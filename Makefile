@@ -3,7 +3,7 @@ TARGET = toycen
 PEDANTIC = $(if $(INHIBIT_PEDANTRY),,-pedantic)
 
 YFLAGS += -dv
-CFLAGS += -g -std=c99 $(PEDANTIC)
+CFLAGS += -Wall -g -std=c99 $(PEDANTIC)
 LFLAGS +=
 
 SRC     = parser.y lexer.l main.c

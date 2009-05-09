@@ -16,14 +16,17 @@
 typedef struct bucket_s bucket_t;
 
 struct bucket_s {
+    enum { NODE, HEAD } type;
     char *key;
-    void *val;
+    const void *val;
+    int index;
     bucket_t *next;
 };
 
 struct hash_table_s {
-    unsigned int size;
-    unsigned int full;
+    unsigned int size;  ///< the total size of the hash
+    unsigned int full;  ///< the number of elements stored
+    unsigned int next;  ///< next index to fill in keys[]
     char **keys;
     bucket_t **bkts;
 };
@@ -43,9 +46,9 @@ static inline unsigned int hash(const char *str)
     return result;
 }
 
-static int bucket_put(bucket_t **bkts, int size, char *duped, void *val)
+static int bucket_put(bucket_t **bkts, int size, unsigned int *next, char *duped, const void *val)
 {
-    int rc = 0;
+    int next_index = *next;
 
     unsigned int index = hash(duped) % size;
 
@@ -53,20 +56,25 @@ static int bucket_put(bucket_t **bkts, int size, char *duped, void *val)
     bucket_t *here = top;
     if (!top) {
         top = malloc(sizeof *top);
-        top->next = NULL;
-        here = top;
+        top->type = HEAD;
+        top->next = malloc(sizeof *top->next);
+        here = top->next;
+        here->type = NODE;
+        next_index = (*next)++;
     } else {
         while (here->next) here = here->next;
         here->next = malloc(sizeof *here);
         here = here->next;
+        next_index = (*next)++;
     }
 
     here->key = duped;
     here->val = val;
+    here->index = next_index;
 
     bkts[index] = top;
 
-    return rc;
+    return next_index;
 }
 
 static int hash_table_resize(hash_table_t *table, unsigned int newsize)
@@ -78,12 +86,14 @@ static int hash_table_resize(hash_table_t *table, unsigned int newsize)
 
     bucket_t **old_buckets = table->bkts;
     bucket_t **new_buckets = calloc(newsize, sizeof *new_buckets);
+    unsigned new_next = 0; /// @todo update this
 
-    for (int i = 0; i < table->full; i++)
-        bucket_put(new_buckets, newsize, table->keys[i], hash_table_get(table, table->keys[i]));
+    for (int i = 0; i < table->next; i++)
+        bucket_put(new_buckets, newsize, &new_next, table->keys[i], hash_table_get(table, table->keys[i]));
 
     table->size = newsize;
-    table->keys = realloc(table->keys, newsize * sizeof *table->keys);
+    table->next = new_next;
+    table->keys = realloc(table->keys, table->next * sizeof *table->keys);
 
     return rc;
 }
@@ -98,11 +108,41 @@ hash_table_t* hash_table_create(unsigned int initial_size)
     if (!initial_size) initial_size = (1 << DEFAULT_HASH_POWER) - 1;
 
     table->full = 0;
+    table->next = 0;
     table->size = initial_size;
     table->keys = malloc(table->size * sizeof *table->keys);
     table->bkts = calloc(table->size,  sizeof *table->bkts);
 
     return table;
+}
+
+int hash_table_delete(hash_table_t *table, const char *key)
+{
+    int rc = -1;
+
+    unsigned int index = hash(key) % table->size;
+
+    bucket_t *top  = table->bkts[index];
+    bucket_t *here = top;
+    bucket_t *last = top;
+    if (here) {
+        do {
+            if (here->type == HEAD) continue;
+            if (!strcmp(key, here->key)) {
+                last->next = here->next;
+                free(table->keys[here->index]);
+                table->keys[here->index] = NULL;
+                free(here);
+                table->full--;
+                rc = 0;
+                break;
+            }
+            last = here;
+        } while ((here = here->next));
+        table->bkts[index] = top;
+    }
+
+    return rc;
 }
 
 void* hash_table_get(hash_table_t *table, const char *key)
@@ -114,8 +154,11 @@ void* hash_table_get(hash_table_t *table, const char *key)
     bucket_t *here = table->bkts[index];
     if (here) {
         do {
+            if (here->type == HEAD) continue;
             if (!strcmp(key, here->key)) {
-                result = here->val;
+                // cast away constness, since the external program has
+                // the right to do what it wants with its value
+                result = (void*)here->val;
                 break;
             }
         } while ((here = here->next));
@@ -124,17 +167,29 @@ void* hash_table_get(hash_table_t *table, const char *key)
     return result;
 }
 
-int hash_table_put(hash_table_t *table, const char *key, void *val)
+int hash_table_put(hash_table_t *table, const char *key, const void *val)
 {
     int rc = 0;
 
-    if (table->full + 1 >= table->size)
-        hash_table_resize(table, (table->size + 1) * 2 - 1);
+    if (hash_table_get(table, key))
+        hash_table_delete(table, key);
+
+    if (table->full + 1 >= table->size) {
+        int newsize = table->size;
+        while (table->full + 1 >= newsize)
+            newsize = (newsize + 1) * 2 - 1;
+        hash_table_resize(table, newsize);
+    }
 
     // save key for enumeration purposes
-    char *duped = table->keys[table->full++] = strdup(key);
+    char *duped = strdup(key);
 
-    bucket_put(table->bkts, table->size, duped, val);
+    int index = bucket_put(table->bkts, table->size, &table->next, duped, val);
+    if (index != -1)
+        free(table->keys[index]);
+
+    table->keys[index] = duped;
+    table->full++;
 
     return rc;
 }
@@ -153,7 +208,7 @@ int hash_table_destroy(hash_table_t *table)
         }
     }
 
-    for (int i = 0; i < table->full; i++)
+    for (int i = 0; i < table->next; i++)
         free(table->keys[i]);
 
     free(table->keys); table->keys = NULL;
@@ -161,6 +216,7 @@ int hash_table_destroy(hash_table_t *table)
 
     table->size = 0;
     table->full = 0;
+    table->next = 0;
 
     return rc;
 }
