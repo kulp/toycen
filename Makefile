@@ -9,13 +9,16 @@ LFLAGS +=
 SRC     = parser.y lexer.l main.c
 OBJECTS = parser.o lexer.o main.o
 
-all: $(TARGET)
+all: $(TARGET) t/test_hash_table
 
 $(TARGET): $(OBJECTS)
 	$(LINK.c) $(OUTPUT_OPTION) $^
 
 lexer.o: parser.h
 parser.h: y.tab.h ; ln $< $@
+
+t/%: CFLAGS += -I.
+t/test_hash_table: hash_table.o
 
 .SECONDARY: parser.c lexer.c
 CLEANFILES += y.output parser.h y.tab.h parser.c lexer.c

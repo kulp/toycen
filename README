@@ -1,4 +1,6 @@
-toycen's parser and lexer are based on a yacc grammar written by Jeff Lee. The original README file accompanying his (increasingly hacked-up) sources follows:
+toycen's parser and lexer are based on a yacc grammar written by Jeff
+Lee. The original README file accompanying his (increasingly
+hacked-up) sources follows:
 
 --------------------------------------------------------------------------------
 
