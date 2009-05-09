@@ -473,8 +473,12 @@ function_definition
 
 %%
 
-static void yyerror(const char *s)
-{
-    fprintf(stderr, "%d: %s\n", lineno, s);
+extern int column;
+ 
+static void yyerror(const char *s) {
+    fflush(stdout);
+    printf("%*s\n%*s\n", column, "^", column, s);
 }
 
+
+/* vi:set ts=4 sw=4 et: */

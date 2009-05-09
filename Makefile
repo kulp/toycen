@@ -1,17 +1,30 @@
-.SECONDARY:
+TARGET = toycen
+
+PEDANTIC = $(if $(INHIBIT_PEDANTRY),,-pedantic)
+
 YFLAGS += -dv
-CFLAGS += -g -std=c99
+CFLAGS += -g -std=c99 $(PEDANTIC)
 LFLAGS +=
 
-SRC	= gram.y scan.l main.c
-OBJ	= gram.o scan.o main.o
+SRC     = parser.y lexer.l main.c
+OBJECTS = parser.o lexer.o main.o
 
-TARGET = ansi_c
+all: $(TARGET)
 
-$(TARGET): $(OBJ)
-	cc $(CFLAGS) $(OBJ) -o $@
+$(TARGET): $(OBJECTS)
+	$(LINK.c) $(OUTPUT_OPTION) $^
 
-scan.o: y.tab.h
+lexer.o: parser.h
+parser.h: y.tab.h ; ln $< $@
+
+.SECONDARY: parser.c lexer.c
+CLEANFILES += y.output parser.h y.tab.h parser.c lexer.c
+
+ifeq ($(words $(filter clean,$(MAKECMDGOALS))),0)
+-include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
+endif
+
+%.d: %.c ; $(COMPILE.c) -MG -M -MF $@ $<
 
 clean:
-	-rm -f y.tab.h y.output *.o $(TARGET)
+	-rm -f $(CLEANFILES) *.[od] $(TARGET)
