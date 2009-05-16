@@ -11,7 +11,7 @@
 
 #include "hash_table.h"
 
-#define DEFAULT_HASH_POWER 8
+#define DEFAULT_HASH_POWER 9
 
 typedef struct bucket_s bucket_t;
 
@@ -19,15 +19,13 @@ struct bucket_s {
     enum { NODE, HEAD } type;
     char *key;
     const void *val;
-    int index;
-    bucket_t *next;
+    bucket_t *next;     ///< next node in a bucket
+    bucket_t *chain;    ///< next node in enumeration order
 };
 
 struct hash_table_s {
     unsigned int size;  ///< the total size of the hash
     unsigned int full;  ///< the number of elements stored
-    unsigned int next;  ///< next index to fill in keys[]
-    char **keys;
     bucket_t **bkts;
 };
 
@@ -37,44 +35,62 @@ static inline unsigned int hash(const char *str)
     unsigned int result = 0;
 
     int len = strlen(str);
-
     result += len;
-
+    if (len > 4) len = 4;
     for (int i = 0; i < len; i++)
         result += (unsigned int)str[i] << i;
 
     return result;
 }
 
-static int bucket_put(bucket_t **bkts, int size, unsigned int *next, char *duped, const void *val)
+static bucket_t* bucket_top(bucket_t **bkts, int index)
 {
-    int next_index = *next;
-
-    unsigned int index = hash(duped) % size;
-
-    bucket_t *top = bkts[index];
-    bucket_t *here = top;
-    if (!top) {
-        top = malloc(sizeof *top);
-        top->type = HEAD;
-        top->next = malloc(sizeof *top->next);
-        here = top->next;
-        here->type = NODE;
-        next_index = (*next)++;
-    } else {
-        while (here->next) here = here->next;
-        here->next = malloc(sizeof *here);
-        here = here->next;
-        next_index = (*next)++;
+    if (!bkts[index]) {
+        bkts[index] = malloc(sizeof *bkts[index]);
+        bkts[index]->type = HEAD;
     }
 
-    here->key = duped;
-    here->val = val;
-    here->index = next_index;
+    return bkts[index];
+}
 
-    bkts[index] = top;
+static int bucket_put(bucket_t **bkts, int size, char *duped, const void *val)
+{
+    unsigned int index = hash(duped) % size;
 
-    return next_index;
+    bucket_t *here = bucket_top(bkts, index);
+    while (here->next) here = here->next;
+    here->next = malloc(sizeof *here->next);
+    here = here->next;
+
+    here->type  = NODE;
+    here->key   = duped;
+    here->val   = val;
+    here->next  = NULL;
+    here->chain = NULL;
+
+    /*
+    int i = (index + 1) % size;
+    while (i != index && !here->chain) {
+        here->chain = bucket_top(bkts, (index++) % size)->next;
+        if (here->chain == here) here->chain = NULL;
+        index %= size;
+    }
+
+    int i = (index + size - 1) % size;
+    bucket_t *there = bucket_top(bkts, i);
+    bool found = false;
+    while (there->next) {
+        if (there->type == NODE) {
+
+        there = there->next;
+    while (i != index && !here->chain) {
+        here->chain = bucket_top(bkts, (index--) % size)->next;
+        if (here->chain == here) here->chain = NULL;
+        index %= size;
+    }
+    */
+
+    return 0;
 }
 
 static int hash_table_resize(hash_table_t *table, unsigned int newsize)
@@ -86,14 +102,29 @@ static int hash_table_resize(hash_table_t *table, unsigned int newsize)
 
     bucket_t **old_buckets = table->bkts;
     bucket_t **new_buckets = calloc(newsize, sizeof *new_buckets);
-    unsigned new_next = 0; /// @todo update this
 
-    for (int i = 0; i < table->next; i++)
-        bucket_put(new_buckets, newsize, &new_next, table->keys[i], hash_table_get(table, table->keys[i]));
+    bucket_t *here = bucket_top(old_buckets, 0);
+    bucket_t *temp;
+    int i = 0;
+    int index = 0;
+    //while (i++ <= table->full) {
+    while (i < table->full && index <= table->size) {
+        if (!((temp = here->next)/* || (temp = here->chain)*/)) {
+            here = bucket_top(old_buckets, (++index, index %= table->size));
+            continue;
+        } else {
+            i++;
+        }
+        void *val = hash_table_get(table, temp->key);
+        printf("fetching key '%s' with value %p during resize\n", temp->key, val);
+        bucket_put(new_buckets, newsize, temp->key, val);
+        here = temp;
+    }
 
     table->size = newsize;
-    table->next = new_next;
-    table->keys = realloc(table->keys, table->next * sizeof *table->keys);
+    table->bkts = new_buckets;
+
+    free(old_buckets);
 
     return rc;
 }
@@ -108,9 +139,7 @@ hash_table_t* hash_table_create(unsigned int initial_size)
     if (!initial_size) initial_size = (1 << DEFAULT_HASH_POWER) - 1;
 
     table->full = 0;
-    table->next = 0;
     table->size = initial_size;
-    table->keys = malloc(table->size * sizeof *table->keys);
     table->bkts = calloc(table->size,  sizeof *table->bkts);
 
     return table;
@@ -130,8 +159,6 @@ int hash_table_delete(hash_table_t *table, const char *key)
             if (here->type == HEAD) continue;
             if (!strcmp(key, here->key)) {
                 last->next = here->next;
-                free(table->keys[here->index]);
-                table->keys[here->index] = NULL;
                 free(here);
                 table->full--;
                 rc = 0;
@@ -171,6 +198,8 @@ int hash_table_put(hash_table_t *table, const char *key, const void *val)
 {
     int rc = 0;
 
+    if (!key) return -1;
+
     if (hash_table_get(table, key))
         hash_table_delete(table, key);
 
@@ -184,11 +213,8 @@ int hash_table_put(hash_table_t *table, const char *key, const void *val)
     // save key for enumeration purposes
     char *duped = strdup(key);
 
-    int index = bucket_put(table->bkts, table->size, &table->next, duped, val);
-    if (index != -1)
-        free(table->keys[index]);
+    bucket_put(table->bkts, table->size, duped, val);
 
-    table->keys[index] = duped;
     table->full++;
 
     return rc;
@@ -204,19 +230,14 @@ int hash_table_destroy(hash_table_t *table)
             do {
                 next = b->next;
                 free(b);
-            } while (next);
+            } while ((b = next));
         }
     }
 
-    for (int i = 0; i < table->next; i++)
-        free(table->keys[i]);
-
-    free(table->keys); table->keys = NULL;
     free(table->bkts); table->bkts = NULL;
 
     table->size = 0;
     table->full = 0;
-    table->next = 0;
 
     return rc;
 }
