@@ -1,1 +1,9 @@
 .*.sw?
+*.[oad]
+*.dSYM
+lexer.c
+parser.c
+parser_internal.h
+y.output
+y.tab.h
+toycen

@@ -3,6 +3,9 @@
  * Hashtable interface.
  */
 
+#ifndef HASH_TABLE_H_E42199ACD89556523F1728BB1503FC38
+#define HASH_TABLE_H_E42199ACD89556523F1728BB1503FC38
+
 /*
  * Forward declaration of hash table struct which is not defined in the
  * interface file prevents easy inspection and modification of structure
@@ -16,5 +19,7 @@ hash_table_t*   hash_table_create(unsigned int initial_size);
 void*           hash_table_get(hash_table_t *table, const char *key);
 int             hash_table_put(hash_table_t *table, const char *key, const void *val);
 int             hash_table_destroy(hash_table_t *table);
+
+#endif
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

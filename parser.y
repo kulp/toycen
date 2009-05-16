@@ -32,12 +32,14 @@
  */
 
 %{
-#include <stdio.h>
+    #include "parser.h"
+    #include "lexer.h"
+    #include <stdio.h>
 
-extern int lineno;
+    extern int lineno;
 
-extern int yylex();
-static void yyerror(const char *s);
+    extern int yylex();
+    static void yyerror(const char *s);
 %}
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
@@ -480,5 +482,16 @@ static void yyerror(const char *s) {
     printf("%*s\n%*s\n", column, "^", column, s);
 }
 
+void parser_setup(parser_state_t *ps)
+{
+    _debug(2, "%s", __func__);
+    /// @todo implement
+}
+
+void parser_teardown(parser_state_t *ps)
+{
+    _debug(2, "%s", __func__);
+    /// @todo implement
+}
 
 /* vi:set ts=4 sw=4 et: */

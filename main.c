@@ -13,15 +13,24 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "hash_table.h"
 
 extern int yyparse();
+
+static hash_table_t *global_symbols;
 
 int main(int argc, char *argv[])
 {
     int result;
 
+    parser_state_t ps = {
+        .globals = global_symbols,
+    };
+
     lexer_setup();
+    parser_setup(&ps);
     result = yyparse();
+    parser_teardown(&ps);
     lexer_teardown();
 
     return result;

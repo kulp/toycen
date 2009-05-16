@@ -219,6 +219,7 @@ void lexer_setup()
 {
     _debug(2, "%s", __func__);
 
+    /// @todo scope type definitions properly
     if (!types_hash)
         types_hash = hash_table_create(0);
 }
@@ -230,5 +231,10 @@ void lexer_teardown()
     types_hash = NULL;
 }
 
+/// @todo scope properly
+void add_typename(scope_t *scope, const char *type)
+{
+    hash_table_put(types_hash, type, (void*)1);
+}
 
 /* vi:set ts=4 sw=4 et: */
