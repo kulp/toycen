@@ -11,11 +11,20 @@
  * extensions.
  */
 
+#include "lexer.h"
+#include "parser.h"
+
 extern int yyparse();
 
 int main(int argc, char *argv[])
 {
-    return yyparse();
+    int result;
+
+    lexer_setup();
+    result = yyparse();
+    lexer_teardown();
+
+    return result;
 }
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

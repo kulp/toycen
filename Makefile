@@ -1,13 +1,16 @@
+ifneq ($(DEBUG),)
+DEFINES += DEBUG=$(DEBUG)
+endif
+
 TARGET = toycen
 
 PEDANTIC = $(if $(INHIBIT_PEDANTRY),,-pedantic)
 
 YFLAGS += -dv
-CFLAGS += -Wall -g -std=c99 $(PEDANTIC)
+CFLAGS += -Wall -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES))
 LFLAGS +=
 
-SRC     = parser.y lexer.l main.c
-OBJECTS = parser.o lexer.o main.o
+OBJECTS = parser.o lexer.o main.o hash_table.o
 
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface
 
@@ -15,6 +18,8 @@ $(TARGET): $(OBJECTS)
 	$(LINK.c) $(OUTPUT_OPTION) $^
 
 lexer.o: parser.h
+# Don't complain about unused yyunput()
+lexer.o: CFLAGS += -Wno-unused-function
 parser.h: y.tab.h ; ln $< $@
 
 t/%: CFLAGS += -I.

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "lexer.h"
 #include "hash_table.h"
 
 #define countof(X) (sizeof (X) / sizeof (X)[0])

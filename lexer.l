@@ -32,21 +32,24 @@
  */
 
 %{
-#include <ctype.h>
-#include <stdio.h>
+    #include <ctype.h>
+    #include <stdio.h>
 
-#include "parser.h"
+    #include "debug.h"
+    #include "parser.h"
+    #include "hash_table.h"
+    #include "lexer.h"
 
-#define TAB_WIDTH 8
+    int lineno;
 
-int lineno;
+    static hash_table_t* types_hash;
 
-/// Tracks columns for error reporting
-static void c();
+    /// Tracks columns for error reporting
+    static void c();
 
-static int yywrap();
-static void skip_comment();
-static int check_identifier(const char *);
+    static int yywrap();
+    static void skip_comment();
+    static int check_identifier(const char *);
 %}
 
 intsuffix                               ([uU][lL]?)|([lL][uU]?)
@@ -206,15 +209,26 @@ static void skip_comment()
 
 static int check_identifier(const char *s)
 {
-    /*
-     * This function should check if `s' is a type name or an
-     * identifier.
-     */
-
-    if (isupper(s[0]))
+    if (hash_table_get(types_hash, s))
         return TYPEDEF_NAME;
 
     return IDENTIFIER;
 }
+
+void lexer_setup()
+{
+    _debug(2, "%s", __func__);
+
+    if (!types_hash)
+        types_hash = hash_table_create(0);
+}
+
+void lexer_teardown()
+{
+    _debug(2, "%s", __func__);
+    hash_table_destroy(types_hash);
+    types_hash = NULL;
+}
+
 
 /* vi:set ts=4 sw=4 et: */

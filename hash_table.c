@@ -9,14 +9,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#if DEBUG > 0
-#include <stdio.h>
-#define _debug(n,...) \
-    do if (n >= DEBUG) fprintf(stderr, __VA_ARGS__); while (0)
-#else
-#define _debug(...)
-#endif
-
+#include "debug.h"
 #include "hash_table.h"
 
 #define DEFAULT_HASH_POWER 9
@@ -95,7 +88,7 @@ static int hash_table_resize(hash_table_t *table, unsigned int newsize)
         if ((temp = here->next)) {
             i++;
             void *val = hash_table_get(table, temp->key);
-            _debug(1, "fetching key '%s' with value %p during resize\n", temp->key, val);
+            _debug(1, "fetching key '%s' with value %p during resize", temp->key, val);
             bucket_put(new_buckets, newsize, temp->key, val);
             here = temp;
         } else {
