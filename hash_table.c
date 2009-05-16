@@ -9,6 +9,14 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#if DEBUG > 0
+#include <stdio.h>
+#define _debug(n,...) \
+    do if (n >= DEBUG) fprintf(stderr, __VA_ARGS__); while (0)
+#else
+#define _debug(...)
+#endif
+
 #include "hash_table.h"
 
 #define DEFAULT_HASH_POWER 9
@@ -20,7 +28,6 @@ struct bucket_s {
     char *key;
     const void *val;
     bucket_t *next;     ///< next node in a bucket
-    bucket_t *chain;    ///< next node in enumeration order
 };
 
 struct hash_table_s {
@@ -66,29 +73,6 @@ static int bucket_put(bucket_t **bkts, int size, char *duped, const void *val)
     here->key   = duped;
     here->val   = val;
     here->next  = NULL;
-    here->chain = NULL;
-
-    /*
-    int i = (index + 1) % size;
-    while (i != index && !here->chain) {
-        here->chain = bucket_top(bkts, (index++) % size)->next;
-        if (here->chain == here) here->chain = NULL;
-        index %= size;
-    }
-
-    int i = (index + size - 1) % size;
-    bucket_t *there = bucket_top(bkts, i);
-    bool found = false;
-    while (there->next) {
-        if (there->type == NODE) {
-
-        there = there->next;
-    while (i != index && !here->chain) {
-        here->chain = bucket_top(bkts, (index--) % size)->next;
-        if (here->chain == here) here->chain = NULL;
-        index %= size;
-    }
-    */
 
     return 0;
 }
@@ -107,18 +91,16 @@ static int hash_table_resize(hash_table_t *table, unsigned int newsize)
     bucket_t *temp;
     int i = 0;
     int index = 0;
-    //while (i++ <= table->full) {
     while (i < table->full && index <= table->size) {
-        if (!((temp = here->next)/* || (temp = here->chain)*/)) {
-            here = bucket_top(old_buckets, (++index, index %= table->size));
-            continue;
-        } else {
+        if ((temp = here->next)) {
             i++;
+            void *val = hash_table_get(table, temp->key);
+            _debug(1, "fetching key '%s' with value %p during resize\n", temp->key, val);
+            bucket_put(new_buckets, newsize, temp->key, val);
+            here = temp;
+        } else {
+            here = bucket_top(old_buckets, (++index, index %= table->size));
         }
-        void *val = hash_table_get(table, temp->key);
-        printf("fetching key '%s' with value %p during resize\n", temp->key, val);
-        bucket_put(new_buckets, newsize, temp->key, val);
-        here = temp;
     }
 
     table->size = newsize;
