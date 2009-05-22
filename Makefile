@@ -12,7 +12,7 @@ LFLAGS +=
 
 OBJECTS = parser.o lexer.o main.o hash_table.o
 
-all: $(TARGET) t/test_hash_table t/test_hash_table_interface
+all: tpp $(TARGET) t/test_hash_table t/test_hash_table_interface
 
 $(TARGET): $(OBJECTS)
 	$(LINK.c) $(OUTPUT_OPTION) $^
