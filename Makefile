@@ -12,6 +12,7 @@ LFLAGS +=
 
 OBJECTS = parser.o lexer.o main.o hash_table.o
 
+CLEANFILES += tpp
 all: tpp $(TARGET) t/test_hash_table t/test_hash_table_interface
 
 $(TARGET): $(OBJECTS)
@@ -21,6 +22,7 @@ $(TARGET): $(OBJECTS)
 lexer.o: CFLAGS += -Wno-unused-function
 parser_internal.h: y.tab.h ; ln $< $@
 
+CLEANFILES += t/test_hash_table t/test_hash_table_interface
 t/%: CFLAGS += -I.
 t/test_hash_table: hash_table.o
 t/test_hash_table_interface: hash_table.o
