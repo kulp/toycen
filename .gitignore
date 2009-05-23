@@ -8,3 +8,6 @@ y.output
 y.tab.h
 toycen
 build
+tpp
+t/test_hash_table
+t/test_hash_table_interface
