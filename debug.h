@@ -3,8 +3,12 @@
 
 #if DEBUG
 #include <stdio.h>
-#define _debug(n,fmt,...) \
-    do if (n <= DEBUG) fprintf(stderr, fmt "\n", ##__VA_ARGS__); while (0)
+#define _debug(n,...) \
+    do \
+		if (n <= DEBUG) { \
+			fprintf(stderr, __VA_ARGS__); \
+			fprintf(stderr, "\n"); \
+		} while (0)
 #else
 #define _debug(...)
 #endif
