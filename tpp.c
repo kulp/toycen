@@ -14,6 +14,11 @@
 #include "hash_table.h"
 #include "debug.h"
 
+/// horizontal space characters
+#define HSPACE " \t"
+#define VSPACE "\n\v"
+#define ASPACE HSPACE VSPACE
+
 typedef enum keyword {
     K_DEFINE, K_UNDEF, K_IF, K_IFDEF, K_IFNDEF, K_ELSE, K_ENDIF, K_INCLUDE
 } keyword_t;
@@ -41,7 +46,10 @@ static keyword_t check_keyword(int len, const char *str)
 {
 /// @todo check that the isspace() part is correct
 /// @todo potential optimization : check only unchecked remainder
-#define _IS(what,exp) ((!strncmp(what, keywords[exp], (temp = strlen(keywords[exp]))) && isspace(*(what + temp)) ? exp : -1))
+#define _IS(what,exp) \
+    (!strncmp(what, keywords[exp], (temp = strlen(keywords[exp]))) \
+     && (temp == len || isspace(*(what + temp))) ? exp : -1)
+
     /// @todo trap len increments so they don't overflow the string
     int idx = 0;
     int temp;   // prevents recomputation of strlen()
@@ -76,13 +84,12 @@ static int dispatch_line(int len, char line[len])
 {
 #if DEBUG
     {
-        static char buf[50];
+        char buf[50] = { 0 };
         bool ellipse = false;
         if (len > sizeof buf) {
             len = sizeof buf - 3;
             ellipse = true;
         }
-        snprintf(buf, len, "%s", line);
         strncpy(buf, line, len - 1);
         if (ellipse)
             strcpy(&buf[sizeof buf - 4], "...");
@@ -98,25 +105,40 @@ static int dispatch_line(int len, char line[len])
         if (ptr - line > len) return -1;
 #endif
         if (ptr[0] == '#') {
-            ptr += strspn(ptr + 1, " \t") + 1;
+            ptr += strspn(ptr + 1, HSPACE) + 1;
             keyword_t keyword = check_keyword(len - (ptr - line), ptr);
             /// main dispatch
             if (keyword != -1) {
                 _debug(3, "keyword found : '%s'", keywords[keyword]);
                 ptr += strlen(keywords[keyword]);   // skip keyword
-                ptr += strspn(ptr, " \t");          // skip spaces
+                ptr += strspn(ptr, HSPACE);         // skip spaces
                 int numthings = 0;
+                // thing1 and thing2 are the two potential arguments to a preprocessor directive
                 char *thing1, *thing2;
-                int thing1len = strcspn(ptr, " \t");    // skip spaces
+                int len = strcspn(ptr, ASPACE);    // skip spaces
                 /// @todo this logic needs sophistication for function-like macros
-                if (thing1len) {
+                if (len) {
+                    // extend len if spaces are inside a macro param list
+                    char *start_paren, *end_paren;
+                    if ((start_paren = strchr(ptr, '(')) && start_paren - ptr < len) {
+                        len = strchr(ptr, ')') - ptr + 1;
+                        if ((start_paren = strchr(start_paren + 1, '(')) && start_paren < end_paren) {
+                            _error("syntax error: '(' may not occur in macro parameters list");
+                        }
+                    }
+
                     thing1 = ptr;
-                    thing1[thing1len] = 0;
+                    thing1[len] = 0;
                     numthings++;    // we have a first param
                     /// @todo rewrite this more compactly / elegantly
-                    thing2 = thing1 + thing1len + strspn(thing1 + thing1len + 1, " \t") + 1;
+                    thing2 = thing1 + len + strspn(thing1 + len + 1, HSPACE) + 1;
                     /// @todo properly handle comments inside a macro (?)
-                    if (strcspn(thing2, " \t")) numthings++;    // we have a second param
+                    /// @todo create a proper tokenizing function
+                    int len2;
+                    if ((len2 = strcspn(thing2, VSPACE))) {
+                        thing2[len2] = 0;
+                        numthings++;    // have a second param of nonzero length
+                    }
                 }
 
                 switch (keyword) {
