@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "hash_table.h"
 #include "debug.h"
 
@@ -21,6 +22,9 @@ typedef enum keyword {
 
 static hash_table_t *defines;
 static FILE *instream, *outstream;
+
+/// @todo this needs to be treated as a one in some cases
+static const char DEFAULT_DEFINITION[] = "";
 
 static const char * const keywords[] = {
      [K_DEFINE ] = "define", [K_UNDEF ] = "undef",
@@ -89,20 +93,53 @@ static int dispatch_line(int len, char line[len])
 #endif
 
     if (len > 0) {
+        if (line[len - 1] == '\n') line[len-- - 1] = 0;  // chomp newline
         char *ptr = line;
 #ifndef STRICT
         while (isspace(*ptr) && ptr - line < len) ptr++;
         if (ptr - line > len) return -1;
 #endif
         if (ptr[0] == '#') {
-            while (++ptr - line < len && isspace(*ptr)) ;
+            ptr += strspn(ptr + 1, " \t") + 1;
             keyword_t keyword = check_keyword(len - (ptr - line), ptr);
-            /// @todo main dispatch
+            /// main dispatch
             if (keyword != -1) {
                 _debug(3, "keyword found : '%s'", keywords[keyword]);
+                ptr += strlen(keywords[keyword]);   // skip keyword
+                ptr += strspn(ptr, " \t");          // skip spaces
+                int numthings = 0;
+                char *thing1, *thing2;
+                int thing1len = strcspn(ptr, " \t");    // skip spaces
+                /// @todo this logic needs sophistication for function-like macros
+                if (thing1len) {
+                    thing1 = ptr;
+                    thing1[thing1len] = 0;
+                    numthings++;    // we have a first param
+                    /// @todo rewrite this more compactly / elegantly
+                    thing2 = thing1 + thing1len + strspn(thing1 + thing1len + 1, " \t") + 1;
+                    /// @todo properly handle comments inside a macro (?)
+                    if (strcspn(thing2, " \t")) numthings++;    // we have a second param
+                }
+
                 switch (keyword) {
                 case K_DEFINE:
+                {
+                    char *key = strdup(thing1);
+                    char *val = (numthings == 2) ? strdup(thing2) : (char*)DEFAULT_DEFINITION;
+                    _debug(3, "'%s' = '%s'", key, val);
+                    hash_table_put(defines, key, val);
+                    break;
+                }
                 case K_UNDEF:
+                {
+                    if (numthings) {
+                        /// @todo useful messages on syntax error
+                        _debug(1, "syntax error");
+                    }
+                    void *what = hash_table_delete(defines, thing1);
+                    if (what != DEFAULT_DEFINITION) free(what);
+                    break;
+                }
                 case K_IF:
                 case K_IFDEF:
                 case K_IFNDEF:
@@ -155,6 +192,8 @@ int main(int argc, char *argv[])
 
     outstream = stdout;
 
+    defines = hash_table_create(0);
+
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
             if (!strcmp(argv[i], "-")) {
@@ -168,6 +207,8 @@ int main(int argc, char *argv[])
         instream = stdin;
         dispatch_stream(instream);
     }
+
+    hash_table_destroy(defines);
 
     return result;
 }

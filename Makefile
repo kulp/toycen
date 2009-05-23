@@ -24,8 +24,9 @@ parser_internal.h: y.tab.h ; ln $< $@
 
 CLEANFILES += t/test_hash_table t/test_hash_table_interface
 t/%: CFLAGS += -I.
-t/test_hash_table: hash_table.o
-t/test_hash_table_interface: hash_table.o
+t/test_hash_table t/test_hash_table_interface: hash_table.o
+
+tpp: hash_table.o
 
 .SECONDARY: parser.c lexer.c
 CLEANFILES += y.output parser_internal.h y.tab.h parser.c lexer.c
