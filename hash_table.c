@@ -120,9 +120,9 @@ hash_table_t* hash_table_create(unsigned int initial_size)
     return table;
 }
 
-int hash_table_delete(hash_table_t *table, const char *key)
+void* hash_table_delete(hash_table_t *table, const char *key)
 {
-    int rc = -1;
+    void *result = NULL;
 
     unsigned int index = hash(key) % table->size;
 
@@ -134,9 +134,11 @@ int hash_table_delete(hash_table_t *table, const char *key)
             if (here->type == HEAD) continue;
             if (!strcmp(key, here->key)) {
                 last->next = here->next;
+                // cast away constness, since the external program has
+                // the right to do what it wants with its value
+                result = (void*)here->val;
                 free(here);
                 table->full--;
-                rc = 0;
                 break;
             }
             last = here;
@@ -144,7 +146,7 @@ int hash_table_delete(hash_table_t *table, const char *key)
         table->bkts[index] = top;
     }
 
-    return rc;
+    return result;
 }
 
 void* hash_table_get(hash_table_t *table, const char *key)
@@ -185,7 +187,7 @@ int hash_table_put(hash_table_t *table, const char *key, const void *val)
         hash_table_resize(table, newsize);
     }
 
-    // save key for enumeration purposes
+    // save our own copy of the key
     char *duped = strdup(key);
 
     bucket_put(table->bkts, table->size, duped, val);

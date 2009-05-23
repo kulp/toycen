@@ -18,6 +18,7 @@ typedef struct hash_table_s hash_table_t;
 hash_table_t*   hash_table_create(unsigned int initial_size);
 void*           hash_table_get(hash_table_t *table, const char *key);
 int             hash_table_put(hash_table_t *table, const char *key, const void *val);
+void* hash_table_delete(hash_table_t *table, const char *key);
 int             hash_table_destroy(hash_table_t *table);
 
 #endif
