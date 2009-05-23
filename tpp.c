@@ -2,10 +2,8 @@
  * @file
  * tpp is the C preprocessor in the Toycen C compiler suite.
  *
- * If arguments are provided, takes then as filenames to process; otherwise,
- * takes input on stdin. In either case, produces a single stream of
- * concatenated output on stdout. The filename "-" is taken to mean standard
- * input (so that standard input can be interleaved with other files);
+ * Expects (besides options) exactly two arguments, infile and outfile, either
+ * of which may be "-" to represent stdin or stdout, respectively.
  */
 
 #include <ctype.h>
@@ -186,6 +184,13 @@ static int dispatch_file(const char *filename)
     return result;
 }
 
+void usage(const char *me)
+{
+    printf("Usage:\n"
+           "  %s infile outfile\n"
+           "\n", me);
+}
+
 int main(int argc, char *argv[])
 {
     int result;
@@ -194,18 +199,28 @@ int main(int argc, char *argv[])
 
     defines = hash_table_create(0);
 
-    if (argc > 1) {
-        for (int i = 1; i < argc; i++) {
-            if (!strcmp(argv[i], "-")) {
-                instream = stdin;
-                dispatch_stream(instream);
-            } else {
-                dispatch_file(argv[i]);
+    /// @todo use getopt_long()
+    if (argc == 3) {
+        if (!strcmp(argv[2], "-")) {
+            outstream = stdout;
+        } else {
+            outstream = fopen(argv[2], "w");
+            if (!outstream) {
+                perror("fopen");
+                fprintf(stderr, "failing filename was '%s'\n", argv[2]);
             }
         }
+
+        if (!strcmp(argv[1], "-")) {
+            instream = stdin;
+            dispatch_stream(instream);
+        } else {
+            dispatch_file(argv[1]);
+        }
     } else {
-        instream = stdin;
-        dispatch_stream(instream);
+        fprintf(stderr, "You must supply an 'infile' and an 'outfile' argument.");
+        usage(argv[0]);
+        result = -1;
     }
 
     hash_table_destroy(defines);
