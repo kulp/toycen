@@ -1,0 +1,4 @@
+^#	BEGIN(dir);
+
+<dir>define	printf("define\n"); return 123;
+

@@ -7,6 +7,7 @@
  */
 
 #include <ctype.h>
+#include <getopt.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -14,14 +15,24 @@
 #include "hash_table.h"
 #include "debug.h"
 
+//------------------------------------------------------------------------------
+// Type and macro definitions
+//------------------------------------------------------------------------------
+
 /// horizontal space characters
 #define HSPACE " \t"
+/// vertical space characters
 #define VSPACE "\n\v"
+/// all space characters
 #define ASPACE HSPACE VSPACE
 
 typedef enum keyword {
     K_DEFINE, K_UNDEF, K_IF, K_IFDEF, K_IFNDEF, K_ELSE, K_ENDIF, K_INCLUDE
 } keyword_t;
+
+//------------------------------------------------------------------------------
+// Global declarations
+//------------------------------------------------------------------------------
 
 static hash_table_t *defines;
 static FILE *instream, *outstream;
@@ -35,6 +46,10 @@ static const char * const keywords[] = {
      [K_IF     ] = "if",     [K_ELSE  ] = "else",   [K_ENDIF] = "endif",
      [K_INCLUDE] = "include",
 };
+
+//------------------------------------------------------------------------------
+// Function definitions
+//------------------------------------------------------------------------------
 
 static inline void output(const char *line)
 {
@@ -220,6 +235,8 @@ int main(int argc, char *argv[])
     outstream = stdout;
 
     defines = hash_table_create(0);
+
+    int a = yylex();
 
     /// @todo use getopt_long()
     if (argc == 3) {
