@@ -2,6 +2,7 @@
 *.[oad]
 *.dSYM
 lexer.c
+pp_lexer.c
 parser.c
 parser_internal.h
 y.output
