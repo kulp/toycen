@@ -49,6 +49,9 @@
 
     static void skip_comment();
     static int check_identifier(const char *);
+    static void whitespace();
+
+    typedef enum { C89_STYLE, C99_STYLE } comment_t;
 %}
 
 intsuffix                               ([uU][lL]?)|([lL][uU]?)
@@ -57,4 +60,5 @@ exppart                                 [eE][-+]?[0-9]+
 floatsuffix                             [fFlL]
 chartext                                ([^'])|(\\.)
 stringtext                              ([^"])|(\\.)
+id                                      [a-zA-Z_][a-zA-Z_0-9]*
 

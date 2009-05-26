@@ -1,7 +1,11 @@
-"\n"                                    { c(); lineno++; }
-[\t\f\v\r ]+                            { c(); /* Ignore whitespace. */ }
+"\n"                                    { c(); whitespace(); lineno++; }
+[\t\f\v\r ]+                            { c(); whitespace(); }
 
-"/*"                                    { skip_comment(); }
+"/*"                                    { skip_comment(C89_STYLE); }
+"//"                                    { skip_comment(C99_STYLE); }
+
+<*>"\\"[ \t]*"\n"                       { c(); /* acceptable backslash continuation */ }
+<*>"\\"                                 { c(); return '\\'; /* unacceptable */ }
 
 "{"                                     { c(); return '{'; }
 "<%"                                    { c(); return '{'; }
@@ -88,7 +92,7 @@
 "volatile"                              { c(); return VOLATILE; } 
 "while"                                 { c(); return WHILE;    } 
 
-[a-zA-Z_][a-zA-Z_0-9]*                  { c(); return check_identifier(yytext); }
+{id}                                    { c(); return check_identifier(yytext); }
 
 "0"[xX][0-9a-fA-F]+{intsuffix}?         { c(); return INTEGER;   } 
 "0"[0-7]+{intsuffix}?                   { c(); return INTEGER;   } 
@@ -103,5 +107,4 @@
 "\""{stringtext}*"\""                   { c(); return STRING;    } 
 "L\""{stringtext}*"\""                  { c(); return STRING;    } 
 
-.                                       { c(); fprintf(stderr, "%d: unexpected character `%c'\n", lineno, yytext[0]); }
-
+.                                       { c(); fprintf(stderr, "line %d: unexpected character `%c'\n", lineno, yytext[0]); /* vi:set ts=4 sw=4 et syntax=lexrules: */ }

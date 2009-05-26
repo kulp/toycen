@@ -15,27 +15,47 @@ static void c()
  * We use this routine instead a lex pattern because we don't need
  * to save the matched comment in the `yytext' buffer.
  */
-static void skip_comment()
+static void skip_comment(comment_t style)
 {
     int c1, c2;
 
-    c1 = input();
-    c2 = input();
+	c1 = input();
+	if (style == C89_STYLE) {
+		c2 = input();
 
-    while (c2 != EOF && !(c1 == '*' && c2 == '/')) {
-        if (c1 == '\n')
-            ++lineno;
-        c1 = c2;
-        c2 = input();
-    }
+		while (c2 != EOF && !(c1 == '*' && c2 == '/')) {
+			if (c1 == '\n')
+				++lineno;
+			c1 = c2;
+			c2 = input();
+		}
+	} else {
+		while (c2 != EOF && !(c1 == '\n'))
+			c1 = input();
+		if (c1 == '\n')
+			++lineno;
+	}
 }
 
 static int check_identifier(const char *s)
 {
+#ifdef PREPROCESSOR_LEXING
+    /// @todo do replacement from hashtable
+    char *val = get_define(s);
+    printf("%s", val ? val : s);
+#else
     if (hash_table_get(types_hash, s))
         return TYPEDEF_NAME;
+#endif
 
     return IDENTIFIER;
+}
+
+static void whitespace()
+{
+#if PREPROCESSOR_LEXING
+    printf("%s", yytext);
+#endif
 }
 
 void lexer_setup()
