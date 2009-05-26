@@ -16,7 +16,8 @@ typedef enum keyword {
 /// @todo this needs to be treated as a one in some cases
 static const char DEFAULT_DEFINITION[] = "";
 
-void add_define(const char *key, const char *val);
+void  add_define(const char *key, const char *val);
 void* get_define(const char *key);
+void  del_define(const char *key);
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

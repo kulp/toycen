@@ -254,6 +254,8 @@ int main(int argc, char *argv[])
 void add_define(const char *key, const char *val)
 {
     _debug(3, "'%s' = '%s'", key, val);
+    /// @todo warn / error on redefinition
+    /// @todo watch for memory leaks from this strdup()
     hash_table_put(defines, key, strdup(val));
 }
 
@@ -262,6 +264,12 @@ void* get_define(const char *key)
     void *val = hash_table_get(defines, key);
     _debug(3, "'%s' = %p", key, val);
     return val;
+}
+
+void del_define(const char *key)
+{
+    void *val = hash_table_delete(defines, key);
+    _debug(3, "'%s' = %p", key, val);
 }
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

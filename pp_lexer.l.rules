@@ -1,15 +1,15 @@
 ^#  BEGIN(drct);
 
-<drct,argn,keyw,valu,arg1,arg0,incl>[ \t]+ /* eat spaces */
+<drct,argn,keyw,valu,undw,arg1,arg0,incl>[ \t]+ /* eat spaces */
 
-<drct>define    { printf("define\n") ; BEGIN(keyw); if (0) return K_DEFINE ; }
-<drct>undef     { printf("undef\n")  ; BEGIN(arg0); if (0) return K_UNDEF  ; }
-<drct>if        { printf("if\n")     ; BEGIN(argn); if (0) return K_IF     ; }
-<drct>ifdef     { printf("ifdef\n")  ; BEGIN(arg1); if (0) return K_IFDEF  ; }
-<drct>elif      { printf("elif\n")   ; BEGIN(argn); if (0) return K_ELIF   ; }
-<drct>else      { printf("else\n")   ; BEGIN(arg0); if (0) return K_ELSE   ; }
-<drct>endif     { printf("endif\n")  ; BEGIN(arg0); if (0) return K_ENDIF  ; }
-<drct>include   { printf("include\n"); BEGIN(incl); if (0) return K_INCLUDE; }
+<drct>define    { BEGIN(keyw); if (0) return K_DEFINE ; }
+<drct>undef     { BEGIN(undw); if (0) return K_UNDEF  ; }
+<drct>if        { BEGIN(argn); if (0) return K_IF     ; }
+<drct>ifdef     { BEGIN(arg1); if (0) return K_IFDEF  ; }
+<drct>elif      { BEGIN(argn); if (0) return K_ELIF   ; }
+<drct>else      { BEGIN(arg0); if (0) return K_ELSE   ; }
+<drct>endif     { BEGIN(arg0); if (0) return K_ENDIF  ; }
+<drct>include   { BEGIN(incl); if (0) return K_INCLUDE; }
 
 <valu>[^\n]+/\n   {
     strncpy(defval + valpos, yytext, yyleng);
@@ -20,10 +20,6 @@
     if (!cont) {
         BEGIN(INITIAL);
         add_define(defkey, defval);
-        /*
-        printf("defined: '%s'\n", defkey);
-        printf("as: '%s'\n", defval);
-        */
         defkey[0] = defval[0] = keypos = valpos = 0;
         /// @todo return here
     }
@@ -31,19 +27,23 @@
 
 <keyi>{hspace}  { BEGIN(valu); }
 
-<keyi>\n        {
-    BEGIN(INITIAL);
-    add_define(defkey, DEFAULT_DEFINITION);
-    /*
-    printf("defined: '%s'\n", defkey);
-    printf("as: <default value>\n");
-    */
+<keyi,undi>\n        {
+    switch (YYSTATE) {
+    case keyi: add_define(defkey, DEFAULT_DEFINITION); break;
+    case undi: del_define(defkey);                     break;
+    default: printf("invalid state %d\n", YYSTATE); /** @todo error */ break;
+    }
+
     defkey[0] = defval[0] = keypos = valpos = 0;
+    BEGIN(INITIAL);
 }
 
-<keyw,keyi>{id}      { /** @todo function-like macros */
+<keyw,keyi,undw,undi>{id}      { /** @todo function-like macros */
     /// @todo trap and error on non-identifier macro names
-    BEGIN(keyi);
+    switch (YYSTATE) {
+    case keyw: case keyi: BEGIN(keyi); break;
+    case undw: case undi: BEGIN(undi); break;
+    }
     strncpy(defkey + keypos, yytext, yyleng);
     defkey[(keypos += yyleng)] = 0;
 }

@@ -1,5 +1,12 @@
 int column;
 
+static void p()
+{
+#if PREPROCESSOR_LEXING
+    printf("%s", yytext);
+#endif
+}
+
 static void c()
 {
     for (int i = 0; yytext[i]; i++)
@@ -51,13 +58,6 @@ static int check_identifier(const char *s)
     return IDENTIFIER;
 }
 
-static void whitespace()
-{
-#if PREPROCESSOR_LEXING
-    printf("%s", yytext);
-#endif
-}
-
 void lexer_setup()
 {
     _debug(2, "%s", __func__);
@@ -80,4 +80,4 @@ void add_typename(scope_t *scope, const char *type)
     hash_table_put(types_hash, type, (void*)1);
 }
 
-/* vi:set ts=4 sw=4 et: */
+/* vi:set ts=4 sw=4 et syntax=c.doxygen: */

@@ -46,6 +46,7 @@
 
     /// Tracks columns for error reporting
     static void c();
+    static void p();
 
     static void skip_comment();
     static int check_identifier(const char *);
