@@ -1,4 +1,51 @@
-^#	BEGIN(dir);
+^#  BEGIN(drct);
 
-<dir>define	printf("define\n"); return 123;
+<drct,argn,keyw,valu,arg1,arg0,incl>[ \t]+ /* eat spaces */
 
+<drct>define    { printf("define\n") ; BEGIN(keyw); if (0) return K_DEFINE ; }
+<drct>undef     { printf("undef\n")  ; BEGIN(arg0); if (0) return K_UNDEF  ; }
+<drct>if        { printf("if\n")     ; BEGIN(argn); if (0) return K_IF     ; }
+<drct>ifdef     { printf("ifdef\n")  ; BEGIN(arg1); if (0) return K_IFDEF  ; }
+<drct>elif      { printf("elif\n")   ; BEGIN(argn); if (0) return K_ELIF   ; }
+<drct>else      { printf("else\n")   ; BEGIN(arg0); if (0) return K_ELSE   ; }
+<drct>endif     { printf("endif\n")  ; BEGIN(arg0); if (0) return K_ENDIF  ; }
+<drct>include   { printf("include\n"); BEGIN(incl); if (0) return K_INCLUDE; }
+
+<valu>[^\n]+/\n   {
+    strncpy(defval + valpos, yytext, yyleng);
+    /// @todo stop dealing with continued lines explicitly here
+    int cont = (yytext[yyleng - 1] == '\\');
+    int len = cont ? yyleng - 1 : yyleng;
+    defval[(valpos += len)] = 0;
+    if (!cont) {
+        BEGIN(INITIAL);
+        add_define(defkey, defval);
+        /*
+        printf("defined: '%s'\n", defkey);
+        printf("as: '%s'\n", defval);
+        */
+        defkey[0] = defval[0] = keypos = valpos = 0;
+        /// @todo return here
+    }
+}
+
+<keyi>{hspace}  { BEGIN(valu); }
+
+<keyi>\n        {
+    BEGIN(INITIAL);
+    add_define(defkey, DEFAULT_DEFINITION);
+    /*
+    printf("defined: '%s'\n", defkey);
+    printf("as: <default value>\n");
+    */
+    defkey[0] = defval[0] = keypos = valpos = 0;
+}
+
+<keyw,keyi>{id}      { /** @todo function-like macros */
+    /// @todo trap and error on non-identifier macro names
+    BEGIN(keyi);
+    strncpy(defkey + keypos, yytext, yyleng);
+    defkey[(keypos += yyleng)] = 0;
+}
+
+<drct>.         { printf("unknown directive\n"); return -1; /* vi:set ts=4 sw=4 et syntax=lexrules: */ }

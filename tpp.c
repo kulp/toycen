@@ -14,21 +14,7 @@
 #include <stdlib.h>
 #include "hash_table.h"
 #include "debug.h"
-
-//------------------------------------------------------------------------------
-// Type and macro definitions
-//------------------------------------------------------------------------------
-
-/// horizontal space characters
-#define HSPACE " \t"
-/// vertical space characters
-#define VSPACE "\n\v"
-/// all space characters
-#define ASPACE HSPACE VSPACE
-
-typedef enum keyword {
-    K_DEFINE, K_UNDEF, K_IF, K_IFDEF, K_IFNDEF, K_ELSE, K_ENDIF, K_INCLUDE
-} keyword_t;
+#include "pp_lexer.h"
 
 //------------------------------------------------------------------------------
 // Global declarations
@@ -37,13 +23,10 @@ typedef enum keyword {
 static hash_table_t *defines;
 static FILE *instream, *outstream;
 
-/// @todo this needs to be treated as a one in some cases
-static const char DEFAULT_DEFINITION[] = "";
-
 static const char * const keywords[] = {
      [K_DEFINE ] = "define", [K_UNDEF ] = "undef",
      [K_IFDEF  ] = "ifdef",  [K_IFNDEF] = "ifndef",
-     [K_IF     ] = "if",     [K_ELSE  ] = "else",   [K_ENDIF] = "endif",
+     [K_IF     ] = "if",     [K_ELSE  ] = "else",   [K_ELIF] = "elif", [K_ENDIF] = "endif",
      [K_INCLUDE] = "include",
 };
 
@@ -161,8 +144,7 @@ static int dispatch_line(int len, char line[len])
                 {
                     char *key = strdup(thing1);
                     char *val = (numthings == 2) ? strdup(thing2) : (char*)DEFAULT_DEFINITION;
-                    _debug(3, "'%s' = '%s'", key, val);
-                    hash_table_put(defines, key, val);
+                    add_define(key, val);
                     break;
                 }
                 case K_UNDEF:
@@ -236,7 +218,8 @@ int main(int argc, char *argv[])
 
     defines = hash_table_create(0);
 
-    int a = yylex();
+    int a;
+    do a = yylex(); while (a);
 
     /// @todo use getopt_long()
     if (argc == 3) {
@@ -265,6 +248,20 @@ int main(int argc, char *argv[])
     hash_table_destroy(defines);
 
     return result;
+}
+
+//--------------------------------------------------------------------------------
+void add_define(const char *key, const char *val)
+{
+    _debug(3, "'%s' = '%s'", key, val);
+    hash_table_put(defines, key, strdup(val));
+}
+
+void* get_define(const char *key)
+{
+    void *val = hash_table_get(defines, key);
+    _debug(3, "'%s' = %p", key, val);
+    return val;
 }
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */
