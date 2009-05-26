@@ -49,3 +49,9 @@
 }
 
 <drct>.         { printf("unknown directive\n"); return -1; /* vi:set ts=4 sw=4 et syntax=lexrules: */ }
+
+<<EOF>>         {
+    yypop_buffer_state();
+    if (!YY_CURRENT_BUFFER) yyterminate();
+}
+

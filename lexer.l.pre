@@ -52,6 +52,10 @@
     static int check_identifier(const char *);
     static void whitespace();
 
+#if PREPROCESSOR_LEXING
+    extern void output(const char *str);
+#endif
+
     typedef enum { C89_STYLE, C99_STYLE } comment_t;
 %}
 

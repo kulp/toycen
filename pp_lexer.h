@@ -20,4 +20,6 @@ void  add_define(const char *key, const char *val);
 void* get_define(const char *key);
 void  del_define(const char *key);
 
+int switch_to_input_file(const char *s);
+
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

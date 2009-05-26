@@ -3,7 +3,7 @@ int column;
 static void p()
 {
 #if PREPROCESSOR_LEXING
-    printf("%s", yytext);
+    output(yytext);
 #endif
 }
 
@@ -47,9 +47,8 @@ static void skip_comment(comment_t style)
 static int check_identifier(const char *s)
 {
 #ifdef PREPROCESSOR_LEXING
-    /// @todo do replacement from hashtable
     char *val = get_define(s);
-    printf("%s", val ? val : s);
+    output(val ? val : s);
 #else
     if (hash_table_get(types_hash, s))
         return TYPEDEF_NAME;
