@@ -1,7 +1,7 @@
 /**
  * @file
  * Toycen is a toy C compiler. From "toy" the reader should infer not
- * that Toycen is completel useless, but that it doesn't take itself
+ * that Toycen is completely useless, but that it doesn't take itself
  * very seriously. Toycen may become a pedagogical aid for those wishing to
  * introduce themselves to compiler theory and practice, but at the moment the
  * author is unwilling to propose himself as a teacher on those subjects,
