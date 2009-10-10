@@ -5,6 +5,8 @@
  * Very naive implementation for starters.
  */
 
+#define _XOPEN_SOURCE 500
+
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>

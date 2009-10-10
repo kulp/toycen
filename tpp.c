@@ -6,6 +6,8 @@
  * of which may be "-" to represent stdin or stdout, respectively.
  */
 
+#define _XOPEN_SOURCE 500
+
 #include <ctype.h>
 #include <getopt.h>
 #include <stdbool.h>

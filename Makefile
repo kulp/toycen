@@ -26,8 +26,10 @@ t/%: CFLAGS += -I.
 t/test_hash_table t/test_hash_table_interface: hash_table.o
 
 tpp: hash_table.o pp_lexer.o
-pp_lexer.o: DEFINES += PREPROCESSOR_LEXING
+pp_lexer.o: DEFINES += PREPROCESSOR_LEXING _XOPEN_SOURCE=500
 pp_lexer.l: lexer.l.pre lexer.l.rules lexer.l.post
+
+lexer.o: DEFINES += _XOPEN_SOURCE=500
 
 .SECONDARY: parser.c lexer.c pp_lexer.c
 CLEANFILES += y.output parser_internal.h y.tab.h parser.c pp_lexer.l lexer.l

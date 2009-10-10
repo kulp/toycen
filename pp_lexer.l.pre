@@ -10,7 +10,10 @@
 %x incl
 
 %{
+    #define _XOPEN_SOURCE 500
 	#include "pp_lexer.h"
+    #include <stdio.h>
+
 	static char defkey[256];
 	static char defval[256];
 	static int keypos, valpos;
