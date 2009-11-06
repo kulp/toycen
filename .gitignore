@@ -13,3 +13,4 @@ tpp
 t/test_hash_table
 t/test_hash_table_interface
 pp_lexer.l
+Session.vim
