@@ -84,8 +84,8 @@ static int hash_table_resize(hash_table_t *table, unsigned int newsize)
 
     bucket_t *here = bucket_top(old_buckets, 0);
     bucket_t *temp;
-    int i = 0;
-    int index = 0;
+    unsigned i = 0;
+    unsigned index = 0;
     while (i < table->full && index <= table->size) {
         if ((temp = here->next)) {
             i++;
@@ -183,7 +183,7 @@ int hash_table_put(hash_table_t *table, const char *key, const void *val)
         hash_table_delete(table, key);
 
     if (table->full + 1 >= table->size) {
-        int newsize = table->size;
+        unsigned newsize = table->size;
         while (table->full + 1 >= newsize)
             newsize = (newsize + 1) * 2 - 1;
         hash_table_resize(table, newsize);
@@ -204,7 +204,7 @@ int hash_table_destroy(hash_table_t *table)
     int rc = 0;
 
     bucket_t *b, *next;
-    for (int i = 0; i < table->size; i++) {
+    for (unsigned i = 0; i < table->size; i++) {
         if ((b = table->bkts[i])) {
             do {
                 next = b->next;
