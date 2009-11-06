@@ -5,17 +5,19 @@ endif
 TARGET = toycen
 
 PEDANTIC = $(if $(INHIBIT_PEDANTRY),,-pedantic)
+WEXTRA = -Wextra
 
 YFLAGS += -dv
-CFLAGS += -Wall -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES))
+CFLAGS += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES))
 LFLAGS +=
 
 OBJECTS = parser.o lexer.o main.o hash_table.o pp_lexer.o
 
 CLEANFILES += tpp
-all: tpp $(TARGET) t/test_hash_table t/test_hash_table_interface
+all: $(TARGET) t/test_hash_table t/test_hash_table_interface
 
 toycen: parser.o lexer.o hash_table.o
+parser.o: CFLAGS += -Wno-missing-field-initializers
 
 # Don't complain about unused yyunput()
 lexer.o: CFLAGS += -Wno-unused-function
@@ -27,6 +29,7 @@ t/test_hash_table t/test_hash_table_interface: hash_table.o
 
 tpp: hash_table.o pp_lexer.o
 pp_lexer.o: DEFINES += PREPROCESSOR_LEXING _XOPEN_SOURCE=500
+pp_lexer.o: WEXTRA =
 pp_lexer.l: lexer.l.pre lexer.l.rules lexer.l.post
 
 lexer.o: DEFINES += _XOPEN_SOURCE=500
