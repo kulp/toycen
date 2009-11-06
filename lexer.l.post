@@ -77,6 +77,7 @@ void lexer_teardown()
 void add_typename(scope_t *scope, const char *type)
 {
     hash_table_put(types_hash, type, (void*)1);
+    scope = scope; // to avoid uused warning for now
 }
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */
