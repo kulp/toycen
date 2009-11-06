@@ -49,6 +49,7 @@
 %union {
     long i;
     char *str;
+    char chr;
     struct unary_expression *ue;
     struct postfix_expression *pe;
     struct cast_expression *ce;
@@ -56,7 +57,7 @@
     struct type_name *tn;
     struct type_specifier *ts;
     struct aggregate_specifier *as;
-    struct enum_specifier *es;
+    struct enum_specifier *enum_spec;
     struct identifier *id;
     struct aggregate_declaration_list *al;
     struct aggregate_declaration *ai;
@@ -67,6 +68,21 @@
     struct logical_or_expression *l_or_expr;
     struct logical_and_expression *l_and_expr;
     struct expression *expr;
+    struct inclusive_or_expression *i_or_expr;
+    struct exclusive_or_expression *e_or_expr;
+    struct and_expression *and_expr;
+    struct equality_expression *eq_expr;
+    struct relational_expression *rel_expr;
+    struct shift_expression *shift_expr;
+    struct additive_expression *add_expr;
+    struct primary_expression *pri_expr;
+    struct multiplicative_expression *mult_expr;
+    struct assignment_expression *assn_expr;
+    enum assignment_operator assn_op;
+    struct specifier_qualifier_list *sq_list;
+    struct abstract_declarator *abs_decl;
+    struct aggregate_declarator_list *sdecl_list;
+    struct aggregate_declarator *sdecl;
 }
 
 %type <ue> unary_expression
@@ -76,7 +92,7 @@
 %type <tn> type_name
 %type <ts> type_specifier
 %type <as> struct_or_union_specifier
-%type <es> enum_specifier
+%type <enum_spec> enum_specifier
 %type <id> identifier
 %type <al> struct_declaration_list
 %type <i>  struct_or_union
@@ -88,6 +104,21 @@
 %type <l_or_expr> logical_or_expression;
 %type <l_and_expr> logical_and_expression;
 %type <expr> expression;
+%type <i_or_expr> inclusive_or_expression;
+%type <e_or_expr> exclusive_or_expression;
+%type <and_expr> and_expression;
+%type <eq_expr> equality_expression;
+%type <rel_expr> relational_expression;
+%type <shift_expr> shift_expression;
+%type <add_expr> additive_expression;
+%type <pri_expr> primary_expression;
+%type <mult_expr> multiplicative_expression;
+%type <assn_expr> assignment_expression;
+%type <assn_op> assignment_operator;
+%type <sq_list> specifier_qualifier_list;
+%type <abs_decl> abstract_declarator;
+%type <sdecl_list> struct_declarator_list;
+%type <sdecl> struct_declarator;
 
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
@@ -99,7 +130,7 @@
 %token EXTERN FLOAT FOR GOTO IF INT LONG REGISTER RETURN SHORT SIGNED SIZEOF
 %token STATIC SWITCH TYPEDEF UNSIGNED VOID VOLATILE WHILE
 
-%token <uo> '&' '*' '+' '-' '~' '!'
+%token <chr> '&' '*' '+' '-' '~' '!' '/' '%'
 %token <i> STRUCT UNION
 
 %start translation_unit
@@ -109,12 +140,12 @@
 /* B.2.1 Expressions. */
 
 primary_expression
-    : identifier
-    | INTEGER
-    | CHARACTER
-    | FLOATING
-    | STRING
-    | '(' expression ')'
+    : identifier { $$ = NN(primary_expression, .type = PRET_IDENTIFIER, .me.id = $1); }
+    | INTEGER    { $$ = NN(primary_expression, .type = PRET_INTEGER   , .me.i  = /* TODO */NULL); }
+    | CHARACTER  { $$ = NN(primary_expression, .type = PRET_CHARACTER , .me.c  = /* TODO */NULL); }
+    | FLOATING   { $$ = NN(primary_expression, .type = PRET_FLOATING  , .me.f  = /* TODO */NULL); }
+    | STRING     { $$ = NN(primary_expression, .type = PRET_STRING    , .me.s  = /* TODO */NULL); }
+    | '(' expression ')' { $$ = NN(primary_expression, .type = PRET_PARENTHESIZED, .me.e = $2); }
     ;
 
 identifier
@@ -122,7 +153,7 @@ identifier
     ;
 
 postfix_expression
-    : primary_expression { $$ = NN(primary_expression, .type = PET_PRIMARY); }
+    : primary_expression { $$ = UN(postfix_expression, $1, .type = PET_PRIMARY); }
     | postfix_expression '[' expression ']'
     | postfix_expression '(' argument_expression_list ')'
     | postfix_expression '(' ')'
@@ -163,12 +194,12 @@ unary_expression
     ;
 
 unary_operator
-    : '&'
-    | '*'
-    | '+'
-    | '-'
-    | '~'
-    | '!'
+    : '&' { $$ = $<chr>1; }
+    | '*' { $$ = $<chr>1; }
+    | '+' { $$ = $<chr>1; }
+    | '-' { $$ = $<chr>1; }
+    | '~' { $$ = $<chr>1; }
+    | '!' { $$ = $<chr>1; }
     ;
 
 cast_expression
@@ -178,62 +209,83 @@ cast_expression
 
 multiplicative_expression
     : cast_expression
+        { $$ = UN(multiplicative_expression, $1, .left = NULL); }
     | multiplicative_expression '*' cast_expression
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = $2); }
     | multiplicative_expression '/' cast_expression
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = $2); }
     | multiplicative_expression '%' cast_expression
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = $2); }
     ;
 
 additive_expression
     : multiplicative_expression
+        { $$ = UN(additive_expression, $1, .left = NULL); }
     | additive_expression '+' multiplicative_expression
+        { $$ = UN(additive_expression, $3, .left = $1, .op = $2); }
     | additive_expression '-' multiplicative_expression
+        { $$ = UN(additive_expression, $3, .left = $1, .op = $2); }
     ;
 
 shift_expression
     : additive_expression
+        { $$ = UN(shift_expression, $1, .left = NULL); }
     | shift_expression SL additive_expression
+        { $$ = UN(shift_expression, $3, .left = $1, .op = SO_LSH); }
     | shift_expression SR additive_expression
+        { $$ = UN(shift_expression, $3, .left = $1, .op = SO_RSH); }
     ;
 
 relational_expression
     : shift_expression
+        { $$ = UN(relational_expression, $1, .left = NULL); }
     | relational_expression '<' shift_expression
+        { $$ = UN(relational_expression, $3, .left = $1, .op = RO_LT); }
     | relational_expression '>' shift_expression
+        { $$ = UN(relational_expression, $3, .left = $1, .op = RO_GT); }
     | relational_expression LTEQ shift_expression
+        { $$ = UN(relational_expression, $3, .left = $1, .op = RO_LTEQ); }
     | relational_expression GTEQ shift_expression
+        { $$ = UN(relational_expression, $3, .left = $1, .op = RO_GTEQ); }
     ;
 
 equality_expression
     : relational_expression
+        { $$ = UN(equality_expression, $1, .left = NULL); }
     | equality_expression EQ relational_expression
+        { $$ = UN(equality_expression, $3, .left = $1, .eq = true); }
     | equality_expression NOTEQ relational_expression
+        { $$ = UN(equality_expression, $3, .left = $1, .eq = false); }
     ;
 
 and_expression
-    : equality_expression
+    : equality_expression { $$ = UN(and_expression, $1, .left = NULL); }
     | and_expression '&' equality_expression
+        { $$ = UN(and_expression, $3, .left = $1); }
     ;
 
 exclusive_or_expression
-    : and_expression
+    : and_expression { $$ = UN(exclusive_or_expression, $1, .left = NULL); }
     | exclusive_or_expression '^' and_expression
+        { $$ = UN(exclusive_or_expression, $3, .left = $1); }
     ;
 
 inclusive_or_expression
-    : exclusive_or_expression
+    : exclusive_or_expression { $$ = UN(inclusive_or_expression, $1, .left = NULL); }
     | inclusive_or_expression '|' exclusive_or_expression
+        { $$ = UN(inclusive_or_expression, $3, .left = $1); }
     ;
 
 logical_and_expression
-    : inclusive_or_expression
+    : inclusive_or_expression { $$ = UN(logical_and_expression, $1, .left = NULL); }
     | logical_and_expression ANDAND inclusive_or_expression
+        { $$ = UN(logical_and_expression, $3, .left = $1); }
     ;
 
 logical_or_expression
-    : logical_and_expression { $$ = UN(logical_or_expression, $1, .prev = NULL); }
-    | logical_or_expression OROR logical_and_expression {
-            $$ = UN(logical_or_expression, $3, .prev = $1);
-        }
+    : logical_and_expression { $$ = UN(logical_or_expression, $1, .left = NULL); }
+    | logical_or_expression OROR logical_and_expression
+        { $$ = UN(logical_or_expression, $3, .left = $1); }
     ;
 
 conditional_expression
@@ -244,26 +296,30 @@ conditional_expression
 
 assignment_expression
     : conditional_expression
+        { $$ = UN(assignment_expression, $1, .has_op = false); }
     | unary_expression assignment_operator assignment_expression
+        { $$ = NN(assignment_expression, .val.assn = { .left = $1, .op = $2, .right = $3 }); }
     ;
 
 assignment_operator
-    : '='
-    | MULEQ
-    | DIVEQ
-    | MODEQ
-    | ADDEQ
-    | SUBEQ
-    | SLEQ
-    | SREQ
-    | ANDEQ
-    | XOREQ
-    | OREQ
+    : '='   { $$ = AO_EQ   ; }
+    | MULEQ { $$ = AO_MULEQ; }
+    | DIVEQ { $$ = AO_DIVEQ; }
+    | MODEQ { $$ = AO_MODEQ; }
+    | ADDEQ { $$ = AO_ADDEQ; }
+    | SUBEQ { $$ = AO_SUBEQ; }
+    | SLEQ  { $$ = AO_SLEQ ; }
+    | SREQ  { $$ = AO_SREQ ; }
+    | ANDEQ { $$ = AO_ANDEQ; }
+    | XOREQ { $$ = AO_XOREQ; }
+    | OREQ  { $$ = AO_OREQ ; }
     ;
 
 expression
     : assignment_expression
+        { $$ = UN(expression, $1, .left = NULL); }
     | expression ',' assignment_expression
+        { $$ = UN(expression, $1, .left = $1); }
     ;
 
 constant_expression
@@ -318,7 +374,7 @@ type_specifier
     | enum_specifier {
             $$ = NN(type_specifier, .type = TS_ENUM_SPEC, .val.es = $1);
         }
-    | TYPEDEF_NAME { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .val.tn = str2type_name(yylval.str)); }
+    | TYPEDEF_NAME { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .val.tn = NULL /* TODO str2type_name(yylval.str)*/); }
     ;
 
 struct_or_union_specifier
@@ -359,6 +415,7 @@ struct_declaration_list
 
 struct_declaration
     : specifier_qualifier_list struct_declarator_list ';'
+        { $$ = NN(aggregate_declaration, .sq = $1, .decl = $2); }
     ;
 
 specifier_qualifier_list
@@ -370,7 +427,9 @@ specifier_qualifier_list
 
 struct_declarator_list
     : struct_declarator
+        { $$ = UN(aggregate_declarator_list, $1, .prev = NULL); }
     | struct_declarator_list ',' struct_declarator
+        { $$ = UN(aggregate_declarator_list, $3, .prev = $1); }
     ;
 
 struct_declarator
@@ -380,9 +439,25 @@ struct_declarator
     ;
 
 enum_specifier
-    : ENUM identifier '{' enumerator_list '}'
-    | ENUM '{' enumerator_list '}'
-    | ENUM identifier
+    : ENUM identifier '{' enumerator_list '}' {
+            $$ = NN(enum_specifier, .has_id = true,
+                                    .id = $2,
+                                    .has_list = true,
+                                    .list = $4,
+                                    );
+        }
+    | ENUM '{' enumerator_list '}' {
+            $$ = NN(enum_specifier, .has_id = false,
+                                    .has_list = true,
+                                    .list = $3,
+                                    );
+        }
+    | ENUM identifier {
+            $$ = NN(enum_specifier, .has_id = true,
+                                    .id = $2,
+                                    .has_list = false,
+                                    );
+        }
     ;
 
 enumerator_list
@@ -450,7 +525,9 @@ identifier_list
 
 type_name
     : specifier_qualifier_list
+        { $$ = NN(type_name, .list = $1, .decl = NULL); }
     | specifier_qualifier_list abstract_declarator
+        { $$ = NN(type_name, .list = $1, .decl = $2); }
     ;
 
 abstract_declarator

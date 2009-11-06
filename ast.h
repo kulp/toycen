@@ -27,6 +27,7 @@ enum primary_expression_type {
 enum expression_type {
     ET_CAST_EXPRESSION,
     ET_MULTIPLICATIVE_EXRESSION,
+    /// @todo fill in the rest
     ET_max
 };
 
@@ -40,8 +41,14 @@ enum unary_operator {
 };
 
 enum binary_operator {
-    BO_max
     /// @todo but what about multi-character operators
+    BO_ADD            = '+',
+    BO_SUBTRACT       = '-',
+    BO_MULTIPLY       = '*',
+    BO_DIVIDE         = '/',
+    BO_MODULUS        = '%',
+    BO_BITWISE_AND    = '&',
+    BO_max
 };
 
 enum increment_operator {
@@ -49,12 +56,45 @@ enum increment_operator {
     IO_DECREMENT
 };
 
+struct assignment_expression {
+    bool has_op;
+    union {
+        struct conditional_expression *right;
+        struct {
+            struct unary_expression *left;
+            enum assignment_operator {
+                AO_MULEQ,
+                AO_DIVEQ,
+                AO_MODEQ,
+                AO_ADDEQ,
+                AO_SUBEQ,
+                AO_SLEQ,
+                AO_SREQ,
+                AO_ANDEQ,
+                AO_XOREQ,
+                AO_OREQ,
+                AO_EQ = '='
+            } op;
+            struct assignment_expression *right;
+        } assn;
+    } val;
+
+};
+
 struct expression {
-    enum expression_type type;
+    struct assignment_expression right;
+    struct expression *left;
+};
+
+struct specifier_qualifier_list {
+    enum { SQ_HAS_TYPE_SPEC, SQ_HAS_TYPE_QUAL } type;
+    struct specifier_qualifier_list *next;
 };
 
 struct type_name {
-    char *name;
+    struct specifier_qualifier_list *list;
+    struct abstract_declarator *decl;
+    //char *name;
     //struct type *type;  ///< NULL until looked up
 };
 
@@ -110,14 +150,19 @@ struct string {
     char *value;
 };
 
+struct _expression_having_type {
+    enum expression_type type;
+};
+
 struct primary_expression {
+    struct _expression_having_type base;
     enum primary_expression_type type;
     union {
-        struct identifier id;
-        struct integer i;
-        struct character c;
-        struct floating f;
-        struct string s;
+        struct identifier *id;
+        struct integer *i;
+        struct character *c;
+        struct floating *f;
+        struct string *s;
         struct expression *e;
     } me;
 };
@@ -164,33 +209,67 @@ struct cast_expression {
 struct multiplicative_expression {
     struct cast_expression right;
     struct multiplicative_expression *left; ///< may be NULL
-    enum binary_operator bop;               ///< if @c is NULL, nonsensical
+    enum binary_operator op;                ///< if @c is NULL, nonsensical
 };
 
 struct additive_expression {
     struct multiplicative_expression right;
     struct additive_expression *left;       ///< may be NULL
-    enum binary_operator bop;               ///< if @c is NULL, nonsensical
+    enum binary_operator op;                ///< if @c is NULL, nonsensical
+};
+
+struct shift_expression {
+    struct additive_expression base;
+    enum shift_operator { SO_LSH, SO_RSH } op;
+    struct shift_expression *left;
+};
+
+struct relational_expression {
+    struct shift_expression right;
+    enum relational_operator { RO_LT, RO_GT, RO_LTEQ, RO_GTEQ } op;
+    struct relational_expression *left;
+};
+
+struct equality_expression {
+    struct relational_expression right;
+    bool eq;
+    struct equality_expression *left;
+};
+
+struct and_expression {
+    struct equality_expression right;
+    struct and_expression *left;
+};
+
+struct exclusive_or_expression {
+    struct and_expression right;
+    struct exclusive_or_expression *left;
+};
+
+struct inclusive_or_expression {
+    struct exclusive_or_expression right;
+    struct inclusive_or_expression *left;
 };
 
 struct logical_and_expression {
-    bool TODO;
+    struct inclusive_or_expression right;
+    struct logical_and_expression *left;
 };
 
 struct logical_or_expression {
-    struct logical_and_expression base;
-    struct logical_or_expression *prev;
+    struct logical_and_expression right;
+    struct logical_or_expression *left;
 };
 
 struct conditional_expression {
-    struct logical_or_expression base;
+    struct logical_or_expression right;
     bool is_ternary;
     struct expression *if_expr;
     struct conditional_expression *else_expr;
 };
 
 struct constant_expression {
-    struct conditional_expression base;
+    struct conditional_expression right;
     char dummy; ///< to avoid warnings about empty initializer braces, since there is nothing to initialize
 };
 
@@ -204,7 +283,8 @@ struct aggregate_definition_list {
 };
 
 struct aggregate_declaration {
-    bool TODO;
+    struct specifier_qualifier_list *sq;
+    struct aggregate_declarator_list *decl;
 };
 
 struct aggregate_declaration_list {
@@ -237,7 +317,7 @@ struct enum_specifier {
     bool has_id;
     struct identifier *id;
     bool has_list;
-    struct enum_list *list;
+    struct enumerator_list *list;
 };
 
 struct type_specifier {
@@ -261,6 +341,22 @@ struct type_specifier {
         struct enum_specifier *es;
         struct type_name *tn;
     } val;
+};
+
+struct declarator {
+    bool TODO;
+};
+
+struct aggregate_declarator {
+    bool has_decl;
+    struct declarator base;
+    bool has_bitfield;
+    struct constant_expression *bf;
+};
+
+struct aggregate_declarator_list {
+    struct aggregate_declarator base;
+    struct aggregate_declarator_list *prev;
 };
 
 #endif

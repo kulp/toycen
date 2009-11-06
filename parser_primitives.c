@@ -14,6 +14,7 @@ void* _alloc_node(size_t size, void *data)
  */
 void* _copy_node(void *old, void *data, size_t size, size_t off)
 {
+    /// @todo must we move memmove() here ?
     memcpy((char*)old + off, data, size - off);
     return old;
 }
