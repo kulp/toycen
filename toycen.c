@@ -15,13 +15,20 @@
 #include "parser.h"
 #include "hash_table.h"
 
+#include <stdio.h>
+
 extern int yyparse();
+
+int DEBUG_LEVEL = 5;
+FILE* DEBUG_FILE;
 
 static hash_table_t *global_symbols;
 
 int main(int argc, char *argv[])
 {
     int result;
+
+    DEBUG_FILE = stdout;
 
     parser_state_t ps = {
         .globals = global_symbols,
