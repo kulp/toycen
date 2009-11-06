@@ -11,13 +11,13 @@ YFLAGS += -dv
 CFLAGS += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES))
 LFLAGS +=
 
-OBJECTS = parser.o lexer.o main.o hash_table.o pp_lexer.o
+OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o pp_lexer.o
 
 CLEANFILES += tpp
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface
 
 toycen.o: CFLAGS += -Wno-unused-parameter
-toycen: parser.o lexer.o hash_table.o
+toycen: parser.o parser_primitives.o lexer.o hash_table.o
 parser.o: CFLAGS += -Wno-missing-field-initializers
 
 # Don't complain about unused yyunput()

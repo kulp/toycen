@@ -44,8 +44,9 @@ static void skip_comment(comment_t style)
 	}
 }
 
-static int check_identifier(const char *s)
+static int check_identifier(char *s)
 {
+    yylval.str = s;
 #ifdef PREPROCESSOR_LEXING
     char *val = get_define(s);
     output(val ? val : s);

@@ -4,14 +4,12 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-/**
- * @todo
+/// @todo
 enum node_type { NT_max };
 
 struct node {
     enum node_type type;
 };
-*/
 
 enum type_class {
     TC_INVALID, TC_VOID, TC_INT, TC_FLOAT, TC_STRUCT, TC_UNION, TC_max
@@ -62,6 +60,7 @@ struct type_name {
 
 /// @todo
 struct identifier {
+    size_t len;
     char *name;
 };
 
@@ -172,6 +171,96 @@ struct additive_expression {
     struct multiplicative_expression right;
     struct additive_expression *left;       ///< may be NULL
     enum binary_operator bop;               ///< if @c is NULL, nonsensical
+};
+
+struct logical_and_expression {
+    bool TODO;
+};
+
+struct logical_or_expression {
+    struct logical_and_expression base;
+    struct logical_or_expression *prev;
+};
+
+struct conditional_expression {
+    struct logical_or_expression base;
+    bool is_ternary;
+    struct expression *if_expr;
+    struct conditional_expression *else_expr;
+};
+
+struct constant_expression {
+    struct conditional_expression base;
+    char dummy; ///< to avoid warnings about empty initializer braces, since there is nothing to initialize
+};
+
+struct aggregate_definition {
+    bool TODO;
+};
+
+struct aggregate_definition_list {
+    struct aggregate_definition *me;
+    struct aggregate_definition_list *prev;
+};
+
+struct aggregate_declaration {
+    bool TODO;
+};
+
+struct aggregate_declaration_list {
+    struct aggregate_declaration *me;
+    struct aggregate_declaration_list *prev;
+};
+
+struct aggregate_specifier {
+    struct node base;
+    enum aggregate_type { AT_UNION, AT_STRUCT } type;
+    bool has_id;
+    struct identifier *id;
+    bool has_list;
+    struct aggregate_declaration_list *list;
+};
+
+struct enumerator {
+    struct identifier *id;
+    struct constant_expression *val;
+};
+
+struct enumerator_list {
+    /// @todo fields
+    struct enumerator *me;
+    struct enumerator_list *prev;
+};
+
+struct enum_specifier {
+    struct node base;
+    bool has_id;
+    struct identifier *id;
+    bool has_list;
+    struct enum_list *list;
+};
+
+struct type_specifier {
+    struct node base;
+    enum type_specifier_type {
+        TS_VOID,
+        TS_CHAR,
+        TS_SHORT,
+        TS_INT,
+        TS_LONG,
+        TS_FLOAT,
+        TS_DOUBLE,
+        TS_SIGNED,
+        TS_UNSIGNED,
+        TS_STRUCT_OR_UNION_SPEC,
+        TS_ENUM_SPEC,
+        TS_TYPEDEF_NAME
+    } type;
+    union {
+        struct aggregate_specifier *as;
+        struct enum_specifier *es;
+        struct type_name *tn;
+    } val;
 };
 
 #endif

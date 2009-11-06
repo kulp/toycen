@@ -49,7 +49,7 @@
     static void p();
 
     static void skip_comment();
-    static int check_identifier(const char *);
+    static int check_identifier(char *);
     static void whitespace();
 
 #if PREPROCESSOR_LEXING

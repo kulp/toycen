@@ -33,6 +33,7 @@
 
 %{
     #include "parser.h"
+    #include "parser_primitives.h"
     #include "lexer.h"
 
     #include <assert.h>
@@ -43,66 +44,51 @@
     #include <stdint.h>
 
     extern int lineno;
-
-    extern int DEBUG_LEVEL;
-    extern FILE* DEBUG_FILE;
-
-    extern int yylex();
-    static void yyerror(const char *s);
-    static inline void* _alloc_node(size_t size, void *data);
-    /// copies data into old at offset
-    static inline void* _copy_node(void *old, void *data, size_t size, size_t off);
-
-    /// pointer to anonymous
-    #define PtA(Type, ...) &(struct Type){ __VA_ARGS__ }
-
-    /// size of type
-    #define SoT(Type) sizeof(struct Type)
-
-    /// new node
-    #define NN(Type, ...) \
-        ( (debug(2, "allocating node type " #Type)), \
-          (_alloc_node(SoT(Type), PtA(Type, __VA_ARGS__))) \
-        )
-
-    /// child node (descend from existing node)
-    #define CN(Type, Old, ...) \
-        ( (assert(Old != NULL)), \
-          (debug(2, "creating node type " #Type " by descent")), \
-          (memcpy(NN(Type, __VA_ARGS__), Old, sizeof *Old)) \
-        )
-
-    /// upgrade node (descend from existing node, replacing old node)
-    #define UN(Type, Old, ...) \
-        ( (assert(Old != NULL)), \
-          (debug(2, "upgrading node %p to type " #Type, Old)), \
-          (_copy_node(my_realloc(Old, SoT(Type)), PtA(Type, __VA_ARGS__), SoT(Type), sizeof(Old) - SoT(Type))) \
-        )
-
-    /// free node
-    #define FN(NODE) my_free(AsPtr(node)NODE)
-
-    #define my_realloc realloc
-    #define my_calloc calloc
-    #define my_malloc malloc
-    #define my_free free
-
-    #define AsPtr(Type) (struct Type*)(uintptr_t)
-    #define Anon(Type,Val) ((struct Type){ Val })
-
-    /// @todo define this elswhere
-    static inline void debug(int level, const char *fmt, ...)
-    {
-        if (level <= DEBUG_LEVEL && DEBUG_FILE) {
-            va_list vl;
-            va_start(vl, fmt);
-            vfprintf(DEBUG_FILE, fmt, vl);
-            putc('\n', DEBUG_FILE);
-            va_end(vl);
-        }
-    }
-
 %}
+
+%union {
+    long i;
+    char *str;
+    struct unary_expression *ue;
+    struct postfix_expression *pe;
+    struct cast_expression *ce;
+    enum unary_operator uo;
+    struct type_name *tn;
+    struct type_specifier *ts;
+    struct aggregate_specifier *as;
+    struct enum_specifier *es;
+    struct identifier *id;
+    struct aggregate_declaration_list *al;
+    struct aggregate_declaration *ai;
+    struct enumerator_list *el;
+    struct enumerator *ei;
+    struct constant_expression *const_expr;
+    struct conditional_expression *cond_expr;
+    struct logical_or_expression *l_or_expr;
+    struct logical_and_expression *l_and_expr;
+    struct expression *expr;
+}
+
+%type <ue> unary_expression
+%type <pe> postfix_expression
+%type <uo> unary_operator
+%type <ce> cast_expression
+%type <tn> type_name
+%type <ts> type_specifier
+%type <as> struct_or_union_specifier
+%type <es> enum_specifier
+%type <id> identifier
+%type <al> struct_declaration_list
+%type <i>  struct_or_union
+%type <ai> struct_declaration
+%type <el> enumerator_list
+%type <ei> enumerator
+%type <const_expr> constant_expression;
+%type <cond_expr> conditional_expression;
+%type <l_or_expr> logical_or_expression;
+%type <l_and_expr> logical_and_expression;
+%type <expr> expression;
+
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
 
@@ -111,23 +97,12 @@
 
 %token AUTO BREAK CASE CHAR CONST CONTINUE DEFAULT DO DOUBLE ELSE ENUM
 %token EXTERN FLOAT FOR GOTO IF INT LONG REGISTER RETURN SHORT SIGNED SIZEOF
-%token STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE WHILE
+%token STATIC SWITCH TYPEDEF UNSIGNED VOID VOLATILE WHILE
+
+%token <uo> '&' '*' '+' '-' '~' '!'
+%token <i> STRUCT UNION
 
 %start translation_unit
-
-%union {
-    struct unary_expression *ue;
-    struct postfix_expression *pe;
-    struct cast_expression *ce;
-    enum unary_operator uo;
-    struct type_name *tn;
-}
-
-%type <ue> unary_expression
-%type <pe> postfix_expression
-%type <uo> unary_operator
-%type <ce> cast_expression
-%type <tn> type_name
 
 %%
 
@@ -143,11 +118,11 @@ primary_expression
     ;
 
 identifier
-    : IDENTIFIER
+    : IDENTIFIER { $$ = NN(identifier, .name = strdup(yylval.str)); }
     ;
 
 postfix_expression
-    : primary_expression { $$ = NN(primary_expression, PET_PRIMARY); }
+    : primary_expression { $$ = NN(primary_expression, .type = PET_PRIMARY); }
     | postfix_expression '[' expression ']'
     | postfix_expression '(' argument_expression_list ')'
     | postfix_expression '(' ')'
@@ -255,13 +230,16 @@ logical_and_expression
     ;
 
 logical_or_expression
-    : logical_and_expression
-    | logical_or_expression OROR logical_and_expression
+    : logical_and_expression { $$ = UN(logical_or_expression, $1, .prev = NULL); }
+    | logical_or_expression OROR logical_and_expression {
+            $$ = UN(logical_or_expression, $3, .prev = $1);
+        }
     ;
 
 conditional_expression
-    : logical_or_expression
-    | logical_or_expression '?' expression ':' conditional_expression
+    : logical_or_expression { $$ = UN(conditional_expression, $1, .is_ternary = false); }
+    | logical_or_expression '?' expression ':' conditional_expression {
+            $$ = UN(conditional_expression, $1, .is_ternary = true, .if_expr = $3, .else_expr = $5); }
     ;
 
 assignment_expression
@@ -289,7 +267,7 @@ expression
     ;
 
 constant_expression
-    : conditional_expression
+    : conditional_expression { $$ = UN(constant_expression, $1, .dummy = 0); }
     ;
 
 declaration
@@ -325,24 +303,48 @@ storage_class_specifier
     ;
 
 type_specifier
-    : VOID
-    | CHAR
-    | SHORT
-    | INT
-    | LONG
-    | FLOAT
-    | DOUBLE
-    | SIGNED
-    | UNSIGNED
-    | struct_or_union_specifier
-    | enum_specifier
-    | TYPEDEF_NAME
+    : VOID     { $$ = NN(type_specifier, .type = TS_VOID    ); }
+    | CHAR     { $$ = NN(type_specifier, .type = TS_CHAR    ); }
+    | SHORT    { $$ = NN(type_specifier, .type = TS_SHORT   ); }
+    | INT      { $$ = NN(type_specifier, .type = TS_INT     ); }
+    | LONG     { $$ = NN(type_specifier, .type = TS_LONG    ); }
+    | FLOAT    { $$ = NN(type_specifier, .type = TS_FLOAT   ); }
+    | DOUBLE   { $$ = NN(type_specifier, .type = TS_DOUBLE  ); }
+    | SIGNED   { $$ = NN(type_specifier, .type = TS_SIGNED  ); }
+    | UNSIGNED { $$ = NN(type_specifier, .type = TS_UNSIGNED); }
+    | struct_or_union_specifier {
+            $$ = NN(type_specifier, .type = TS_STRUCT_OR_UNION_SPEC, .val.as = $1);
+        }
+    | enum_specifier {
+            $$ = NN(type_specifier, .type = TS_ENUM_SPEC, .val.es = $1);
+        }
+    | TYPEDEF_NAME { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .val.tn = str2type_name(yylval.str)); }
     ;
 
 struct_or_union_specifier
-    : struct_or_union identifier '{' struct_declaration_list '}'
-    | struct_or_union '{' struct_declaration_list '}'
-    | struct_or_union identifier
+    : struct_or_union identifier '{' struct_declaration_list '}' {
+            /// @todo rename struct_or_union_* to agreggate_specifier
+            $$ = NN(aggregate_specifier, .type = ($1 == STRUCT ? AT_STRUCT : AT_UNION),
+                                         .has_id = true,
+                                         .id = $2,
+                                         .has_list = true,
+                                         .list = $4,
+                                         );
+        }
+    | struct_or_union '{' struct_declaration_list '}' {
+            $$ = NN(aggregate_specifier, .type = ($1 == STRUCT ? AT_STRUCT : AT_UNION),
+                                         .has_id = false,
+                                         .has_list = true,
+                                         .list = $3,
+                                         );
+        }
+    | struct_or_union identifier {
+            $$ = NN(aggregate_specifier, .type = ($1 == STRUCT ? AT_STRUCT : AT_UNION),
+                                         .has_id = true,
+                                         .id = $2,
+                                         .has_list = false,
+                                         );
+        }
     ;
 
 struct_or_union
@@ -351,8 +353,8 @@ struct_or_union
     ;
 
 struct_declaration_list
-    : struct_declaration
-    | struct_declaration_list struct_declaration
+    : struct_declaration { $$ = NN(aggregate_declaration_list, .me = $1); }
+    | struct_declaration_list struct_declaration { $$ = NN(aggregate_declaration_list, .me = $2, .prev = $1); }
     ;
 
 struct_declaration
@@ -384,13 +386,13 @@ enum_specifier
     ;
 
 enumerator_list
-    : enumerator
-    | enumerator_list ',' enumerator
+    : enumerator { $$ = NN(enumerator_list, .me = $1); }
+    | enumerator_list ',' enumerator { $$ = NN(enumerator_list, .me = $3, .prev = $1); }
     ;
 
 enumerator
-    : identifier
-    | identifier '=' constant_expression
+    : identifier { $$ = NN(enumerator, .id = $1, .val = NULL); }
+    | identifier '=' constant_expression { $$ = NN(enumerator, .id = $1, .val = $3); }
     ;
 
 type_qualifier
@@ -569,41 +571,10 @@ function_definition
 
 extern int column;
 
-static inline void* _alloc_node(size_t size, void *data)
-{
-    debug(3, "node allocator running with size %ld", size);
-    void *result = my_calloc(1, size);
-    _copy_node(result, data, size, 0);
-    return result;
-}
-
-/**
- * Copies @c (size - off) bytes from @p data into @p old at position @p off.
- * Used to copy child data into a recently-upgraded parent.
- */
-static inline void* _copy_node(void *old, void *data, size_t size, size_t off)
-{
-    memcpy((char*)old + off, data, size - off);
-    return old;
-}
- 
-static void yyerror(const char *s) {
+void yyerror(const char *s) {
     fflush(stdout);
+    printf("Error on line %d\n", lineno);
     printf("%*s\n%*s\n", column, "^", column, s);
-}
-
-void parser_setup(parser_state_t *ps)
-{
-    _debug(2, "%s", __func__);
-    *ps = (parser_state_t){ 0 };
-    /// @todo implement
-}
-
-void parser_teardown(parser_state_t *ps)
-{
-    _debug(2, "%s", __func__);
-    *ps = (parser_state_t){ 0 };
-    /// @todo implement
 }
 
 /* vi:set ts=4 sw=4 et syntax=yacc: */
