@@ -4,6 +4,15 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+/**
+ * @todo
+enum node_type { NT_max };
+
+struct node {
+    enum node_type type;
+};
+*/
+
 enum type_class {
     TC_INVALID, TC_VOID, TC_INT, TC_FLOAT, TC_STRUCT, TC_UNION, TC_max
 };
@@ -117,6 +126,7 @@ struct primary_expression {
 struct postfix_expression {
     struct primary_expression me;
     enum postfix_expression_type {
+        PET_PRIMARY,
         PET_ARRAY_INDEX,
         PET_FUNCTION_CALL,
         PET_AGGREGATE_SELECTION,
@@ -131,19 +141,24 @@ struct unary_expression {
     enum unary_expression_type {
         UET_POSTFIX,
         UET_PREINCREMENT,
+        UET_PREDECREMENT,
         UET_UNARY_OP,
         UET_SIZEOF_EXPR,
         UET_SIZEOF_TYPE
     } type;
     union {
         struct unary_expression *ue;
-        struct cast_expression *ce;
+        struct {
+            enum unary_operator uo;
+            struct cast_expression *ce;
+        } ce;
         struct type_name *tn;
     } val;
 };
 
 struct cast_expression {
     struct unary_expression base;
+    struct cast_expression *ce;
     struct type_name *tn;
 };
 

@@ -35,6 +35,7 @@
     #include "parser.h"
     #include "lexer.h"
 
+    #include <assert.h>
     #include <stdio.h>
     #include <stdarg.h>
     #include <stdlib.h>
@@ -48,16 +49,46 @@
 
     extern int yylex();
     static void yyerror(const char *s);
-    static inline struct node* _alloc_node(size_t size, void *data);
+    static inline void* _alloc_node(size_t size, void *data);
+    /// copies data into old at offset
+    static inline void* _copy_node(void *old, void *data, size_t size, size_t off);
+
+    /// pointer to anonymous
+    #define PtA(Type, ...) &(struct Type){ __VA_ARGS__ }
+
+    /// size of type
+    #define SoT(Type) sizeof(struct Type)
 
     /// new node
     #define NN(Type, ...) \
         ( (debug(2, "allocating node type " #Type)), \
-          ((uintptr_t)_alloc_node(sizeof(Type), &(Type){ __VA_ARGS__ })) \
+          (_alloc_node(SoT(Type), PtA(Type, __VA_ARGS__))) \
+        )
+
+    /// child node (descend from existing node)
+    #define CN(Type, Old, ...) \
+        ( (assert(Old != NULL)), \
+          (debug(2, "creating node type " #Type " by descent")), \
+          (memcpy(NN(Type, __VA_ARGS__), Old, sizeof *Old)) \
+        )
+
+    /// upgrade node (descend from existing node, replacing old node)
+    #define UN(Type, Old, ...) \
+        ( (assert(Old != NULL)), \
+          (debug(2, "upgrading node %p to type " #Type, Old)), \
+          (_copy_node(my_realloc(Old, SoT(Type)), PtA(Type, __VA_ARGS__), SoT(Type), sizeof(Old) - SoT(Type))) \
         )
 
     /// free node
-    #define FN(NODE) free(node)
+    #define FN(NODE) my_free(AsPtr(node)NODE)
+
+    #define my_realloc realloc
+    #define my_calloc calloc
+    #define my_malloc malloc
+    #define my_free free
+
+    #define AsPtr(Type) (struct Type*)(uintptr_t)
+    #define Anon(Type,Val) ((struct Type){ Val })
 
     /// @todo define this elswhere
     static inline void debug(int level, const char *fmt, ...)
@@ -66,7 +97,7 @@
             va_list vl;
             va_start(vl, fmt);
             vfprintf(DEBUG_FILE, fmt, vl);
-            fputs("\n", DEBUG_FILE);
+            putc('\n', DEBUG_FILE);
             va_end(vl);
         }
     }
@@ -83,6 +114,20 @@
 %token STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED VOID VOLATILE WHILE
 
 %start translation_unit
+
+%union {
+    struct unary_expression *ue;
+    struct postfix_expression *pe;
+    struct cast_expression *ce;
+    enum unary_operator uo;
+    struct type_name *tn;
+}
+
+%type <ue> unary_expression
+%type <pe> postfix_expression
+%type <uo> unary_operator
+%type <ce> cast_expression
+%type <tn> type_name
 
 %%
 
@@ -102,7 +147,7 @@ identifier
     ;
 
 postfix_expression
-    : primary_expression
+    : primary_expression { $$ = NN(primary_expression, PET_PRIMARY); }
     | postfix_expression '[' expression ']'
     | postfix_expression '(' argument_expression_list ')'
     | postfix_expression '(' ')'
@@ -118,12 +163,28 @@ argument_expression_list
     ;
 
 unary_expression
-    : postfix_expression { $$ = NN(struct unary_expression, { { 0 } }); }
-    | PLUSPLUS unary_expression
-    | MINUSMINUS unary_expression
-    | unary_operator cast_expression
-    | SIZEOF unary_expression
-    | SIZEOF '(' type_name ')'
+    : postfix_expression {
+            $$ = UN(unary_expression, $1, .type = UET_POSTFIX);
+        }
+    | PLUSPLUS unary_expression {
+        /// @todo .me
+            $$ = NN(unary_expression, .type = UET_PREINCREMENT, .val.ue = $<ue>2);
+        }
+    | MINUSMINUS unary_expression {
+        /// @todo .me
+            $$ = NN(unary_expression, .type = UET_PREDECREMENT, .val.ue = $<ue>2);
+        }
+    | unary_operator cast_expression {
+            $$ = NN(unary_expression, .type = UET_UNARY_OP,
+                                      .val.ce = { .uo = $1, .ce = $2 }
+                                      );
+        }
+    | SIZEOF unary_expression {
+            $$ = NN(unary_expression, .type = UET_SIZEOF_EXPR, .val.ue = $<ue>2);
+        }
+    | SIZEOF '(' type_name ')' {
+            $$ = NN(unary_expression, .type = UET_SIZEOF_TYPE, .val.tn = $3);
+        }
     ;
 
 unary_operator
@@ -136,8 +197,8 @@ unary_operator
     ;
 
 cast_expression
-    : unary_expression
-    | '(' type_name ')' cast_expression
+    : unary_expression { $$ = UN(cast_expression, $1, .tn = NULL); }
+    | '(' type_name ')' cast_expression { $$ = NN(cast_expression, .tn = $2, .ce = $4); }
     ;
 
 multiplicative_expression
@@ -508,12 +569,22 @@ function_definition
 
 extern int column;
 
-static inline struct node* _alloc_node(size_t size, void *data)
+static inline void* _alloc_node(size_t size, void *data)
 {
     debug(3, "node allocator running with size %ld", size);
-    struct node *result = calloc(1, size);
-    memcpy(result, data, size);
+    void *result = my_calloc(1, size);
+    _copy_node(result, data, size, 0);
     return result;
+}
+
+/**
+ * Copies @c (size - off) bytes from @p data into @p old at position @p off.
+ * Used to copy child data into a recently-upgraded parent.
+ */
+static inline void* _copy_node(void *old, void *data, size_t size, size_t off)
+{
+    memcpy((char*)old + off, data, size - off);
+    return old;
 }
  
 static void yyerror(const char *s) {
