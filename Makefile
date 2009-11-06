@@ -42,7 +42,6 @@ ifeq ($(words $(filter clean,$(MAKECMDGOALS))),0)
 -include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
 endif
 
-#%.d: %.c ; $(COMPILE.c) -MG -M -MF $@ $<
 %.d: %.c
 	@set -e; rm -f $@; \
 	$(CC) -MG -M $(CPPFLAGS) $< > $@.$$$$; \
