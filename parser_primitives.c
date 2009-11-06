@@ -2,7 +2,7 @@
 
 void* _alloc_node(size_t size, void *data)
 {
-    debug(3, "node allocator running with size %ld", size);
+    debug(3, "allocator running with size %ld", size);
     void *result = my_calloc(1, size);
     _copy_node(result, data, size, 0);
     return result;

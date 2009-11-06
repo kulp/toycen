@@ -52,21 +52,21 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
 
 /// new node
 #define NN(Type, ...) \
-    ( (debug(2, "allocating node type " #Type)), \
+    ( (debug(2, "allocating '" #Type "' with { " #__VA_ARGS__ " }")), \
       (_alloc_node(SoT(Type), PtA(Type, __VA_ARGS__))) \
     )
 
 /// child node (descend from existing node)
 #define CN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
-      (debug(2, "creating node type " #Type " by descent")), \
+      (debug(2, "creating '" #Type "' by descent with { " #__VA_ARGS__ " }")), \
       (memcpy(NN(Type, __VA_ARGS__), Old, sizeof *Old)) \
     )
 
 /// upgrade node (descend from existing node, replacing old node)
 #define UN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
-      (debug(2, "upgrading node %p to type " #Type, Old)), \
+      (debug(2, "upgrading %p to '" #Type "' with { " #__VA_ARGS__ " }", Old)), \
       (_copy_node(my_realloc(Old, SoT(Type)), PtA(Type, __VA_ARGS__), SoT(Type), sizeof(Old) - SoT(Type))) \
     )
 
