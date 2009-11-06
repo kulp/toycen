@@ -34,12 +34,43 @@
 %{
     #include "parser.h"
     #include "lexer.h"
+
     #include <stdio.h>
+    #include <stdarg.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <stdint.h>
 
     extern int lineno;
 
+    extern int DEBUG_LEVEL;
+    extern FILE* DEBUG_FILE;
+
     extern int yylex();
     static void yyerror(const char *s);
+    static inline struct node* _alloc_node(size_t size, void *data);
+
+    /// new node
+    #define NN(Type, ...) \
+        ( (debug(2, "allocating node type " #Type)), \
+          ((uintptr_t)_alloc_node(sizeof(Type), &(Type){ __VA_ARGS__ })) \
+        )
+
+    /// free node
+    #define FN(NODE) free(node)
+
+    /// @todo define this elswhere
+    static inline void debug(int level, const char *fmt, ...)
+    {
+        if (level <= DEBUG_LEVEL && DEBUG_FILE) {
+            va_list vl;
+            va_start(vl, fmt);
+            vfprintf(DEBUG_FILE, fmt, vl);
+            fputs("\n", DEBUG_FILE);
+            va_end(vl);
+        }
+    }
+
 %}
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
@@ -87,7 +118,7 @@ argument_expression_list
     ;
 
 unary_expression
-    : postfix_expression
+    : postfix_expression { $$ = NN(struct unary_expression, { { 0 } }); }
     | PLUSPLUS unary_expression
     | MINUSMINUS unary_expression
     | unary_operator cast_expression
@@ -476,6 +507,14 @@ function_definition
 %%
 
 extern int column;
+
+static inline struct node* _alloc_node(size_t size, void *data)
+{
+    debug(3, "node allocator running with size %ld", size);
+    struct node *result = calloc(1, size);
+    memcpy(result, data, size);
+    return result;
+}
  
 static void yyerror(const char *s) {
     fflush(stdout);
@@ -485,13 +524,16 @@ static void yyerror(const char *s) {
 void parser_setup(parser_state_t *ps)
 {
     _debug(2, "%s", __func__);
+    *ps = (parser_state_t){ 0 };
     /// @todo implement
 }
 
 void parser_teardown(parser_state_t *ps)
 {
     _debug(2, "%s", __func__);
+    *ps = (parser_state_t){ 0 };
     /// @todo implement
 }
 
-/* vi:set ts=4 sw=4 et: */
+/* vi:set ts=4 sw=4 et syntax=yacc: */
+
