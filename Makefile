@@ -16,6 +16,7 @@ OBJECTS = parser.o lexer.o main.o hash_table.o pp_lexer.o
 CLEANFILES += tpp
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface
 
+toycen.o: CFLAGS += -Wno-unused-parameter
 toycen: parser.o lexer.o hash_table.o
 parser.o: CFLAGS += -Wno-missing-field-initializers
 
@@ -41,7 +42,12 @@ ifeq ($(words $(filter clean,$(MAKECMDGOALS))),0)
 -include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
 endif
 
-%.d: %.c ; $(COMPILE.c) -MG -M -MF $@ $<
+#%.d: %.c ; $(COMPILE.c) -MG -M -MF $@ $<
+%.d: %.c
+	@set -e; rm -f $@; \
+	$(CC) -MG -M $(CPPFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
 
 %.l: %.l.pre %.l.rules %.l.post
 	cat $(filter %.l.pre,$^) blank.l $(filter %.l.rules,$^) blank.l $(filter %.l.post,$^) > $@
