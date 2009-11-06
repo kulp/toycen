@@ -17,7 +17,11 @@ enum primary_expression_type {
     PRET_PARENTHESIZED
 };
 
-enum expression_type { ET_CAST_EXPRESSION, ET_MULTIPLICATIVE_EXRESSION };
+enum expression_type {
+    ET_CAST_EXPRESSION,
+    ET_MULTIPLICATIVE_EXRESSION,
+    ET_max
+};
 
 enum unary_operator {
     UO_ADDRESS_OF     = '&',
@@ -56,6 +60,10 @@ struct integer {
     size_t size;
     bool is_signed;
     union {
+        short s;
+        int i;
+        long l;
+        long long ll;
         signed short ss;
         signed int si;
         signed long sl;
@@ -67,8 +75,9 @@ struct integer {
     } me;
 };
 
-struct character{
-    size_t size;
+struct character {
+    /// @todo support wchars ?
+    //size_t size;
     bool has_signage;
     bool is_signed;
     union {
