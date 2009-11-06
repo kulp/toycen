@@ -33,7 +33,7 @@ int main()
 {
     hash_table_t *ht = hash_table_create(1);
 
-    for (int i = 0; i < countof(toput); i += 2) {
+    for (unsigned i = 0; i < countof(toput); i += 2) {
         hash_table_put(ht, toput[i], toput[i + 1]);
         char *str1 = hash_table_get(ht, toget[i]);
         char *str2 = hash_table_get(ht, toget[i]);
@@ -45,7 +45,7 @@ int main()
             printf("mismatch: hash[%s] = '%s', should have been '%s'\n", toget[i], str1, toget[i + 1]);
     }
 
-    for (int i = 0; i < countof(atlast); i += 2) {
+    for (unsigned i = 0; i < countof(atlast); i += 2) {
         char *str = hash_table_get(ht, atlast[i]);
         if (str != atlast[i + 1] && (str == NULL || strcmp(str, atlast[i + 1])))
             printf("mismatch: hash[%s] = '%s', should have been '%s'\n", atlast[i], str, atlast[i + 1]);
