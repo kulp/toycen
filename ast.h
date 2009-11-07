@@ -343,13 +343,67 @@ struct type_specifier {
     } val;
 };
 
-struct declarator {
+struct declaration_specifiers {
     bool TODO;
+};
+
+struct parameter_declaration {
+    struct declaration_specifiers base;
+    enum parameter_declaration_subtype { PD_HAS_NONE, PD_HAS_DECL, PD_HAS_ABSTRACT_DECL } type;
+    union {
+        struct declarator *decl;
+        struct abstract_declarator *abstract;
+    } decl;
+};
+
+struct parameter_list {
+    struct parameter_declaration base;
+    struct parameter_list *left;
+};
+
+struct parameter_type_list {
+    struct parameter_list base;
+    bool has_ellipsis;
+};
+
+struct identifier_list {
+    struct identifier base;
+    struct identifier_list *left;
+};
+
+struct direct_declarator {
+    enum direct_declarator_type {
+        DD_IDENTIFIER,
+        DD_PARENTHESIZED,
+        DD_ARRAY,
+        DD_FUNCTION,
+    } type;
+    union {
+        struct identifier *id;
+        struct declarator *decl;
+        struct {
+            struct direct_declarator *left;
+            struct constant_expression *index;
+        } array;
+        struct {
+            struct direct_declarator *left;
+            enum function_declarator_subtype { FD_HAS_NONE, FD_HAS_PLIST, FD_HAS_ILIST } type;
+            union {
+                struct parameter_type_list *param;
+                struct identifier_list *ident;
+            } list;
+        } function;
+    } val;
+};
+
+struct declarator {
+    struct direct_declarator base;
+    bool has_pointer;
 };
 
 struct aggregate_declarator {
     bool has_decl;
-    struct declarator base;
+    struct declarator *decl;
     bool has_bitfield;
     struct constant_expression *bf;
 };

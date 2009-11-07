@@ -81,8 +81,15 @@
     enum assignment_operator assn_op;
     struct specifier_qualifier_list *sq_list;
     struct abstract_declarator *abs_decl;
-    struct aggregate_declarator_list *sdecl_list;
-    struct aggregate_declarator *sdecl;
+    struct aggregate_declarator_list *adecl_list;
+    struct aggregate_declarator *adecl;
+    struct declarator *decl;
+    struct direct_declarator *ddecl;
+    struct parameter_type_list *p_type_list;
+    struct identifier_list *ident_list;
+    struct parameter_list *p_list;
+    struct parameter_declaration *p_decl;
+    struct declaration_specifiers *decl_spec;
 }
 
 %type <ue> unary_expression
@@ -117,8 +124,15 @@
 %type <assn_op> assignment_operator;
 %type <sq_list> specifier_qualifier_list;
 %type <abs_decl> abstract_declarator;
-%type <sdecl_list> struct_declarator_list;
-%type <sdecl> struct_declarator;
+%type <adecl_list> struct_declarator_list;
+%type <adecl> struct_declarator;
+%type <decl> declarator;
+%type <ddecl> direct_declarator;
+%type <p_type_list> parameter_type_list
+%type <ident_list> identifier_list
+%type <p_list> parameter_list;
+%type <p_decl> parameter_declaration;
+%type <decl_spec> declaration_specifiers;
 
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
@@ -420,9 +434,13 @@ struct_declaration
 
 specifier_qualifier_list
     : type_specifier specifier_qualifier_list
+        { $$ = NN(specifier_qualifier_list, .type = SQ_HAS_TYPE_SPEC, .next = $2); }
     | type_specifier
+        { $$ = NN(specifier_qualifier_list, .type = SQ_HAS_TYPE_SPEC, .next = NULL); }
     | type_qualifier specifier_qualifier_list
+        { $$ = NN(specifier_qualifier_list, .type = SQ_HAS_TYPE_QUAL, .next = $2); }
     | type_qualifier
+        { $$ = NN(specifier_qualifier_list, .type = SQ_HAS_TYPE_QUAL, .next = NULL); }
     ;
 
 struct_declarator_list
@@ -434,8 +452,11 @@ struct_declarator_list
 
 struct_declarator
     : declarator
+        { $$ = NN(aggregate_declarator, .has_decl = true, .decl = $1, .has_bitfield = false); }
     |  ':' constant_expression
+        { $$ = NN(aggregate_declarator, .has_decl = false, .has_bitfield = false, .bf = $2); }
     | declarator ':' constant_expression
+        { $$ = NN(aggregate_declarator, .has_decl = true, .decl = $1, .has_bitfield = true, .bf = $3); }
     ;
 
 enum_specifier
@@ -477,17 +498,26 @@ type_qualifier
 
 declarator
     : pointer direct_declarator
+        { $$ = UN(declarator, $2, .has_pointer = true); }
     | direct_declarator
+        { $$ = UN(declarator, $1, .has_pointer = false); }
     ;
 
 direct_declarator
     : identifier
+        { $$ = NN(direct_declarator, .type = DD_IDENTIFIER, .val.id = $1); }
     | '(' declarator ')'
+        { $$ = NN(direct_declarator, .type = DD_PARENTHESIZED, .val.decl = $2); }
     | direct_declarator '[' constant_expression ']'
+        { $$ = NN(direct_declarator, .type = DD_ARRAY, .val.array = { .left = $1, .index = $3 }); }
     | direct_declarator '[' ']'
+        { $$ = NN(direct_declarator, .type = DD_ARRAY, .val.array = { .left = $1, .index = NULL }); }
     | direct_declarator '(' parameter_type_list ')'
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .val.function = { .left = $1, .type = FD_HAS_PLIST, .list.param = $3 }); }
     | direct_declarator '(' identifier_list ')'
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .val.function = { .left = $1, .type = FD_HAS_ILIST, .list.ident = $3 }); }
     | direct_declarator '(' ')'
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .val.function = { .left = $1, .type = FD_HAS_NONE }); }
     ;
 
 pointer
@@ -504,23 +534,32 @@ type_qualifier_list
 
 parameter_type_list
     : parameter_list
+        { $$ = UN(parameter_type_list, $1, .has_ellipsis = false); }
     | parameter_list ',' ELLIPSIS
+        { $$ = UN(parameter_type_list, $1, .has_ellipsis = true); }
     ;
 
 parameter_list
     : parameter_declaration
+        { $$ = UN(parameter_list, $1, .left = NULL); }
     | parameter_list ',' parameter_declaration
+        { $$ = UN(parameter_list, $3, .left = $1); }
     ;
 
 parameter_declaration
     : declaration_specifiers declarator
+        { $$ = UN(parameter_declaration, $1, .type = PD_HAS_DECL, .decl.decl = $2); }
     | declaration_specifiers abstract_declarator
+        { $$ = UN(parameter_declaration, $1, .type = PD_HAS_DECL, .decl.abstract = $2); }
     | declaration_specifiers
+        { $$ = UN(parameter_declaration, $1, .type = PD_HAS_NONE); }
     ;
 
 identifier_list
     : identifier
+        { $$ = UN(identifier_list, $1, .left = NULL); }
     | identifier_list ',' identifier
+        { $$ = UN(identifier_list, $3, .left = $1); }
     ;
 
 type_name
