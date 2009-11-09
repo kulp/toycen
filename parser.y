@@ -96,7 +96,21 @@
     struct type_qualifier_list *tq_list;
     struct type_specifier *ts;
     struct unary_expression *ue;
-
+    struct argument_expression_list *ael;
+    struct init_declarator_list *i_d_list;
+    struct init_declarator *i_decl;
+    struct declaration *decln;
+    struct initializer *init;
+    struct initializer_list *init_list;
+    struct iteration_statement *iter_stat;
+    struct statement *stat;
+    struct labeled_statement *lab_stat;
+    struct compound_statement *comp_stat;
+    struct expression_statement *expr_stat;
+    struct selection_statement *sel_stat;
+    struct jump_statement *jump_stat;
+    struct declaration_list *decln_list;
+    struct statement_list *stat_list;
 }
 
 %type <abs_decl> abstract_declarator;
@@ -122,7 +136,7 @@
 %type <enum_spec> enum_specifier
 %type <eq_expr> equality_expression;
 %type <expr> expression;
-%type <i>  struct_or_union
+%type <i> struct_or_union
 %type <i_or_expr> inclusive_or_expression;
 %type <id> identifier
 %type <ident_list> identifier_list
@@ -145,6 +159,21 @@
 %type <ts> type_specifier
 %type <ue> unary_expression
 %type <uo> unary_operator
+%type <ael> argument_expression_list
+%type <i_d_list> init_declarator_list
+%type <i_decl> init_declarator
+%type <decln> declaration
+%type <init> initializer
+%type <init_list> initializer_list
+%type <iter_stat> iteration_statement
+%type <stat> statement
+%type <jump_stat> jump_statement
+%type <lab_stat> labeled_statement
+%type <sel_stat> selection_statement
+%type <expr_stat> expression_statement
+%type <comp_stat> compound_statement
+%type <decln_list> declaration_list
+%type <stat_list> statement_list
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
 
@@ -189,19 +218,28 @@ identifier
 
 postfix_expression
     : primary_expression
-        { $$ = UN(postfix_expression, $1, .type = PET_PRIMARY); }
+        { $$ = NN(postfix_expression, .type = PET_PRIMARY, .me.pri = $1); }
     | postfix_expression '[' expression ']'
+        { $$ = NN(postfix_expression, .type = PET_ARRAY_INDEX, .me.array = { .left = $1, .index = $3 }); }
     | postfix_expression '(' argument_expression_list ')'
+        { $$ = NN(postfix_expression, .type = PET_FUNCTION_CALL, .me.function = { .left = $1, .ael = $3 }); }
     | postfix_expression '(' ')'
+        { $$ = NN(postfix_expression, .type = PET_FUNCTION_CALL, .me.function = { .left = $1, .ael = NULL }); }
     | postfix_expression '.' identifier
+        { $$ = NN(postfix_expression, .type = PET_AGGREGATE_SELECTION, .me.aggregate = { .left = $1, .designator = $3 }); }
     | postfix_expression ARROW identifier
+        { $$ = NN(postfix_expression, .type = PET_AGGREGATE_PTR_SELECTION, .me.aggregate = { .left = $1, .designator = $3 }); }
     | postfix_expression PLUSPLUS
+        { $$ = NN(postfix_expression, .type = PET_POSTINCREMENT, .me.left = $1); }
     | postfix_expression MINUSMINUS
+        { $$ = NN(postfix_expression, .type = PET_POSTDECREMENT, .me.left = $1); }
     ;
 
 argument_expression_list
     : assignment_expression
+        { $$ = UN(argument_expression_list, $1, .left = NULL); }
     | argument_expression_list ',' assignment_expression
+        { $$ = UN(argument_expression_list, $3, .left = $1); }
     ;
 
 unary_expression
@@ -363,7 +401,9 @@ constant_expression
 
 declaration
     : declaration_specifiers init_declarator_list ';'
+        { $$ = UN(declaration, $1, .decl = $2); }
     | declaration_specifiers ';'
+        { $$ = UN(declaration, $1, .decl = NULL); }
     ;
 
 declaration_specifiers
@@ -383,12 +423,16 @@ declaration_specifiers
 
 init_declarator_list
     : init_declarator
+        { $$ = UN(init_declarator_list, $1, .left = NULL); }
     | init_declarator_list ',' init_declarator
+        { $$ = UN(init_declarator_list, $3, .left = $1); }
     ;
 
 init_declarator
     : declarator
+        { $$ = UN(init_declarator, $1, .init = NULL); }
     | declarator '=' initializer
+        { $$ = UN(init_declarator, $1, .init = $3); }
     ;
 
 storage_class_specifier
@@ -433,30 +477,18 @@ type_specifier
 
 struct_or_union_specifier
     : struct_or_union identifier '{' struct_declaration_list '}'
-        { /// @todo rename struct_or_union_* to agreggate_specifier
-          $$ = NN(aggregate_specifier, .type = ($1 == STRUCT ? AT_STRUCT : AT_UNION),
-                                       .has_id = true,
-                                       .id = $2,
-                                       .has_list = true,
-                                       .list = $4,
-                                       ); }
+        { $$ = NN(aggregate_specifier, .type = $1, .has_id = true, .id = $2, .has_list = true, .list = $4); }
     | struct_or_union '{' struct_declaration_list '}'
-        { $$ = NN(aggregate_specifier, .type = ($1 == STRUCT ? AT_STRUCT : AT_UNION),
-                                       .has_id = false,
-                                       .has_list = true,
-                                       .list = $3,
-                                       ); }
+        { $$ = NN(aggregate_specifier, .type = $1, .has_id = false, .has_list = true, .list = $3); }
     | struct_or_union identifier
-        { $$ = NN(aggregate_specifier, .type = ($1 == STRUCT ? AT_STRUCT : AT_UNION),
-                                       .has_id = true,
-                                       .id = $2,
-                                       .has_list = false,
-                                       ); }
+        { $$ = NN(aggregate_specifier, .type = $1, .has_id = true, .id = $2, .has_list = false); }
     ;
 
 struct_or_union
     : STRUCT
+        { $$ = AT_STRUCT; }
     | UNION
+        { $$ = AT_UNION; }
     ;
 
 struct_declaration_list
@@ -649,79 +681,121 @@ direct_abstract_declarator
 
 initializer
     : assignment_expression
+        { $$ = NN(initializer, .me.ae = $1); }
     | '{' initializer_list '}'
+        { $$ = NN(initializer, .me.il = $2); }
     | '{' initializer_list ',' '}'
+        { $$ = NN(initializer, .me.il = $2); }
     ;
 
 initializer_list
     : initializer
+        { $$ = UN(initializer_list, $1, .left = NULL); }
     | initializer_list ',' initializer
+        { $$ = UN(initializer_list, $3, .left = $1); }
     ;
 
 /* B.2.3 Statements. */
 
 statement
     : labeled_statement
+        { $$ = NN(statement, .type = ST_LABELED, .me.ls = $1); }
     | compound_statement
+        { $$ = NN(statement, .type = ST_COMPOUND, .me.cs = $1); }
     | expression_statement
+        { $$ = NN(statement, .type = ST_EXPRESSION, .me.es = $1); }
     | selection_statement
+        { $$ = NN(statement, .type = ST_SELECTION, .me.ss = $1); }
     | iteration_statement
+        { $$ = NN(statement, .type = ST_ITERATION, .me.is = $1); }
     | jump_statement
+        { $$ = NN(statement, .type = ST_JUMP, .me.js = $1); }
     ;
 
 labeled_statement
     : identifier ':' statement
+        { $$ = NN(labeled_statement, .type = LS_LABELED, .me.id = $1, .right = $3); }
     | CASE constant_expression ':' statement
+        { $$ = NN(labeled_statement, .type = LS_CASE, .me.case_id = $2, .right = $4); }
     | DEFAULT ':' statement
+        { $$ = NN(labeled_statement, .type = LS_CASE, .me.case_id = NULL, .right = $3); }
     ;
 
 compound_statement
     : '{' '}'
+        { $$ = NN(compound_statement, .st = NULL, .dl = NULL); }
     | '{' statement_list '}'
+        { $$ = NN(compound_statement, .st = $2, .dl = NULL); }
     | '{' declaration_list '}'
+        { $$ = NN(compound_statement, .st = NULL, .dl = $2); }
     | '{' declaration_list statement_list '}'
+        { $$ = NN(compound_statement, .st = $3, .dl = $2); }
     ;
 
 declaration_list
     : declaration
+        { $$ = UN(declaration_list, $1, .left = NULL); }
     | declaration_list declaration
+        { $$ = UN(declaration_list, $2, .left = $1); }
     ;
 
 statement_list
     : statement
+        { $$ = UN(statement_list, $1, .left = NULL); }
     | statement_list statement
+        { $$ = UN(statement_list, $2, .left = $1); }
     ;
 
 expression_statement
     : ';'
+        { $$ = NN(expression_statement, .expr = NULL); }
     | expression ';'
+        { $$ = NN(expression_statement, .expr = $1); }
     ;
 
 selection_statement
     : IF '(' expression ')' statement
+        { $$ = NN(selection_statement, .type = ES_IF, .cond = $3, .if_stat = $5); }
     | IF '(' expression ')' statement ELSE statement
+        { $$ = NN(selection_statement, .type = ES_IF, .cond = $3, .if_stat = $5, .else_stat = $7); }
     | SWITCH '(' expression ')' statement
+        { $$ = NN(selection_statement, .type = ES_SWITCH, .cond = $3, .if_stat = $5); }
     ;
 
 iteration_statement
     : WHILE '(' expression ')' statement
+        { $$ = NN(iteration_statement, .type = IST_WHILE, .while_expr = $3, .action = $5); }
     | DO statement WHILE '(' expression ')' ';'
+        { $$ = NN(iteration_statement, .type = IST_DO_WHILE, .while_expr = $5, .action = $2); }
     | FOR '(' ';' ';' ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .action = $6); }
     | FOR '(' expression ';' ';' ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .before_expr = $3, .action = $7); }
     | FOR '(' ';' expression ';' ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .while_expr = $4, .action = $7); }
     | FOR '(' expression ';' expression ';' ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .before_expr = $3, .while_expr = $5, .action = $8); }
     | FOR '(' ';' ';' expression ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .after_expr = $5, .action = $7); }
     | FOR '(' expression ';' ';' expression ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .before_expr = $3, .after_expr = $6, .action = $8); }
     | FOR '(' ';' expression ';' expression ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .while_expr = $4, .after_expr = $6, .action = $8); }
     | FOR '(' expression ';' expression ';' expression ')' statement
+        { $$ = NN(iteration_statement, .type = IST_FOR, .before_expr = $3, .while_expr = $5, .after_expr = $7, .action = $9); }
     ;
 
 jump_statement
     : GOTO identifier ';'
+        { $$ = NN(jump_statement, .type = JS_GOTO, .me.goto_id = $2); }
     | CONTINUE ';'
+        { $$ = NN(jump_statement, .type = JS_CONTINUE); }
     | BREAK ';'
+        { $$ = NN(jump_statement, .type = JS_BREAK); }
     | RETURN ';'
+        { $$ = NN(jump_statement, .type = JS_RETURN, .me.return_expr = NULL); }
     | RETURN expression ';'
+        { $$ = NN(jump_statement, .type = JS_RETURN, .me.return_expr = $2); }
     ;
 
 /* B.2.4 External definitions. */

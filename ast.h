@@ -203,17 +203,39 @@ struct primary_expression {
     } me;
 };
 
+struct argument_expression_list {
+    struct assignment_expression base;
+    struct argument_expression_list *left;
+};
+
 struct postfix_expression {
-    struct primary_expression me;
+    //struct primary_expression me;
     enum postfix_expression_type {
         PET_PRIMARY,
         PET_ARRAY_INDEX,
         PET_FUNCTION_CALL,
         PET_AGGREGATE_SELECTION,
         PET_AGGREGATE_PTR_SELECTION,
-        PET_POSTINCREMENT
+        PET_POSTINCREMENT,
+        PET_POSTDECREMENT
     } type;
-    struct postfix_expression *left;
+    union {
+        struct primary_expression *pri;
+        struct postfix_expression *left;
+        struct {
+            struct postfix_expression *left;
+            struct expression *index;
+        } array;
+        struct {
+            struct postfix_expression *left;
+            struct argument_expression_list *ael;
+        } function;
+        struct {
+            struct postfix_expression *left;
+            struct identifier *designator;
+        } aggregate;
+    } me;
+    //struct postfix_expression *left;
 };
 
 struct unary_expression {
@@ -450,6 +472,34 @@ struct declarator {
     bool has_pointer;
 };
 
+struct initializer {
+    enum initializer_subtype { I_ASSIGN, I_INIT_LIST } type;
+    union {
+        struct assignment_expression *ae;
+        struct initializer_list *il;
+    } me;
+};
+
+struct initializer_list {
+    struct initializer me;
+    struct initializer_list *left;
+};
+
+struct init_declarator {
+    struct declarator base;
+    struct initializer *init;
+};
+
+struct init_declarator_list {
+    struct init_declarator base;
+    struct init_declarator_list *left;
+};
+
+struct declaration {
+    struct declaration_specifiers base;
+    struct init_declarator_list *decl;
+};
+
 struct aggregate_declarator {
     bool has_decl;
     struct declarator *decl;
@@ -460,6 +510,87 @@ struct aggregate_declarator {
 struct aggregate_declarator_list {
     struct aggregate_declarator base;
     struct aggregate_declarator_list *prev;
+};
+
+// control
+
+struct expression_statement {
+    struct expression *expr;
+};
+
+struct selection_statement {
+    enum selection_statement_subtype { ES_IF, ES_SWITCH } type;
+    struct expression *cond;
+    struct statement *if_stat;
+    struct statement *else_stat;
+};
+
+struct labeled_statement {
+    enum labeled_statement_subtype {
+        LS_LABELED,
+        LS_CASE
+        // LS_CASE with case_id == NULL means default
+    } type;
+    struct statement *right;
+    union {
+        struct identifier *id;
+        struct constant_expression *case_id;
+    } me;
+};
+
+struct declaration_list {
+    struct declaration base;
+    struct declaration_list *left;
+};
+
+struct compound_statement {
+    /// @todo support mixed declarations and statements as C99 demands
+    struct declaration_list *dl;
+    struct statement_list *st;
+};
+
+struct iteration_statement {
+    enum iteration_statement_subtype {
+        IST_WHILE, IST_DO_WHILE, IST_FOR
+    } type;
+    struct statement *action;
+    struct expression *before_expr;
+    struct expression *while_expr;
+    struct expression *after_expr;
+};
+
+struct jump_statement {
+    enum jump_statement_subtype {
+        JS_GOTO, JS_CONTINUE, JS_BREAK, JS_RETURN
+    } type;
+    union {
+        struct identifier *goto_id;
+        struct expression *return_expr;
+    } me;
+};
+
+struct statement {
+    enum statement_type {
+        ST_LABELED,
+        ST_COMPOUND,
+        ST_EXPRESSION,
+        ST_SELECTION,
+        ST_ITERATION,
+        ST_JUMP
+    } type;
+    union {
+        struct labeled_statement *ls;
+        struct compound_statement *cs;
+        struct expression_statement *es;
+        struct selection_statement *ss;
+        struct iteration_statement *is;
+        struct jump_statement *js;
+    } me;
+};
+
+struct statement_list {
+    struct statement base;
+    struct statement_list *left;
 };
 
 #endif
