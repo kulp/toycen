@@ -44,6 +44,8 @@
     #include <stdint.h>
 
     extern int lineno;
+
+    static struct translation_unit *top;
 %}
 
 %union {
@@ -111,6 +113,9 @@
     struct jump_statement *jump_stat;
     struct declaration_list *decln_list;
     struct statement_list *stat_list;
+    struct translation_unit *trans_unit;
+    struct external_declaration *ext_decl;
+    struct function_definition *func_def;
 }
 
 %type <abs_decl> abstract_declarator;
@@ -174,6 +179,9 @@
 %type <comp_stat> compound_statement
 %type <decln_list> declaration_list
 %type <stat_list> statement_list
+%type <trans_unit> translation_unit
+%type <ext_decl> external_declaration
+%type <func_def> function_definition
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
 
@@ -802,19 +810,27 @@ jump_statement
 
 translation_unit
     : external_declaration
+        { top = $$ = UN(translation_unit, $1, .left = NULL); }
     | translation_unit external_declaration
+        { top = $$ = UN(translation_unit, $2, .left = $1); }
     ;
 
 external_declaration
     : function_definition
+        { $$ = NN(external_declaration, .me.func = $1); }
     | declaration
+        { $$ = NN(external_declaration, .me.decl = $1); }
     ;
 
 function_definition
     : declaration_specifiers declarator declaration_list compound_statement
+        { $$ = NN(function_definition, .decl_spec = $1, .decl = $2, .decl_list = $3, .stat = $4); }
     | declaration_specifiers declarator compound_statement
+        { $$ = NN(function_definition, .decl_spec = $1, .decl = $2, .stat = $3); }
     | declarator declaration_list compound_statement
+        { $$ = NN(function_definition, .decl = $1, .decl_list = $2, .stat = $3); }
     | declarator compound_statement
+        { $$ = NN(function_definition, .decl = $1, .stat = $2); }
     ;
 
 %%
@@ -825,6 +841,11 @@ void yyerror(const char *s) {
     fflush(stdout);
     printf("Error on line %d\n", lineno);
     printf("%*s\n%*s\n", column, "^", column, s);
+}
+
+struct translation_unit* get_top_of_parse_result(void)
+{
+    return top;
 }
 
 /* vi:set ts=4 sw=4 et syntax=yacc: */

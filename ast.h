@@ -593,6 +593,28 @@ struct statement_list {
     struct statement_list *left;
 };
 
+// top-levels
+
+struct external_declaration {
+    enum external_declaration_subtype { ED_FUNC_DEF, ED_DECL } type;
+    union {
+        struct function_definition *func;
+        struct declaration *decl;
+    } me;
+};
+
+struct translation_unit {
+    struct external_declaration base;
+    struct translation_unit *left;
+};
+
+struct function_definition {
+    struct declaration_specifiers *decl_spec;
+    struct declarator *decl;
+    struct declaration_list *decl_list;
+    struct compound_statement *stat;
+};
+
 #endif
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

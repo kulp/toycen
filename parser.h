@@ -14,6 +14,8 @@ typedef struct parser_state_s {
 void parser_setup(parser_state_t *ps);
 void parser_teardown(parser_state_t *ps);
 
+struct translation_unit* get_top_of_parse_result(void);
+
 #endif
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */
