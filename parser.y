@@ -90,6 +90,11 @@
     struct parameter_list *p_list;
     struct parameter_declaration *p_decl;
     struct declaration_specifiers *decl_spec;
+    enum storage_class_specifier scs;
+    enum type_qualifier tq;
+    struct pointer *ptr;
+    struct direct_abstract_declarator *dir_abs_decl;
+    struct type_qualifier_list *tq_list;
 }
 
 %type <ue> unary_expression
@@ -133,6 +138,11 @@
 %type <p_list> parameter_list;
 %type <p_decl> parameter_declaration;
 %type <decl_spec> declaration_specifiers;
+%type <scs> storage_class_specifier;
+%type <tq> type_qualifier;
+%type <ptr> pointer;
+%type <dir_abs_decl> direct_abstract_declarator;
+%type <tq_list> type_qualifier_list;
 
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
@@ -167,7 +177,8 @@ identifier
     ;
 
 postfix_expression
-    : primary_expression { $$ = UN(postfix_expression, $1, .type = PET_PRIMARY); }
+    : primary_expression
+        { $$ = UN(postfix_expression, $1, .type = PET_PRIMARY); }
     | postfix_expression '[' expression ']'
     | postfix_expression '(' argument_expression_list ')'
     | postfix_expression '(' ')'
@@ -183,28 +194,18 @@ argument_expression_list
     ;
 
 unary_expression
-    : postfix_expression {
-            $$ = UN(unary_expression, $1, .type = UET_POSTFIX);
-        }
-    | PLUSPLUS unary_expression {
-        /// @todo .me
-            $$ = NN(unary_expression, .type = UET_PREINCREMENT, .val.ue = $<ue>2);
-        }
-    | MINUSMINUS unary_expression {
-        /// @todo .me
-            $$ = NN(unary_expression, .type = UET_PREDECREMENT, .val.ue = $<ue>2);
-        }
-    | unary_operator cast_expression {
-            $$ = NN(unary_expression, .type = UET_UNARY_OP,
-                                      .val.ce = { .uo = $1, .ce = $2 }
-                                      );
-        }
-    | SIZEOF unary_expression {
-            $$ = NN(unary_expression, .type = UET_SIZEOF_EXPR, .val.ue = $<ue>2);
-        }
-    | SIZEOF '(' type_name ')' {
-            $$ = NN(unary_expression, .type = UET_SIZEOF_TYPE, .val.tn = $3);
-        }
+    : postfix_expression
+        { $$ = UN(unary_expression, $1, .type = UET_POSTFIX); }
+    | PLUSPLUS unary_expression
+        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREINCREMENT, .val.ue = $2); }
+    | MINUSMINUS unary_expression
+        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREDECREMENT, .val.ue = $2); }
+    | unary_operator cast_expression
+        { $$ = NN(unary_expression, .type = UET_UNARY_OP, .val.ce = { .uo = $1, .ce = $2 }); }
+    | SIZEOF unary_expression
+        { $$ = NN(unary_expression, .type = UET_SIZEOF_EXPR, .val.ue = $2); }
+    | SIZEOF '(' type_name ')'
+        { $$ = NN(unary_expression, .type = UET_SIZEOF_TYPE, .val.tn = $3); }
     ;
 
 unary_operator
@@ -217,8 +218,10 @@ unary_operator
     ;
 
 cast_expression
-    : unary_expression { $$ = UN(cast_expression, $1, .tn = NULL); }
-    | '(' type_name ')' cast_expression { $$ = NN(cast_expression, .tn = $2, .ce = $4); }
+    : unary_expression
+        { $$ = UN(cast_expression, $1, .tn = NULL); }
+    | '(' type_name ')' cast_expression
+        { $$ = NN(cast_expression, .tn = $2, .ce = $4); }
     ;
 
 multiplicative_expression
@@ -347,11 +350,17 @@ declaration
 
 declaration_specifiers
     : storage_class_specifier declaration_specifiers
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_STORAGE_CLASS, .me.scs = $1, .right = $2); }
     | storage_class_specifier
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_STORAGE_CLASS, .me.scs = $1, .right = NULL); }
     | type_specifier declaration_specifiers
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_SPEC, .me.ts = $1, .right = $2); }
     | type_specifier
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_SPEC, .me.ts = $1, .right = NULL); }
     | type_qualifier declaration_specifiers
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_QUAL, .me.tq = $1, .right = $2); }
     | type_qualifier
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_QUAL, .me.tq = $1, .right = NULL); }
     ;
 
 init_declarator_list
@@ -366,10 +375,15 @@ init_declarator
 
 storage_class_specifier
     : TYPEDEF
+        { $$ = SCS_TYPEDEF; }
     | EXTERN
+        { $$ = SCS_EXTERN; }
     | STATIC
+        { $$ = SCS_STATIC; }
     | AUTO
+        { $$ = SCS_AUTO; }
     | REGISTER
+        { $$ = SCS_REGISTER; }
     ;
 
 type_specifier
@@ -493,7 +507,9 @@ enumerator
 
 type_qualifier
     : CONST
+        { $$ = TQ_CONST; }
     | VOLATILE
+        { $$ = TQ_VOLATILE; }
     ;
 
 declarator
@@ -522,14 +538,20 @@ direct_declarator
 
 pointer
     : '*' type_qualifier_list
+        { $$ = NN(pointer, .tq = $2, .right = NULL); }
     | '*'
+        { $$ = NN(pointer, .tq = NULL, .right = NULL); }
     | '*' type_qualifier_list pointer
+        { $$ = NN(pointer, .tq = $2, .right = $3); }
     | '*' pointer
+        { $$ = NN(pointer, .right = $2); }
     ;
 
 type_qualifier_list
     : type_qualifier
+        { $$ = NN(type_qualifier_list, .me = $1, .left = NULL); }
     | type_qualifier_list type_qualifier
+        { $$ = NN(type_qualifier_list, .me = $2, .left = $1); }
     ;
 
 parameter_type_list
@@ -571,20 +593,32 @@ type_name
 
 abstract_declarator
     : pointer
+        { $$ = NN(abstract_declarator, .ptr = $1, .right = NULL); }
     | direct_abstract_declarator
+        { $$ = NN(abstract_declarator, .ptr = NULL, .right = $1); }
     | pointer direct_abstract_declarator
+        { $$ = NN(abstract_declarator, .ptr = $1, .right = $2); }
     ;
 
 direct_abstract_declarator
     : '(' abstract_declarator ')'
+        { $$ = NN(direct_abstract_declarator, .type = DA_PARENTHESIZED, .me.abs = $2); }
     | '[' ']'
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = NULL, .idx = NULL }); }
     | '[' constant_expression ']'
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = NULL, .idx = $2 }); }
     | direct_abstract_declarator '[' ']'
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = $1, .idx = NULL }); }
     | direct_abstract_declarator '[' constant_expression ']'
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = $1, .idx = $3 }); }
     | '(' ')'
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = NULL, .params = NULL }); }
     | '(' parameter_type_list ')'
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = NULL, .params = $2 }); }
     | direct_abstract_declarator '(' ')'
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = $1, .params = NULL }); }
     | direct_abstract_declarator '(' parameter_type_list ')'
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = $1, .params = $3 }); }
     ;
 
 initializer

@@ -45,3 +45,30 @@ void debug(int level, const char *fmt, ...)
     }
 }
 
+void *my_malloc(size_t size)
+{
+    void *result = malloc(size);
+    debug(5, "%s(%lu) returning %p", __func__, size, result);
+    return result;
+}
+
+void *my_calloc(size_t count, size_t size)
+{
+    void *result = calloc(count, size);
+    debug(5, "%s(%lu,%lu) returning %p", __func__, count, size, result);
+    return result;
+}
+
+void *my_realloc(void *ptr, size_t size)
+{
+    void *result = realloc(ptr, size);
+    debug(5, "%s(%p,%lu) returning %p", __func__, ptr, size, result);
+    return result;
+}
+
+void my_free(void *ptr)
+{
+    debug(5, "%s(%p)", __func__, ptr);
+    free(ptr);
+}
+

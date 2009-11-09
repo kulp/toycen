@@ -80,10 +80,14 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
 
 /// @todo find a better prefix
 /// @todo implement a better allocator for such small nodes
-#define my_realloc realloc
-#define my_calloc calloc
-#define my_malloc malloc
-#define my_free free
+//#define my_realloc realloc
+void *my_realloc(void*, size_t);
+//#define my_calloc calloc
+void *my_calloc(size_t, size_t);
+//#define my_malloc malloc
+void *my_malloc(size_t);
+//#define my_free free
+void my_free(void*);
 
 #define AsPtr(Type) (struct Type*)(uintptr_t)
 #define Anon(Type,Val) ((struct Type){ Val })

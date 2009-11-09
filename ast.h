@@ -91,6 +91,45 @@ struct specifier_qualifier_list {
     struct specifier_qualifier_list *next;
 };
 
+enum type_qualifier {
+    TQ_CONST,
+    TQ_VOLATILE
+};
+
+struct type_qualifier_list {
+    enum type_qualifier me;
+    struct type_qualifier_list *left;
+};
+
+struct pointer {
+    struct type_qualifier_list *tq;
+    struct pointer *right;
+};
+
+struct direct_abstract_declarator {
+    enum direct_abstract_declarator_subtype {
+        DA_PARENTHESIZED,
+        DA_ARRAY_INDEX,
+        DA_FUNCTION_CALL,
+    } type;
+    union {
+        struct abstract_declarator *abs;
+        struct {
+            struct direct_abstract_declarator *left;
+            struct constant_expression *idx;
+        } array;
+        struct {
+            struct direct_abstract_declarator *left;
+            struct parameter_type_list *params;
+        } function;
+    } me;
+};
+
+struct abstract_declarator {
+    struct pointer *ptr;
+    struct direct_abstract_declarator *right;
+};
+
 struct type_name {
     struct specifier_qualifier_list *list;
     struct abstract_declarator *decl;
@@ -274,7 +313,7 @@ struct constant_expression {
 };
 
 struct aggregate_definition {
-    bool TODO;
+    bool TODO; /// @todo
 };
 
 struct aggregate_definition_list {
@@ -343,8 +382,22 @@ struct type_specifier {
     } val;
 };
 
+enum storage_class_specifier {
+    SCS_TYPEDEF,
+    SCS_EXTERN,
+    SCS_STATIC,
+    SCS_AUTO,
+    SCS_REGISTER
+};
+
 struct declaration_specifiers {
-    bool TODO;
+    enum declaration_specifiers_subtype { DS_HAS_STORAGE_CLASS, DS_HAS_TYPE_SPEC, DS_HAS_TYPE_QUAL } type;
+    union {
+        enum storage_class_specifier scs;
+        struct type_specifier *ts;
+        enum type_qualifier tq;
+    } me;
+    struct declaration_specifiers *right;
 };
 
 struct parameter_declaration {
