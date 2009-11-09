@@ -94,9 +94,9 @@
 
 {id}                                    { c();      return check_identifier(yytext); }
 
-"0"[xX][0-9a-fA-F]+{intsuffix}?         { c(); p(); return INTEGER;   }
-"0"[0-7]+{intsuffix}?                   { c(); p(); return INTEGER;   }
-[0-9]+{intsuffix}?                      { c(); p(); return INTEGER;   }
+"0"[xX][0-9a-fA-F]+{intsuffix}?         { c(); p(); yylval.str = yytext; return INTEGER; }
+"0"[0-7]+{intsuffix}?                   { c(); p(); yylval.str = yytext; return INTEGER; }
+[0-9]+{intsuffix}?                      { c(); p(); yylval.str = yytext; return INTEGER; }
 
 {fracconst}{exppart}?{floatsuffix}?     { c(); p(); return FLOATING;  }
 [0-9]+{exppart}{floatsuffix}?           { c(); p(); return FLOATING;  }

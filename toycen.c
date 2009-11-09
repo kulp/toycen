@@ -19,7 +19,7 @@
 
 extern int yyparse();
 
-int DEBUG_LEVEL = 5;
+int DEBUG_LEVEL = 4;
 FILE* DEBUG_FILE;
 
 static hash_table_t *global_symbols;

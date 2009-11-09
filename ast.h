@@ -133,11 +133,8 @@ struct abstract_declarator {
 struct type_name {
     struct specifier_qualifier_list *list;
     struct abstract_declarator *decl;
-    //char *name;
-    //struct type *type;  ///< NULL until looked up
 };
 
-/// @todo
 struct identifier {
     size_t len;
     char *name;
@@ -184,9 +181,9 @@ struct floating {
 };
 
 struct string {
-    /// @todo support wchars ?
     size_t size;
-    char *value;
+    struct character *value;
+    char *cached;
 };
 
 struct _expression_having_type {
@@ -346,7 +343,6 @@ struct enumerator {
 };
 
 struct enumerator_list {
-    /// @todo fields
     struct enumerator *me;
     struct enumerator_list *prev;
 };
