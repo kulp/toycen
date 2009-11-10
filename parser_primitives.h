@@ -53,13 +53,14 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
       ((struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__))) \
     )
 
+/*
 /// child node (descend from existing node)
 #define CN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
       (debug(2, "creating '" #Type "' by descent with { " #__VA_ARGS__ " }")), \
-      /** @todo must we move memmove() here */ \
       ((struct Type*)memcpy(NN(Type, __VA_ARGS__), Old, sizeof *Old)) \
     )
+*/
 
 /// upgrade node (descend from existing node, replacing old node)
 #define UN(Type, Old, ...) \

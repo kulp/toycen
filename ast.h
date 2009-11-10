@@ -486,6 +486,7 @@ struct direct_declarator {
                 struct identifier_list *ident;
             } list;
         } function;
+    /// @todo unify "me" and "val" synonyms / overlap
     } val;
 };
 
@@ -626,7 +627,7 @@ struct external_declaration {
 };
 
 struct translation_unit {
-    struct external_declaration base;
+    struct external_declaration *right;
     struct translation_unit *left;
 };
 

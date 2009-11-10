@@ -43,7 +43,7 @@
     #include <string.h>
     #include <stdint.h>
 
-    extern int lineno;
+    extern int lineno, column;
 
     static struct translation_unit *top;
 %}
@@ -266,12 +266,18 @@ unary_expression
     ;
 
 unary_operator
-    : '&' { $$ = $<chr>1; }
-    | '*' { $$ = $<chr>1; }
-    | '+' { $$ = $<chr>1; }
-    | '-' { $$ = $<chr>1; }
-    | '~' { $$ = $<chr>1; }
-    | '!' { $$ = $<chr>1; }
+    : '&'
+        { $$ = $<chr>1; }
+    | '*'
+        { $$ = $<chr>1; }
+    | '+'
+        { $$ = $<chr>1; }
+    | '-'
+        { $$ = $<chr>1; }
+    | '~'
+        { $$ = $<chr>1; }
+    | '!'
+        { $$ = $<chr>1; }
     ;
 
 cast_expression
@@ -409,7 +415,16 @@ constant_expression
 
 declaration
     : declaration_specifiers init_declarator_list ';'
-        { $$ = UN(declaration, $1, .decl = $2); }
+        { $$ = UN(declaration, $1, .decl = $2);
+          /// @todo this is a very naïve way of handling types : replace it
+          if (($1)->type == DS_HAS_STORAGE_CLASS && ($1)->me.scs == SCS_TYPEDEF) {
+              struct init_declarator_list *head = $2;
+              while (head) {
+                  add_typename(NULL, head->base.base.base.val.id->name);
+                  head = head->left;
+              }
+          }
+        }
     | declaration_specifiers ';'
         { $$ = UN(declaration, $1, .decl = NULL); }
     ;
@@ -810,16 +825,16 @@ jump_statement
 
 translation_unit
     : external_declaration
-        { top = $$ = UN(translation_unit, $1, .left = NULL); }
+        { top = $$ = NN(translation_unit, .right = $1, .left = NULL); }
     | translation_unit external_declaration
-        { top = $$ = UN(translation_unit, $2, .left = $1); }
+        { top = $$ = NN(translation_unit, .right = $2, .left = $1); }
     ;
 
 external_declaration
     : function_definition
-        { $$ = NN(external_declaration, .me.func = $1); }
+        { $$ = NN(external_declaration, .type = ED_FUNC_DEF, .me.func = $1); }
     | declaration
-        { $$ = NN(external_declaration, .me.decl = $1); }
+        { $$ = NN(external_declaration, .type = ED_DECL, .me.decl = $1); }
     ;
 
 function_definition
@@ -834,8 +849,6 @@ function_definition
     ;
 
 %%
-
-extern int column;
 
 void yyerror(const char *s) {
     fflush(stdout);
