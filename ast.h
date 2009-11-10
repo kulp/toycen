@@ -12,10 +12,17 @@ struct node {
 };
 
 enum type_class {
-    TC_INVALID, TC_VOID, TC_INT, TC_FLOAT, TC_STRUCT, TC_UNION, TC_max
+    TC_INVALID,
+    TC_VOID,
+    TC_INT,
+    TC_FLOAT,
+    TC_STRUCT,
+    TC_UNION,
+    TC_max
 };
 
 enum primary_expression_type {
+    PRET_INVALID,
     PRET_IDENTIFIER,
     PRET_INTEGER,
     PRET_CHARACTER,
@@ -25,6 +32,7 @@ enum primary_expression_type {
 };
 
 enum expression_type {
+    ET_INVALID,
     ET_CAST_EXPRESSION,
     ET_MULTIPLICATIVE_EXRESSION,
     /// @todo fill in the rest
@@ -32,6 +40,7 @@ enum expression_type {
 };
 
 enum unary_operator {
+    UO_INVALID,
     UO_ADDRESS_OF     = '&',
     UO_DEREFERENCE    = '*',
     UO_PLUS           = '+',
@@ -42,6 +51,7 @@ enum unary_operator {
 
 enum binary_operator {
     /// @todo but what about multi-character operators
+    BO_INVALID,
     BO_ADD            = '+',
     BO_SUBTRACT       = '-',
     BO_MULTIPLY       = '*',
@@ -63,6 +73,7 @@ struct assignment_expression {
         struct {
             struct unary_expression *left;
             enum assignment_operator {
+                AO_INVALID,
                 AO_MULEQ,
                 AO_DIVEQ,
                 AO_MODEQ,
@@ -92,6 +103,7 @@ struct specifier_qualifier_list {
 };
 
 enum type_qualifier {
+    TQ_INVALID,
     TQ_CONST,
     TQ_VOLATILE
 };
@@ -108,6 +120,7 @@ struct pointer {
 
 struct direct_abstract_declarator {
     enum direct_abstract_declarator_subtype {
+        DA_INVALID,
         DA_PARENTHESIZED,
         DA_ARRAY_INDEX,
         DA_FUNCTION_CALL,
@@ -211,6 +224,7 @@ struct argument_expression_list {
 struct postfix_expression {
     //struct primary_expression me;
     enum postfix_expression_type {
+        PET_INVALID,
         PET_PRIMARY,
         PET_ARRAY_INDEX,
         PET_FUNCTION_CALL,
@@ -241,6 +255,7 @@ struct postfix_expression {
 struct unary_expression {
     struct postfix_expression me;
     enum unary_expression_type {
+        UET_INVALID,
         UET_POSTFIX,
         UET_PREINCREMENT,
         UET_PREDECREMENT,
@@ -259,9 +274,13 @@ struct unary_expression {
 };
 
 struct cast_expression {
-    struct unary_expression base;
-    struct cast_expression *ce;
-    struct type_name *tn;
+    union {
+        struct unary_expression *unary;
+        struct {
+            struct cast_expression *ce;
+            struct type_name *tn;
+        } cast;
+    } me;
 };
 
 struct multiplicative_expression {
@@ -380,6 +399,7 @@ struct enum_specifier {
 struct type_specifier {
     struct node base;
     enum type_specifier_type {
+        TS_INVALID,
         TS_VOID,
         TS_CHAR,
         TS_SHORT,
@@ -401,6 +421,7 @@ struct type_specifier {
 };
 
 enum storage_class_specifier {
+    SCS_INVALID,
     SCS_TYPEDEF,
     SCS_EXTERN,
     SCS_STATIC,
@@ -444,6 +465,7 @@ struct identifier_list {
 
 struct direct_declarator {
     enum direct_declarator_type {
+        DD_INVALID,
         DD_IDENTIFIER,
         DD_PARENTHESIZED,
         DD_ARRAY,

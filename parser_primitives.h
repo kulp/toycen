@@ -44,16 +44,13 @@ void* _alloc_node(size_t size, void *data);
 /// copies data into old at offset
 void* _copy_node(void *old, void *data, size_t size, size_t off);
 
-/// pointer to anonymous
-#define PtA(Type, ...) &(struct Type){ __VA_ARGS__ }
-
 /// size of type
 #define SoT(Type) sizeof(struct Type)
 
 /// new node
 #define NN(Type, ...) \
     ( (debug(2, "allocating '" #Type "' with { " #__VA_ARGS__ " }")), \
-      ((struct Type*)_alloc_node(SoT(Type), PtA(Type, __VA_ARGS__))) \
+      ((struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__))) \
     )
 
 /// child node (descend from existing node)
@@ -68,7 +65,7 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
 #define UN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
       (debug(2, "upgrading %p to '" #Type "' with { " #__VA_ARGS__ " }", Old)), \
-      ((struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PtA(Type, __VA_ARGS__), SoT(Type), sizeof(Old) - SoT(Type))) \
+      ((struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)) \
     )
 
 /// @todo real lookup
@@ -80,17 +77,14 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
 
 /// @todo find a better prefix
 /// @todo implement a better allocator for such small nodes
-//#define my_realloc realloc
 void *my_realloc(void*, size_t);
-//#define my_calloc calloc
 void *my_calloc(size_t, size_t);
-//#define my_malloc malloc
 void *my_malloc(size_t);
-//#define my_free free
 void my_free(void*);
 
 #define AsPtr(Type) (struct Type*)(uintptr_t)
-#define Anon(Type,Val) ((struct Type){ Val })
+#define Anon(Type,...) ((struct Type){ __VA_ARGS__ })
+#define PAnon(Type,...) &Anon(Type,__VA_ARGS__)
 
 void debug(int level, const char *fmt, ...);
 

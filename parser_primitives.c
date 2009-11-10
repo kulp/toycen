@@ -1,5 +1,7 @@
 #include "parser_primitives.h"
 
+#include <assert.h>
+
 void* _alloc_node(size_t size, void *data)
 {
     debug(3, "allocator running with size %ld", size);
@@ -14,9 +16,10 @@ void* _alloc_node(size_t size, void *data)
  */
 void* _copy_node(void *old, void *data, size_t size, size_t off)
 {
-    if (size > off)
-        /// @todo should / must we use memmove() here ?
-        memcpy((char*)old + off, data, size - off);
+    assert(size >= off);
+
+    /// @todo should / must we use memmove() here ?
+    memcpy((char*)old + off, data, size - off);
 
     return old;
 }
