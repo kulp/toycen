@@ -612,8 +612,8 @@ struct statement {
 };
 
 struct statement_list {
-    struct statement base;
-    struct statement_list *left;
+    struct statement* st;
+    struct statement_list *prev;
 };
 
 // top-levels

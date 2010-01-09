@@ -89,5 +89,10 @@ void my_free(void*);
 
 void debug(int level, const char *fmt, ...);
 
+parser_state_t *get_parser_state(void);
+void set_parser_state(parser_state_t *ps);
+
+struct string* intern_string(parser_state_t *ps, const char *str);
+
 #endif
 

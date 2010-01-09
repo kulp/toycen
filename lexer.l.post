@@ -64,7 +64,7 @@ void lexer_setup()
 
     /// @todo scope type definitions properly
     if (!types_hash)
-        types_hash = hash_table_create(0);
+        hash_table_create(&types_hash, 0);
 }
 
 void lexer_teardown()

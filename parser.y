@@ -183,7 +183,7 @@
 %type <ue> unary_expression
 %type <uo> unary_operator
 
-%token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER STRING
+%token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER
 
 %token ELLIPSIS ADDEQ SUBEQ MULEQ DIVEQ MODEQ XOREQ ANDEQ OREQ SL SR
 %token SLEQ SREQ EQ NOTEQ LTEQ GTEQ ANDAND OROR PLUSPLUS MINUSMINUS ARROW
@@ -194,6 +194,7 @@
 
 %token <chr> '&' '*' '+' '-' '~' '!' '/' '%'
 %token <i> STRUCT UNION
+%token <str> STRING
 
 %start translation_unit
 
@@ -214,7 +215,7 @@ primary_expression
     | FLOATING
         { $$ = NN(primary_expression, .type = PRET_FLOATING  , .me.f  = /* TODO */NULL); }
     | STRING
-        { $$ = NN(primary_expression, .type = PRET_STRING    , .me.s  = /* TODO */NULL); }
+        { $$ = NN(primary_expression, .type = PRET_STRING    , .me.s  = intern_string(get_parser_state(),$1)); }
     | '(' expression ')'
         { $$ = NN(primary_expression, .type = PRET_PARENTHESIZED, .me.e = $2); }
     ;
@@ -764,9 +765,9 @@ declaration_list
 
 statement_list
     : statement
-        { $$ = UN(statement_list, $1, .left = NULL); }
+        { $$ = NN(statement_list, .st = $1, .prev = NULL); }
     | statement_list statement
-        { $$ = UN(statement_list, $2, .left = $1); }
+        { $$ = NN(statement_list, .st = $2, .prev = $1); }
     ;
 
 expression_statement
@@ -850,7 +851,8 @@ function_definition
 
 %%
 
-void yyerror(const char *s) {
+void yyerror(const char *s)
+{
     fflush(stdout);
     printf("Error on line %d\n", lineno);
     printf("%*s\n%*s\n", column, "^", column, s);
@@ -861,5 +863,5 @@ struct translation_unit* get_top_of_parse_result(void)
     return top;
 }
 
-/* vi:set ts=4 sw=4 et syntax=yacc: */
+/* vi:set ts=4 sw=4 et: */
 

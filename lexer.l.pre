@@ -42,7 +42,7 @@
 
     int lineno;
 
-    static hash_table_t* types_hash;
+    static hash_table_t types_hash;
 
     /// Tracks columns for error reporting
     static void c();

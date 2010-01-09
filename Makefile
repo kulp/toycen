@@ -18,7 +18,7 @@ all: $(TARGET) t/test_hash_table t/test_hash_table_interface
 
 toycen.o: CFLAGS += -Wno-unused-parameter
 toycen: parser.o parser_primitives.o lexer.o hash_table.o
-parser.o: CFLAGS += -Wno-missing-field-initializers
+parser.o: CFLAGS += -Wno-missing-field-initializers -D_XOPEN_SOURCE=600
 
 # Don't complain about unused yyunput()
 lexer.o: CFLAGS += -Wno-unused-function
