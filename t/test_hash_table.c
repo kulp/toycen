@@ -31,7 +31,8 @@ static const char *atlast[] = {
 
 int main()
 {
-    hash_table_t *ht = hash_table_create(1);
+    hash_table_t ht;
+    hash_table_create(&ht, 1);
 
     for (unsigned i = 0; i < countof(toput); i += 2) {
         hash_table_put(ht, toput[i], toput[i + 1]);

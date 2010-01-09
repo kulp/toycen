@@ -11,7 +11,7 @@
 
 int main()
 {
-    hash_table_t *ht = NULL;
+    hash_table_t ht = NULL;
 
     char buf[128];
 
@@ -28,7 +28,7 @@ int main()
             char *start = strchr(buf, ' ');
             if (!start) start = &buf[1];
             int size = strtol(start, NULL, 0);
-            ht = hash_table_create(size);
+            hash_table_create(&ht, size);
             break;
         }
         case 'g': {

@@ -72,7 +72,7 @@ static int bucket_put(bucket_t **bkts, int size, char *duped, const void *val)
     return 0;
 }
 
-static int hash_table_resize(hash_table_t *table, unsigned int newsize)
+static int hash_table_resize(hash_table_t table, unsigned int newsize)
 {
     int rc = 0;
 
@@ -107,22 +107,20 @@ static int hash_table_resize(hash_table_t *table, unsigned int newsize)
 }
 
 /// @todo pass in a key comparator
-hash_table_t* hash_table_create(unsigned int initial_size)
+int hash_table_create(hash_table_t *table, unsigned int initial_size)
 {
-    hash_table_t *table;
-
-    table = malloc(sizeof *table);
+    *table = malloc(sizeof **table);
 
     if (!initial_size) initial_size = (1 << DEFAULT_HASH_POWER) - 1;
 
-    table->full = 0;
-    table->size = initial_size;
-    table->bkts = calloc(table->size,  sizeof *table->bkts);
+    (*table)->full = 0;
+    (*table)->size = initial_size;
+    (*table)->bkts = calloc((*table)->size,  sizeof *(*table)->bkts);
 
-    return table;
+    return 0;
 }
 
-void* hash_table_delete(hash_table_t *table, const char *key)
+void* hash_table_delete(hash_table_t table, const char *key)
 {
     void *result = NULL;
 
@@ -151,7 +149,7 @@ void* hash_table_delete(hash_table_t *table, const char *key)
     return result;
 }
 
-void* hash_table_get(hash_table_t *table, const char *key)
+void* hash_table_get(hash_table_t table, const char *key)
 {
     void *result = NULL;
 
@@ -173,7 +171,7 @@ void* hash_table_get(hash_table_t *table, const char *key)
     return result;
 }
 
-int hash_table_put(hash_table_t *table, const char *key, const void *val)
+int hash_table_put(hash_table_t table, const char *key, const void *val)
 {
     int rc = 0;
 
@@ -199,7 +197,7 @@ int hash_table_put(hash_table_t *table, const char *key, const void *val)
     return rc;
 }
 
-int hash_table_destroy(hash_table_t *table)
+int hash_table_destroy(hash_table_t table)
 {
     int rc = 0;
 
