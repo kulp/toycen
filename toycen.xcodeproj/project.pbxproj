@@ -19,12 +19,21 @@
 		23AF4AAA130726F900362BAB /* parser_primitives.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_primitives.h; sourceTree = "<group>"; };
 		23AF4AAB130726F900362BAB /* parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser.h; sourceTree = "<group>"; };
 		23AF4AAC130726F900362BAB /* pp_lexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pp_lexer.h; sourceTree = "<group>"; };
+		23AF4AFD1307298200362BAB /* lexer.l.post */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lexer.l.post; sourceTree = "<group>"; };
+		23AF4AFE1307298200362BAB /* lexer.l.pre */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lexer.l.pre; sourceTree = "<group>"; };
+		23AF4AFF1307298200362BAB /* lexer.l.rules */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lexer.l.rules; sourceTree = "<group>"; };
+		23AF4B001307298200362BAB /* parser_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_internal.h; sourceTree = "<group>"; };
+		23AF4B011307298200362BAB /* parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parser.c; sourceTree = "<group>"; };
+		23AF4B021307298200362BAB /* pp_lexer.l */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lex; path = pp_lexer.l; sourceTree = "<group>"; };
+		23AF4B031307298200362BAB /* y.tab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = y.tab.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		08FB7794FE84155DC02AAC07 /* toycen */ = {
 			isa = PBXGroup;
 			children = (
+				23AF4B041307298F00362BAB /* Skeleton */,
+				23AF4B051307299600362BAB /* Generated */,
 				23AF4AA3130726F200362BAB /* Headers */,
 				23AF4AA2130726EB00362BAB /* Sources */,
 			);
@@ -55,6 +64,27 @@
 				23AF4AAC130726F900362BAB /* pp_lexer.h */,
 			);
 			name = Headers;
+			sourceTree = "<group>";
+		};
+		23AF4B041307298F00362BAB /* Skeleton */ = {
+			isa = PBXGroup;
+			children = (
+				23AF4AFD1307298200362BAB /* lexer.l.post */,
+				23AF4AFE1307298200362BAB /* lexer.l.pre */,
+				23AF4AFF1307298200362BAB /* lexer.l.rules */,
+			);
+			name = Skeleton;
+			sourceTree = "<group>";
+		};
+		23AF4B051307299600362BAB /* Generated */ = {
+			isa = PBXGroup;
+			children = (
+				23AF4B001307298200362BAB /* parser_internal.h */,
+				23AF4B021307298200362BAB /* pp_lexer.l */,
+				23AF4B011307298200362BAB /* parser.c */,
+				23AF4B031307298200362BAB /* y.tab.h */,
+			);
+			name = Generated;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

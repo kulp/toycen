@@ -266,7 +266,9 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateExpansionKey</key>
 							<array>
 								<string>08FB7794FE84155DC02AAC07</string>
+								<string>23AF4B051307299600362BAB</string>
 								<string>23AF4AA3130726F200362BAB</string>
+								<string>23AF4AA2130726EB00362BAB</string>
 								<string>1C37FBAC04509CD000000102</string>
 								<string>1C37FAAC04509CD000000102</string>
 								<string>1C37FABC05509CD000000102</string>
@@ -274,7 +276,6 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>4</integer>
 									<integer>1</integer>
 									<integer>0</integer>
 								</array>
@@ -315,7 +316,7 @@
 								<key>PBXProjectModuleGUID</key>
 								<string>1CE0B20306471E060097A5F4</string>
 								<key>PBXProjectModuleLabel</key>
-								<string>hash_table.h</string>
+								<string>parser_internal.h</string>
 								<key>PBXSplitModuleInNavigatorKey</key>
 								<dict>
 									<key>Split0</key>
@@ -323,15 +324,26 @@
 										<key>PBXProjectModuleGUID</key>
 										<string>1CE0B20406471E060097A5F4</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>hash_table.h</string>
+										<string>parser_internal.h</string>
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>23AF4AED1307289E00362BAB</string>
+										<string>23AF4B1E130729E500362BAB</string>
 										<key>history</key>
 										<array>
 											<string>23AF4AE51307288A00362BAB</string>
-											<string>23AF4AE61307288A00362BAB</string>
+											<string>23AF4B12130729E500362BAB</string>
+											<string>23AF4B13130729E500362BAB</string>
+											<string>23AF4B14130729E500362BAB</string>
+											<string>23AF4B15130729E500362BAB</string>
+											<string>23AF4B16130729E500362BAB</string>
+											<string>23AF4B17130729E500362BAB</string>
+											<string>23AF4B18130729E500362BAB</string>
+											<string>23AF4B19130729E500362BAB</string>
+											<string>23AF4B1A130729E500362BAB</string>
+											<string>23AF4B1B130729E500362BAB</string>
+											<string>23AF4B1C130729E500362BAB</string>
+											<string>23AF4B1D130729E500362BAB</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
