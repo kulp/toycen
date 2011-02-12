@@ -10,7 +10,6 @@
 		23AF4A9C130726E800362BAB /* hash_table.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = hash_table.c; sourceTree = "<group>"; };
 		23AF4A9D130726E800362BAB /* lexer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lexer.c; sourceTree = "<group>"; };
 		23AF4A9E130726E800362BAB /* parser_primitives.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parser_primitives.c; sourceTree = "<group>"; };
-		23AF4A9F130726E800362BAB /* pp_lexer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pp_lexer.c; sourceTree = "<group>"; };
 		23AF4AA0130726E800362BAB /* toycen.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = toycen.c; sourceTree = "<group>"; };
 		23AF4AA6130726F900362BAB /* ast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ast.h; sourceTree = "<group>"; };
 		23AF4AA7130726F900362BAB /* debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = debug.h; sourceTree = "<group>"; };
@@ -18,20 +17,20 @@
 		23AF4AA9130726F900362BAB /* lexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lexer.h; sourceTree = "<group>"; };
 		23AF4AAA130726F900362BAB /* parser_primitives.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_primitives.h; sourceTree = "<group>"; };
 		23AF4AAB130726F900362BAB /* parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser.h; sourceTree = "<group>"; };
-		23AF4AAC130726F900362BAB /* pp_lexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pp_lexer.h; sourceTree = "<group>"; };
 		23AF4AFD1307298200362BAB /* lexer.l.post */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lexer.l.post; sourceTree = "<group>"; };
 		23AF4AFE1307298200362BAB /* lexer.l.pre */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lexer.l.pre; sourceTree = "<group>"; };
 		23AF4AFF1307298200362BAB /* lexer.l.rules */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lexer.l.rules; sourceTree = "<group>"; };
 		23AF4B001307298200362BAB /* parser_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_internal.h; sourceTree = "<group>"; };
 		23AF4B011307298200362BAB /* parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parser.c; sourceTree = "<group>"; };
-		23AF4B021307298200362BAB /* pp_lexer.l */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lex; path = pp_lexer.l; sourceTree = "<group>"; };
 		23AF4B031307298200362BAB /* y.tab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = y.tab.h; sourceTree = "<group>"; };
+		23AF4B80130735CD00362BAB /* parser.y */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.yacc; path = parser.y; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		08FB7794FE84155DC02AAC07 /* toycen */ = {
 			isa = PBXGroup;
 			children = (
+				23AF4B7F130735BD00362BAB /* Parser Sources */,
 				23AF4B041307298F00362BAB /* Skeleton */,
 				23AF4B051307299600362BAB /* Generated */,
 				23AF4AA3130726F200362BAB /* Headers */,
@@ -46,7 +45,6 @@
 				23AF4A9C130726E800362BAB /* hash_table.c */,
 				23AF4A9D130726E800362BAB /* lexer.c */,
 				23AF4A9E130726E800362BAB /* parser_primitives.c */,
-				23AF4A9F130726E800362BAB /* pp_lexer.c */,
 				23AF4AA0130726E800362BAB /* toycen.c */,
 			);
 			name = Sources;
@@ -61,7 +59,6 @@
 				23AF4AA9130726F900362BAB /* lexer.h */,
 				23AF4AAA130726F900362BAB /* parser_primitives.h */,
 				23AF4AAB130726F900362BAB /* parser.h */,
-				23AF4AAC130726F900362BAB /* pp_lexer.h */,
 			);
 			name = Headers;
 			sourceTree = "<group>";
@@ -80,11 +77,18 @@
 			isa = PBXGroup;
 			children = (
 				23AF4B001307298200362BAB /* parser_internal.h */,
-				23AF4B021307298200362BAB /* pp_lexer.l */,
 				23AF4B011307298200362BAB /* parser.c */,
 				23AF4B031307298200362BAB /* y.tab.h */,
 			);
 			name = Generated;
+			sourceTree = "<group>";
+		};
+		23AF4B7F130735BD00362BAB /* Parser Sources */ = {
+			isa = PBXGroup;
+			children = (
+				23AF4B80130735CD00362BAB /* parser.y */,
+			);
+			name = "Parser Sources";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
