@@ -7,9 +7,12 @@ TARGET = toycen
 PEDANTIC = $(if $(INHIBIT_PEDANTRY),,-pedantic)
 WEXTRA = -Wextra
 
-YFLAGS += -dv
-CFLAGS += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES))
-LFLAGS +=
+ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
+
+YFLAGS  += -dv
+CFLAGS  += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES)) $(ARCHFLAGS)
+LFLAGS  +=
+LDFLAGS += $(ARCHFLAGS)
 
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o pp_lexer.o
 
