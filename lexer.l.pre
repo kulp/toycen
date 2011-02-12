@@ -44,6 +44,7 @@
 
     static hash_table_t types_hash;
 
+	int switch_to_input_file(const char *s);
     /// Tracks columns for error reporting
     static void c();
     static void p();

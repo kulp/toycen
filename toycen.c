@@ -12,6 +12,7 @@
  */
 
 #include "lexer.h"
+#include "pp_lexer.h"
 #include "parser.h"
 #include "hash_table.h"
 
@@ -19,7 +20,7 @@
 
 extern int yyparse();
 
-int DEBUG_LEVEL = 4;
+int DEBUG_LEVEL = 2;
 FILE* DEBUG_FILE;
 
 int main(int argc, char *argv[])
@@ -29,6 +30,9 @@ int main(int argc, char *argv[])
     DEBUG_FILE = stdout;
 
     parser_state_t ps;
+
+    if (argc > 1)
+        switch_to_input_file(argv[1]);
 
     lexer_setup();
     parser_setup(&ps);

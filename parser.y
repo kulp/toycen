@@ -45,6 +45,8 @@
 
     extern int lineno, column;
 
+    void *_tptr;
+
     static struct translation_unit *top;
 %}
 

@@ -47,10 +47,14 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
 /// size of type
 #define SoT(Type) sizeof(struct Type)
 
+/// temporary pointer for debugging output in NN(...)
+extern void *_tptr;
+
 /// new node
 #define NN(Type, ...) \
-    ( (debug(2, "allocating '" #Type "' with { " #__VA_ARGS__ " }")), \
-      ((struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__))) \
+    ( (_tptr = (struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__)), \
+      (debug(2, "allocating %p as %-25s with " #__VA_ARGS__, _tptr, #Type)), \
+      _tptr) \
     )
 
 /*
@@ -65,7 +69,7 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
 /// upgrade node (descend from existing node, replacing old node)
 #define UN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
-      (debug(2, "upgrading %p to '" #Type "' with { " #__VA_ARGS__ " }", Old)), \
+      (debug(2, "upgrading  %p to %-25s with " #__VA_ARGS__, Old, #Type)), \
       ((struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)) \
     )
 
