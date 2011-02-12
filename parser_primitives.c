@@ -34,7 +34,7 @@ void* _copy_node(void *old, void *data, size_t size, size_t off)
     assert(size >= off);
 
     /// @todo should / must we use memmove() here ?
-    memcpy((char*)old + off, data, size - off);
+    memmove((char*)old + off, (char*)data + off, size - off);
 
     return old;
 }
