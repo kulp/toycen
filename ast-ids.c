@@ -31,7 +31,8 @@ const char *id_type_names[] = {
 #undef MAKE_NODE
 
 #define DEFITEM(...)
-#define BASE(Key)               .base = NODE_TYPE_##Key,
+#define BASE(Key)               .base     = NODE_TYPE_##Key, \
+                                .base_ptr = &node_parentages[NODE_TYPE_##Key],
 #define MAKE_ID(Key,...)
 #define MAKE_PRIV(...)
 #define MAKE_NODE(Key,...) \
@@ -55,17 +56,17 @@ struct node_parentage node_parentages[] = {
 #define MAKE_PRIV(...)
 
 #define BASIC(T)                .meta = META_IS_BASIC, /*TODO*/
-#define DEFITEM(...)            { /*.meta = META_IS_INVALID,*/ __VA_ARGS__ },
-#define CHOICE(Name,...)        .meta = META_IS_CHOICE, \
-                                .c.choice = (struct node_item[]){ __VA_ARGS__ },
-#define TYPED(T,X)              T/*TODO X*/
-#define REF_NODE(Key,...)       .meta = META_IS_NODE, .c.node_type = NODE_TYPE_##Key, __VA_ARGS__
-#define REF_ID(Key,...)         .meta = META_IS_ID, .c.id_type = ID_TYPE_##Key, __VA_ARGS__
-#define REF_PRIV(...)           /*TODO*/
+#define DEFITEM(...)            { __VA_ARGS__ },
+#define CHOICE(Name,...)        .meta     = META_IS_CHOICE, \
+                                .c.choice = (struct node_item[]){ __VA_ARGS__ { .meta = META_IS_INVALID } },
+#define TYPED(T,X)              .name = STR_(X), T
+#define REF_NODE(Key)           .meta = META_IS_NODE, .c.node_type = NODE_TYPE_##Key,
+#define REF_ID(Key)             .meta = META_IS_ID  , .c.id_type   =   ID_TYPE_##Key,
+#define REF_PRIV(Key)           /*TODO*/
 #define PTR(...)                .is_pointer = true, __VA_ARGS__
 #define MAKE_NODE(Key,...) \
-    [NODE_TYPE_##Key] = { .type = NODE_TYPE_##Key, \
-                          (struct node_item[]){ __VA_ARGS__ } },
+    [NODE_TYPE_##Key] = { .type  = NODE_TYPE_##Key, \
+                          .items = (struct node_item[]){ __VA_ARGS__ { .meta = META_IS_INVALID } } },
 
 struct node_field node_fields[] = {
     #include "ast.xi"

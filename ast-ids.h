@@ -18,10 +18,11 @@ struct node_parentage {
 	enum node_type type,
 				   base;
 	size_t size;
+	struct node_parentage *base_ptr; ///< for walking convenience
 };
 
 enum meta_type {
-	META_IS_INVALID,
+	META_IS_INVALID,	///< also marks end of list
 	META_IS_NODE,
 	META_IS_ID,
 	META_IS_CHOICE,
@@ -32,6 +33,7 @@ enum meta_type {
 struct node_item {
 	enum meta_type meta;
 	bool is_pointer;
+	const char *name;
 	union {
 		enum node_type node_type;
 		enum id_type id_type;

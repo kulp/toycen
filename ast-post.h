@@ -8,3 +8,4 @@
 #undef TYPED
 #undef CHOICE
 #undef BASIC
+#undef REF_PRIV
