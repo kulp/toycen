@@ -150,7 +150,7 @@ struct assignment_expression {
             } op;
             struct assignment_expression *right;
         } assn;
-    } val;
+    } c;
 };
 #endif
 
@@ -340,7 +340,7 @@ struct unary_expression {
             struct cast_expression *ce;
         } ce;
         struct type_name *tn;
-    } val;
+    } c;
 };
 
 struct cast_expression {
@@ -487,7 +487,7 @@ struct type_specifier {
         struct aggregate_specifier *as;
         struct enum_specifier *es;
         struct type_name *tn;
-    } val;
+    } c;
 };
 
 enum storage_class_specifier {
@@ -557,7 +557,7 @@ struct direct_declarator {
             } list;
         } function;
     /// @todo unify "me" and "val" synonyms / overlap
-    } val;
+    } c;
 };
 
 struct declarator {

@@ -257,15 +257,15 @@ unary_expression
     : postfix_expression
         { $$ = UN(unary_expression, $1, .type = UET_POSTFIX); }
     | PLUSPLUS unary_expression
-        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREINCREMENT, .val.ue = $2); }
+        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREINCREMENT, .c.ue = $2); }
     | MINUSMINUS unary_expression
-        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREDECREMENT, .val.ue = $2); }
+        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREDECREMENT, .c.ue = $2); }
     | unary_operator cast_expression
-        { $$ = NN(unary_expression, .type = UET_UNARY_OP, .val.ce = { .uo = $1, .ce = $2 }); }
+        { $$ = NN(unary_expression, .type = UET_UNARY_OP, .c.ce = { .uo = $1, .ce = $2 }); }
     | SIZEOF unary_expression
-        { $$ = NN(unary_expression, .type = UET_SIZEOF_EXPR, .val.ue = $2); }
+        { $$ = NN(unary_expression, .type = UET_SIZEOF_EXPR, .c.ue = $2); }
     | SIZEOF '(' type_name ')'
-        { $$ = NN(unary_expression, .type = UET_SIZEOF_TYPE, .val.tn = $3); }
+        { $$ = NN(unary_expression, .type = UET_SIZEOF_TYPE, .c.tn = $3); }
     ;
 
 unary_operator
@@ -385,9 +385,9 @@ conditional_expression
 
 assignment_expression
     : conditional_expression
-        { $$ = NN(assignment_expression, .has_op = false, .val.right = $1); }
+        { $$ = NN(assignment_expression, .has_op = false, .c.right = $1); }
     | unary_expression assignment_operator assignment_expression
-        { $$ = NN(assignment_expression, .val.assn = { .left = $1, .op = $2, .right = $3 }); }
+        { $$ = NN(assignment_expression, .c.assn = { .left = $1, .op = $2, .right = $3 }); }
     ;
 
 assignment_operator
@@ -423,7 +423,7 @@ declaration
           if (($1)->type == DS_HAS_STORAGE_CLASS && ($1)->me.scs == SCS_TYPEDEF) {
               struct init_declarator_list *head = $2;
               while (head) {
-                  add_typename(NULL, head->base.base.base.val.id->name);
+                  add_typename(NULL, head->base.base.base.c.id->name);
                   head = head->left;
               }
           }
@@ -494,11 +494,11 @@ type_specifier
     | UNSIGNED
         { $$ = NN(type_specifier, .type = TS_UNSIGNED); }
     | struct_or_union_specifier
-        { $$ = NN(type_specifier, .type = TS_STRUCT_OR_UNION_SPEC, .val.as = $1); }
+        { $$ = NN(type_specifier, .type = TS_STRUCT_OR_UNION_SPEC, .c.as = $1); }
     | enum_specifier
-        { $$ = NN(type_specifier, .type = TS_ENUM_SPEC, .val.es = $1); }
+        { $$ = NN(type_specifier, .type = TS_ENUM_SPEC, .c.es = $1); }
     | TYPEDEF_NAME
-        { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .val.tn = NULL /* TODO str2type_name(yylval.str)*/); }
+        { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .c.tn = NULL /* TODO str2type_name(yylval.str)*/); }
     ;
 
 struct_or_union_specifier
@@ -605,19 +605,19 @@ declarator
 
 direct_declarator
     : identifier
-        { $$ = NN(direct_declarator, .type = DD_IDENTIFIER, .val.id = $1); }
+        { $$ = NN(direct_declarator, .type = DD_IDENTIFIER, .c.id = $1); }
     | '(' declarator ')'
-        { $$ = NN(direct_declarator, .type = DD_PARENTHESIZED, .val.decl = $2); }
+        { $$ = NN(direct_declarator, .type = DD_PARENTHESIZED, .c.decl = $2); }
     | direct_declarator '[' constant_expression ']'
-        { $$ = NN(direct_declarator, .type = DD_ARRAY, .val.array = { .left = $1, .index = $3 }); }
+        { $$ = NN(direct_declarator, .type = DD_ARRAY, .c.array = { .left = $1, .index = $3 }); }
     | direct_declarator '[' ']'
-        { $$ = NN(direct_declarator, .type = DD_ARRAY, .val.array = { .left = $1, .index = NULL }); }
+        { $$ = NN(direct_declarator, .type = DD_ARRAY, .c.array = { .left = $1, .index = NULL }); }
     | direct_declarator '(' parameter_type_list ')'
-        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .val.function = { .left = $1, .type = FD_HAS_PLIST, .list.param = $3 }); }
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c.function = { .left = $1, .type = FD_HAS_PLIST, .list.param = $3 }); }
     | direct_declarator '(' identifier_list ')'
-        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .val.function = { .left = $1, .type = FD_HAS_ILIST, .list.ident = $3 }); }
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c.function = { .left = $1, .type = FD_HAS_ILIST, .list.ident = $3 }); }
     | direct_declarator '(' ')'
-        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .val.function = { .left = $1, .type = FD_HAS_NONE }); }
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c.function = { .left = $1, .type = FD_HAS_NONE }); }
     ;
 
 pointer
