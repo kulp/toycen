@@ -1,35 +1,5 @@
-#if DEBUG
-// easier to debug structs than unions when calloc()ed
-#define UNION_KEYWORD struct
-#else
-#define UNION_KEYWORD union
-#endif
-
-#define MAKE(Sc,Key,...)        DEF_##Sc(Key,__VA_ARGS__); MAKE_TYPE(Sc,Key);
-#define MAKE_TYPE(Sc,Key)       typedef REF_##Sc(Key) T_##Key
-#define DEF(Sc,Key,Name,...)    DEF_##Sc(Key,__VA_ARGS__)
-#define REF(Sc,Key,Name,...)    REF_##Sc(Key) Name
-
-#define CHOICE(...)             UNION_KEYWORD { __VA_ARGS__ } c
-
-#define DEF_ID(Key,...)         enum Key { __VA_ARGS__ }
-#define REF_ID(Key)             enum Key
-#define DEF_NODE(Key,...)       struct Key { enum node_type type; __VA_ARGS__ }
-#define REF_NODE(Key)           struct Key
-#define DEF_PRIV(Key,...)       struct Key { __VA_ARGS__ }
-#define REF_PRIV(Key)           struct Key
-
-#define PTR(X)                  X*
-#define TYPED_(T,X)             T X
-#define REFITEM_(...)           __VA_ARGS__,
-#define DEFITEM_(...)           __VA_ARGS__;
-
-#define ENUM_VAL(X,V)           X = V
-
-/// @todo
-
 MAKE(ID,node_type,
-        REFITEM_(NT_max)
+        REFITEM(NT_max)
     )
 
 MAKE(NODE,node,
@@ -37,144 +7,145 @@ MAKE(NODE,node,
     )
 
 MAKE(ID,assignment_operator,
-        REFITEM_(AO_INVALID)
-        REFITEM_(AO_MULEQ)
-        REFITEM_(AO_DIVEQ)
-        REFITEM_(AO_MODEQ)
-        REFITEM_(AO_ADDEQ)
-        REFITEM_(AO_SUBEQ)
-        REFITEM_(AO_SLEQ)
-        REFITEM_(AO_SREQ)
-        REFITEM_(AO_ANDEQ)
-        REFITEM_(AO_XOREQ)
-        REFITEM_(AO_OREQ)
-        REFITEM_(ENUM_VAL(AO_EQ,'='))
+        REFITEM(AO_INVALID)
+        REFITEM(AO_MULEQ)
+        REFITEM(AO_DIVEQ)
+        REFITEM(AO_MODEQ)
+        REFITEM(AO_ADDEQ)
+        REFITEM(AO_SUBEQ)
+        REFITEM(AO_SLEQ)
+        REFITEM(AO_SREQ)
+        REFITEM(AO_ANDEQ)
+        REFITEM(AO_XOREQ)
+        REFITEM(AO_OREQ)
+        REFITEM(ENUM_VAL(AO_EQ,'='))
     )
 
 MAKE(PRIV,assignment_inner_,
-        DEFITEM_(TYPED_(PTR(REF_NODE(unary_expression)),left))
-        DEFITEM_(TYPED_(REF_ID(assignment_operator),op))
-        DEFITEM_(TYPED_(PTR(REF_NODE(assignment_expression)),right))
+        DEFITEM(TYPED(PTR(REF_NODE(unary_expression)),left))
+        DEFITEM(TYPED(REF_ID(assignment_operator),op))
+        DEFITEM(TYPED(PTR(REF_NODE(assignment_expression)),right))
     )
 
-#if 0
-DEF_NODE(node,REF(ID,node,node_type))
-
-DEF(NODE,node,REF(ID,node,node_type))
-
-struct node {
-    enum node_type type;
-};
-#endif
-
 MAKE(ID,type_class,
-        REFITEM_(TC_INVALID)
-        REFITEM_(TC_VOID)
-        REFITEM_(TC_INT)
-        REFITEM_(TC_FLOAT)
-        REFITEM_(TC_STRUCT)
-        REFITEM_(TC_UNION)
-        REFITEM_(TC_max)
+        REFITEM(TC_INVALID)
+        REFITEM(TC_VOID)
+        REFITEM(TC_INT)
+        REFITEM(TC_FLOAT)
+        REFITEM(TC_STRUCT)
+        REFITEM(TC_UNION)
+        REFITEM(TC_max)
     )
 
 MAKE(ID,primary_expression_type,
-        REFITEM_(PRET_INVALID)
-        REFITEM_(PRET_IDENTIFIER)
-        REFITEM_(PRET_INTEGER)
-        REFITEM_(PRET_CHARACTER)
-        REFITEM_(PRET_FLOATING)
-        REFITEM_(PRET_STRING)
-        REFITEM_(PRET_PARENTHESIZED)
+        REFITEM(PRET_INVALID)
+        REFITEM(PRET_IDENTIFIER)
+        REFITEM(PRET_INTEGER)
+        REFITEM(PRET_CHARACTER)
+        REFITEM(PRET_FLOATING)
+        REFITEM(PRET_STRING)
+        REFITEM(PRET_PARENTHESIZED)
     )
 
 MAKE(ID,expression_type,
-        REFITEM_(ET_INVALID)
-        REFITEM_(ET_CAST_EXPRESSION)
-        REFITEM_(ET_MULTIPLICATIVE_EXRESSION)
+        REFITEM(ET_INVALID)
+        REFITEM(ET_CAST_EXPRESSION)
+        REFITEM(ET_MULTIPLICATIVE_EXRESSION)
         /// @todo fill in the rest
-        REFITEM_(ET_max)
+        REFITEM(ET_max)
     )
 
 MAKE(ID,unary_operator,
-        REFITEM_(UO_INVALID)
-        REFITEM_(ENUM_VAL(UO_ADDRESS_OF    ,'&'))
-        REFITEM_(ENUM_VAL(UO_DEREFERENCE   ,'*'))
-        REFITEM_(ENUM_VAL(UO_PLUS          ,'+'))
-        REFITEM_(ENUM_VAL(UO_MINUS         ,'-'))
-        REFITEM_(ENUM_VAL(UO_BITWISE_INVERT,'~'))
-        REFITEM_(ENUM_VAL(UO_LOGICAL_INVERT,'!'))
+        REFITEM(UO_INVALID)
+        REFITEM(ENUM_VAL(UO_ADDRESS_OF    ,'&'))
+        REFITEM(ENUM_VAL(UO_DEREFERENCE   ,'*'))
+        REFITEM(ENUM_VAL(UO_PLUS          ,'+'))
+        REFITEM(ENUM_VAL(UO_MINUS         ,'-'))
+        REFITEM(ENUM_VAL(UO_BITWISE_INVERT,'~'))
+        REFITEM(ENUM_VAL(UO_LOGICAL_INVERT,'!'))
     )
 
 MAKE(ID,binary_operator,
         /// @todo but what about multi-character operators
-        REFITEM_(BO_INVALID)
-        REFITEM_(ENUM_VAL(BO_ADD        ,'+'))
-        REFITEM_(ENUM_VAL(BO_SUBTRACT   ,'-'))
-        REFITEM_(ENUM_VAL(BO_MULTIPLY   ,'*'))
-        REFITEM_(ENUM_VAL(BO_DIVIDE     ,'/'))
-        REFITEM_(ENUM_VAL(BO_MODULUS    ,'%'))
-        REFITEM_(ENUM_VAL(BO_BITWISE_AND,'&'))
-        REFITEM_(BO_max)
+        REFITEM(BO_INVALID)
+        REFITEM(ENUM_VAL(BO_ADD        ,'+'))
+        REFITEM(ENUM_VAL(BO_SUBTRACT   ,'-'))
+        REFITEM(ENUM_VAL(BO_MULTIPLY   ,'*'))
+        REFITEM(ENUM_VAL(BO_DIVIDE     ,'/'))
+        REFITEM(ENUM_VAL(BO_MODULUS    ,'%'))
+        REFITEM(ENUM_VAL(BO_BITWISE_AND,'&'))
+        REFITEM(BO_max)
     )
 
 MAKE(ID,increment_operator,
-        REFITEM_(IO_INCREMENT)
-        REFITEM_(IO_DECREMENT)
+        REFITEM(IO_INCREMENT)
+        REFITEM(IO_DECREMENT)
     )
 
 MAKE(NODE,assignment_expression,
-        DEFITEM_(TYPED_(bool,has_op))
-        DEFITEM_(CHOICE(
-            DEFITEM_(TYPED_(PTR(REF_NODE(conditional_expression)),right))
-            DEFITEM_(TYPED_(REF_NODE(assignment_inner_),assn))
+        DEFITEM(TYPED(bool,has_op))
+        DEFITEM(CHOICE(c,
+            DEFITEM(TYPED(PTR(REF_NODE(conditional_expression)),right))
+            DEFITEM(TYPED(REF_NODE(assignment_inner_),assn))
         ))
     )
 
-struct expression {
-    struct assignment_expression right;
-    struct expression *left;
-};
-
-struct specifier_qualifier_list {
-    enum { SQ_HAS_TYPE_SPEC, SQ_HAS_TYPE_QUAL } type;
-    struct specifier_qualifier_list *next;
-};
-
-MAKE(ID,type_qualifier,
-        REFITEM_(TQ_INVALID)
-        REFITEM_(TQ_CONST)
-        REFITEM_(TQ_VOLATILE)
+MAKE(NODE,expression,
+        DEFITEM(TYPED(PTR(REF_NODE(assignment_expression)),right))
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),left))
     )
 
-struct type_qualifier_list {
-    enum type_qualifier me;
-    struct type_qualifier_list *left;
-};
+MAKE(ID,sq_meta,
+        REFITEM(SQ_HAS_TYPE_SPEC)
+        REFITEM(SQ_HAS_TYPE_QUAL)
+    )
 
-struct pointer {
-    struct type_qualifier_list *tq;
-    struct pointer *right;
-};
+MAKE(NODE,specifier_qualifier_list,
+        DEFITEM(TYPED(REF_ID(sq_meta),type))
+        DEFITEM(TYPED(PTR(REF_NODE(specifier_qualifier_list)),next))
+    )
 
-struct direct_abstract_declarator {
-    enum direct_abstract_declarator_subtype {
-        DA_INVALID,
-        DA_PARENTHESIZED,
-        DA_ARRAY_INDEX,
-        DA_FUNCTION_CALL,
-    } type;
-    union {
-        struct abstract_declarator *abs;
-        struct {
-            struct direct_abstract_declarator *left;
-            struct constant_expression *idx;
-        } array;
-        struct {
-            struct direct_abstract_declarator *left;
-            struct parameter_type_list *params;
-        } function;
-    } me;
-};
+MAKE(ID,type_qualifier,
+        REFITEM(TQ_INVALID)
+        REFITEM(TQ_CONST)
+        REFITEM(TQ_VOLATILE)
+    )
+
+MAKE(NODE,type_qualifier_list,
+        DEFITEM(TYPED(REF_ID(type_qualifier),me))
+        DEFITEM(TYPED(PTR(REF_NODE(type_qualifier_list)),left))
+    )
+
+MAKE(NODE,pointer,
+        DEFITEM(TYPED(PTR(REF_NODE(type_qualifier_list)),tq))
+        DEFITEM(TYPED(PTR(REF_NODE(pointer)),right))
+    )
+
+MAKE(ID,direct_abstract_declarator_subtype,
+        REFITEM(DA_INVALID)
+        REFITEM(DA_PARENTHESIZED)
+        REFITEM(DA_ARRAY_INDEX)
+        REFITEM(DA_FUNCTION_CALL)
+    )
+
+MAKE(PRIV,array_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(direct_abstract_declarator)),left))
+        DEFITEM(TYPED(PTR(REF_NODE(constant_expression)),idx))
+    )
+
+MAKE(PRIV,func_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(direct_abstract_declarator)),left))
+        DEFITEM(TYPED(PTR(REF_NODE(parameter_type_list)),params))
+    )
+
+MAKE(NODE,direct_abstract_declarator,
+        DEFITEM(TYPED(REF_ID(direct_abstract_declarator_subtype),type))
+        DEFITEM(CHOICE(me,
+            DEFITEM(TYPED(PTR(REF_NODE(abstract_declarator)),abs))
+            DEFITEM(TYPED(REF_PRIV(array_inner_),array))
+            DEFITEM(TYPED(REF_PRIV(func_inner_),function))
+        ))
+        )
 
 struct abstract_declarator {
     struct pointer *ptr;
@@ -459,12 +430,12 @@ struct type_specifier {
 };
 
 MAKE(ID,storage_class_specifier,
-        REFITEM_(SCS_INVALID)
-        REFITEM_(SCS_TYPEDEF)
-        REFITEM_(SCS_EXTERN)
-        REFITEM_(SCS_STATIC)
-        REFITEM_(SCS_AUTO)
-        REFITEM_(SCS_REGISTER)
+        REFITEM(SCS_INVALID)
+        REFITEM(SCS_TYPEDEF)
+        REFITEM(SCS_EXTERN)
+        REFITEM(SCS_STATIC)
+        REFITEM(SCS_AUTO)
+        REFITEM(SCS_REGISTER)
     )
 
 struct declaration_specifiers {

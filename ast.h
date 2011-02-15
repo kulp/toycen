@@ -2,6 +2,7 @@
 #define AST_H
 
 #include "ast-pre.h"
+#include "ast-gen-pre.h"
 #include "ast-gen.h"
 #include "ast-post.h"
 #endif
