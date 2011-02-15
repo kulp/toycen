@@ -1,4 +1,4 @@
-CPP = gcc -E
+CPP = gcc -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
 endif
@@ -25,9 +25,12 @@ toycen.o: CFLAGS += -Wno-unused-parameter
 toycen: parser.o parser_primitives.o lexer.o hash_table.o
 parser.o: CFLAGS += -Wno-missing-field-initializers -D_XOPEN_SOURCE=600
 
-CLEANFILES += ast-gen.h
-ast-gen.h: ast.xi
-	$(CPP) $(CPPFLAGS) -P -x c $< | indent /dev/stdin $@
+CLEANFILES += ast-gen.h ast-gen2.h
+ast-gen2.h: ast.xi
+	$(CPP) $(CPPFLAGS) $^ | indent /dev/stdin $@
+
+ast-gen.h: ast-gen2.h
+	$(CPP) $(CPPFLAGS) -include ast-gen-pre.h $^ | indent /dev/stdin $@
 
 # Don't complain about unused yyunput()
 lexer.o: CFLAGS += -Wno-unused-function

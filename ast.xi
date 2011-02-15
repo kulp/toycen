@@ -145,22 +145,22 @@ MAKE(NODE,direct_abstract_declarator,
             DEFITEM(TYPED(REF_PRIV(array_inner_),array))
             DEFITEM(TYPED(REF_PRIV(func_inner_),function))
         ))
-        )
+    )
 
-struct abstract_declarator {
-    struct pointer *ptr;
-    struct direct_abstract_declarator *right;
-};
+MAKE(NODE,abstract_declarator,
+        DEFITEM(TYPED(PTR(REF_NODE(pointer)),ptr))
+        DEFITEM(TYPED(PTR(REF_NODE(direct_abstract_declarator)),right))
+    )
 
-struct type_name {
-    struct specifier_qualifier_list *list;
-    struct abstract_declarator *decl;
-};
+MAKE(NODE,type_name,
+        DEFITEM(TYPED(PTR(REF_NODE(specifier_qualifier_list)),list))
+        DEFITEM(TYPED(PTR(REF_NODE(abstract_declarator)),decl))
+    )
 
-struct identifier {
-    size_t len;
-    char *name;
-};
+MAKE(NODE,identifier,
+        DEFITEM(TYPED(size_t,len))
+        DEFITEM(TYPED(PTR(char),name))
+    )
 
 MAKE(NODE,integer,
         DEFITEM(TYPED(size_t,size))
@@ -182,253 +182,284 @@ MAKE(NODE,integer,
         ))
     )
 
-struct character {
+MAKE(NODE,character,
     /// @todo support wchars ?
     //size_t size;
-    bool has_signage;
-    bool is_signed;
-    union {
-        char c;
-        signed char lc;
-        unsigned char uc;
-    } me;
-};
+    DEFITEM(TYPED(bool,has_signage))
+    DEFITEM(TYPED(bool,is_signed))
+    DEFITEM(CHOICE(me,
+            DEFITEM(TYPED(char,c))
+            DEFITEM(TYPED(signed char,lc))
+            DEFITEM(TYPED(unsigned char,uc))
+        ))
+    )
 
-struct floating {
-    size_t size;
-    union {
-        float f;
-        double d;
-        long double ld;
-    } me;
-};
+MAKE(NODE,floating,
+    DEFITEM(TYPED(size_t,size))
+    DEFITEM(CHOICE(me,
+            DEFITEM(TYPED(float,f))
+            DEFITEM(TYPED(double,d))
+            DEFITEM(TYPED(long double,ld))
+        ))
+    )
 
-struct string {
-    size_t size;
-    struct character *value;
-    char *cached;
-};
+MAKE(NODE,string,
+    DEFITEM(TYPED(size_t,size))
+    DEFITEM(TYPED(PTR(REF_NODE(character)),value))
+    DEFITEM(TYPED(char,*cached))
+    )
 
-struct _expression_having_type {
-    enum expression_type type;
-};
+MAKE(NODE,expression_having_type_,
+        DEFITEM(TYPED(REF_ID(expression_type),type))
+    )
 
-struct primary_expression {
-    struct _expression_having_type base;
-    enum primary_expression_type type;
-    union {
-        struct identifier *id;
-        struct integer *i;
-        struct character *c;
-        struct floating *f;
-        struct string *s;
-        struct expression *e;
-    } me;
-};
+MAKE(NODE,primary_expression,
+        DEFITEM(TYPED(REF_NODE(expression_having_type_),base))
+        DEFITEM(TYPED(REF_ID(primary_expression_type),type))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
+                DEFITEM(TYPED(PTR(REF_NODE(integer)),i))
+                DEFITEM(TYPED(PTR(REF_NODE(character)),c))
+                DEFITEM(TYPED(PTR(REF_NODE(floating)),f))
+                DEFITEM(TYPED(PTR(REF_NODE(string)),s))
+                DEFITEM(TYPED(PTR(REF_NODE(expression)),e))
+            ))
+    )
 
-struct argument_expression_list {
-    struct assignment_expression base;
-    struct argument_expression_list *left;
-};
+MAKE(NODE,argument_expression_list,
+        DEFITEM(TYPED(REF_NODE(assignment_expression),base))
+        DEFITEM(TYPED(PTR(REF_NODE(argument_expression_list)),left))
+    )
 
-struct postfix_expression {
+MAKE(ID,postfix_expression_type,
+        REFITEM(PET_INVALID)
+        REFITEM(PET_PRIMARY)
+        REFITEM(PET_ARRAY_INDEX)
+        REFITEM(PET_FUNCTION_CALL)
+        REFITEM(PET_AGGREGATE_SELECTION)
+        REFITEM(PET_AGGREGATE_PTR_SELECTION)
+        REFITEM(PET_POSTINCREMENT)
+        REFITEM(PET_POSTDECREMENT)
+    )
+
+MAKE(PRIV,array_postfix_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(postfix_expression)),left))
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),index))
+    )
+
+MAKE(PRIV,function_postfix_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(postfix_expression)),left))
+        DEFITEM(TYPED(PTR(REF_NODE(argument_expression_list)),ael))
+    )
+MAKE(PRIV,aggregate_postfix_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(postfix_expression)),left))
+        DEFITEM(TYPED(PTR(REF_NODE(identifier)),designator))
+    )
+MAKE(NODE,postfix_expression,
     //struct primary_expression me;
-    enum postfix_expression_type {
-        PET_INVALID,
-        PET_PRIMARY,
-        PET_ARRAY_INDEX,
-        PET_FUNCTION_CALL,
-        PET_AGGREGATE_SELECTION,
-        PET_AGGREGATE_PTR_SELECTION,
-        PET_POSTINCREMENT,
-        PET_POSTDECREMENT
-    } type;
-    union {
-        struct primary_expression *pri;
-        struct postfix_expression *left;
-        struct {
-            struct postfix_expression *left;
-            struct expression *index;
-        } array;
-        struct {
-            struct postfix_expression *left;
-            struct argument_expression_list *ael;
-        } function;
-        struct {
-            struct postfix_expression *left;
-            struct identifier *designator;
-        } aggregate;
-    } me;
-    //struct postfix_expression *left;
-};
+        DEFITEM(TYPED(REF_ID(postfix_expression_type),type))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(PTR(REF_NODE(primary_expression)),pri))
+                DEFITEM(TYPED(PTR(REF_NODE(postfix_expression)),left))
+                DEFITEM(TYPED(REF_NODE(array_postfix_inner_),array))
+                DEFITEM(TYPED(REF_NODE(function_postfix_inner_),function))
+                DEFITEM(TYPED(REF_NODE(aggregate_postfix_inner_),aggregate))
+            ))
+        //struct postfix_expression *left;
+    )
 
-struct unary_expression {
-    struct postfix_expression me;
-    enum unary_expression_type {
-        UET_INVALID,
-        UET_POSTFIX,
-        UET_PREINCREMENT,
-        UET_PREDECREMENT,
-        UET_UNARY_OP,
-        UET_SIZEOF_EXPR,
-        UET_SIZEOF_TYPE
-    } type;
-    union {
-        struct unary_expression *ue;
-        struct {
-            enum unary_operator uo;
-            struct cast_expression *ce;
-        } ce;
-        struct type_name *tn;
-    } c;
-};
+MAKE(ID,unary_expression_type,
+        REFITEM(UET_INVALID)
+        REFITEM(UET_POSTFIX)
+        REFITEM(UET_PREINCREMENT)
+        REFITEM(UET_PREDECREMENT)
+        REFITEM(UET_UNARY_OP)
+        REFITEM(UET_SIZEOF_EXPR)
+        REFITEM(UET_SIZEOF_TYPE)
+    )
 
-struct cast_expression {
-    union {
-        struct unary_expression *unary;
-        struct {
-            struct cast_expression *ce;
-            struct type_name *tn;
-        } cast;
-    } me;
-};
+MAKE(PRIV,ce_unary_inner_,
+        DEFITEM(TYPED(REF_ID(unary_operator),uo))
+        DEFITEM(TYPED(PTR(REF_NODE(cast_expression)),ce))
+    )
 
-struct multiplicative_expression {
-    struct cast_expression right;
-    struct multiplicative_expression *left; ///< may be NULL
-    enum binary_operator op;                ///< if @c is NULL, nonsensical
-};
+MAKE(NODE,unary_expression,
+        DEFITEM(TYPED(REF_NODE(postfix_expression),me))
+        DEFITEM(TYPED(REF_ID(unary_expression_type),type))
+        DEFITEM(CHOICE(c,
+                DEFITEM(TYPED(PTR(REF_NODE(unary_expression)),ue))
+                DEFITEM(TYPED(REF_NODE(ce_unary_inner_),ce))
+                DEFITEM(TYPED(PTR(REF_NODE(type_name)),tn))
+            ))
+    )
 
-struct additive_expression {
-    struct multiplicative_expression right;
-    struct additive_expression *left;       ///< may be NULL
-    enum binary_operator op;                ///< if @c is NULL, nonsensical
-};
+MAKE(PRIV,cast_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(cast_expression)),ce))
+        DEFITEM(TYPED(PTR(REF_NODE(type_name)),tn))
+    )
 
-struct shift_expression {
-    struct additive_expression base;
-    enum shift_operator { SO_LSH, SO_RSH } op;
-    struct shift_expression *left;
-};
+MAKE(NODE,cast_expression,
+    DEFITEM(CHOICE(me,
+            DEFITEM(TYPED(PTR(REF_NODE(unary_expression)),unary))
+            DEFITEM(TYPED(REF_NODE(cast_inner_),cast))
+        ))
+    )
 
-struct relational_expression {
-    struct shift_expression right;
-    enum relational_operator { RO_LT, RO_GT, RO_LTEQ, RO_GTEQ } op;
-    struct relational_expression *left;
-};
+MAKE(NODE,multiplicative_expression,
+        DEFITEM(TYPED(REF_NODE(cast_expression),right))
+        DEFITEM(TYPED(PTR(REF_NODE(multiplicative_expression)),left)) ///< may be NULL
+        DEFITEM(TYPED(REF_ID(binary_operator),op))                ///< if @c is NULL, nonsensical
+    )
 
-struct equality_expression {
-    struct relational_expression right;
-    bool eq;
-    struct equality_expression *left;
-};
+MAKE(NODE,additive_expression,
+        DEFITEM(TYPED(REF_NODE(multiplicative_expression),right))
+        DEFITEM(TYPED(PTR(REF_NODE(additive_expression)),left))       ///< may be NULL
+        DEFITEM(TYPED(REF_ID(binary_operator),op))                ///< if @c is NULL, nonsensical
+    )
 
-struct and_expression {
-    struct equality_expression right;
-    struct and_expression *left;
-};
+MAKE(ID,shift_operator,
+        REFITEM(SO_LSH)
+        REFITEM(SO_RSH)
+    )
 
-struct exclusive_or_expression {
-    struct and_expression right;
-    struct exclusive_or_expression *left;
-};
+MAKE(NODE,shift_expression,
+        DEFITEM(TYPED(REF_NODE(additive_expression),base))
+        DEFITEM(TYPED(REF_ID(shift_operator),op))
+        DEFITEM(TYPED(PTR(REF_NODE(shift_expression)),left))
+    )
 
-struct inclusive_or_expression {
-    struct exclusive_or_expression right;
-    struct inclusive_or_expression *left;
-};
+MAKE(ID,relational_operator,
+        REFITEM(RO_LT)
+        REFITEM(RO_GT)
+        REFITEM(RO_LTEQ)
+        REFITEM(RO_GTEQ)
+    )
 
-struct logical_and_expression {
-    struct inclusive_or_expression right;
-    struct logical_and_expression *left;
-};
+MAKE(NODE,relational_expression,
+        DEFITEM(TYPED(REF_NODE(shift_expression),right))
+        DEFITEM(TYPED(REF_ID(relational_operator),op))
+        DEFITEM(TYPED(PTR(REF_NODE(relational_expression)),left))
+    )
 
-struct logical_or_expression {
-    struct logical_and_expression right;
-    struct logical_or_expression *left;
-};
+MAKE(NODE,equality_expression,
+        DEFITEM(TYPED(REF_NODE(relational_expression),right))
+        DEFITEM(TYPED(bool,eq))
+        DEFITEM(TYPED(PTR(REF_NODE(equality_expression)),left))
+    )
 
-struct conditional_expression {
-    struct logical_or_expression right;
-    bool is_ternary;
-    struct expression *if_expr;
-    struct conditional_expression *else_expr;
-};
+MAKE(NODE,and_expression,
+        DEFITEM(TYPED(REF_NODE(equality_expression),right))
+        DEFITEM(TYPED(PTR(REF_NODE(and_expression)),left))
+    )
 
-struct constant_expression {
-    struct conditional_expression right;
-    char dummy; ///< to avoid warnings about empty initializer braces, since there is nothing to initialize
-};
+MAKE(NODE,exclusive_or_expression,
+        DEFITEM(TYPED(REF_NODE(and_expression),right))
+        DEFITEM(TYPED(PTR(REF_NODE(exclusive_or_expression)),left))
+    )
 
-struct aggregate_definition {
-    bool TODO; /// @todo
-};
+MAKE(NODE,inclusive_or_expression,
+        DEFITEM(TYPED(REF_NODE(exclusive_or_expression),right))
+        DEFITEM(TYPED(PTR(REF_NODE(inclusive_or_expression)),left))
+    )
 
-struct aggregate_definition_list {
-    struct aggregate_definition *me;
-    struct aggregate_definition_list *prev;
-};
+MAKE(NODE,logical_and_expression,
+        DEFITEM(TYPED(REF_NODE(inclusive_or_expression),right))
+        DEFITEM(TYPED(PTR(REF_NODE(logical_and_expression)),left))
+    )
 
-struct aggregate_declaration {
-    struct specifier_qualifier_list *sq;
-    struct aggregate_declarator_list *decl;
-};
+MAKE(NODE,logical_or_expression,
+        DEFITEM(TYPED(REF_NODE(logical_and_expression),right))
+        DEFITEM(TYPED(PTR(REF_NODE(logical_or_expression)),left))
+    )
 
-struct aggregate_declaration_list {
-    struct aggregate_declaration *me;
-    struct aggregate_declaration_list *prev;
-};
+MAKE(NODE,conditional_expression,
+        DEFITEM(TYPED(REF_NODE(logical_or_expression),right))
+        DEFITEM(TYPED(bool,is_ternary))
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),if_expr))
+        DEFITEM(TYPED(PTR(REF_NODE(conditional_expression)),else_expr))
+    )
 
-struct aggregate_specifier {
-    struct node base;
-    enum aggregate_type { AT_UNION, AT_STRUCT } type;
-    bool has_id;
-    struct identifier *id;
-    bool has_list;
-    struct aggregate_declaration_list *list;
-};
+MAKE(NODE,constant_expression,
+        DEFITEM(TYPED(REF_NODE(conditional_expression),right))
+        DEFITEM(TYPED(char,dummy)) ///< to avoid warnings about empty initializer braces, since there is nothing to initialize
+    )
 
-struct enumerator {
-    struct identifier *id;
-    struct constant_expression *val;
-};
+MAKE(NODE,aggregate_definition,
+        DEFITEM(TYPED(bool,TODO)) /// @todo
+    )
 
-struct enumerator_list {
-    struct enumerator *me;
-    struct enumerator_list *prev;
-};
+MAKE(NODE,aggregate_definition_list,
+        DEFITEM(TYPED(PTR(REF_NODE(aggregate_definition)),me))
+        DEFITEM(TYPED(PTR(REF_NODE(aggregate_definition_list)),prev))
+    )
 
-struct enum_specifier {
-    struct node base;
-    bool has_id;
-    struct identifier *id;
-    bool has_list;
-    struct enumerator_list *list;
-};
+MAKE(NODE,aggregate_declaration,
+        DEFITEM(TYPED(PTR(REF_NODE(specifier_qualifier_list)),sq))
+        DEFITEM(TYPED(PTR(REF_NODE(aggregate_declarator_list)),decl))
+    )
 
-struct type_specifier {
-    struct node base;
-    enum type_specifier_type {
-        TS_INVALID,
-        TS_VOID,
-        TS_CHAR,
-        TS_SHORT,
-        TS_INT,
-        TS_LONG,
-        TS_FLOAT,
-        TS_DOUBLE,
-        TS_SIGNED,
-        TS_UNSIGNED,
-        TS_STRUCT_OR_UNION_SPEC,
-        TS_ENUM_SPEC,
-        TS_TYPEDEF_NAME
-    } type;
-    union {
-        struct aggregate_specifier *as;
-        struct enum_specifier *es;
-        struct type_name *tn;
-    } c;
-};
+MAKE(NODE,aggregate_declaration_list,
+        DEFITEM(TYPED(PTR(REF_NODE(aggregate_declaration)),me))
+        DEFITEM(TYPED(PTR(REF_NODE(aggregate_declaration_list)),prev))
+    )
+
+MAKE(ID,aggregate_type,
+        REFITEM(AT_UNION)
+        REFITEM(AT_STRUCT)
+    )
+
+MAKE(NODE,aggregate_specifier,
+        DEFITEM(TYPED(REF_NODE(node),base))
+        DEFITEM(TYPED(REF_ID(aggregate_type),type))
+        DEFITEM(TYPED(bool,has_id))
+        DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
+        DEFITEM(TYPED(bool,has_list))
+        DEFITEM(TYPED(PTR(REF_NODE(aggregate_declaration_list)),list))
+    )
+
+MAKE(NODE,enumerator,
+        DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
+        DEFITEM(TYPED(PTR(REF_NODE(constant_expression)),val))
+    )
+
+MAKE(NODE,enumerator_list,
+        DEFITEM(TYPED(PTR(REF_NODE(enumerator)),me))
+        DEFITEM(TYPED(PTR(REF_NODE(enumerator_list)),prev))
+    )
+
+MAKE(NODE,enum_specifier,
+        DEFITEM(TYPED(REF_NODE(node),base))
+        DEFITEM(TYPED(bool,has_id))
+        DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
+        DEFITEM(TYPED(bool,has_list))
+        DEFITEM(TYPED(PTR(REF_NODE(enumerator_list)),list))
+    )
+
+MAKE(ID,type_specifier_type,
+        REFITEM(TS_INVALID)
+        REFITEM(TS_VOID)
+        REFITEM(TS_CHAR)
+        REFITEM(TS_SHORT)
+        REFITEM(TS_INT)
+        REFITEM(TS_LONG)
+        REFITEM(TS_FLOAT)
+        REFITEM(TS_DOUBLE)
+        REFITEM(TS_SIGNED)
+        REFITEM(TS_UNSIGNED)
+        REFITEM(TS_STRUCT_OR_UNION_SPEC)
+        REFITEM(TS_ENUM_SPEC)
+        REFITEM(TS_TYPEDEF_NAME)
+    )
+
+MAKE(NODE,type_specifier,
+        DEFITEM(TYPED(REF_NODE(node),base))
+        DEFITEM(TYPED(REF_ID(type_specifier_type),type))
+        DEFITEM(CHOICE(c,
+                DEFITEM(TYPED(PTR(REF_NODE(aggregate_specifier)),as))
+                DEFITEM(TYPED(PTR(REF_NODE(enum_specifier)),es))
+                DEFITEM(TYPED(PTR(REF_NODE(type_name)),tn))
+            ))
+    )
 
 MAKE(ID,storage_class_specifier,
         REFITEM(SCS_INVALID)
@@ -439,212 +470,262 @@ MAKE(ID,storage_class_specifier,
         REFITEM(SCS_REGISTER)
     )
 
-struct declaration_specifiers {
-    enum declaration_specifiers_subtype { DS_HAS_STORAGE_CLASS, DS_HAS_TYPE_SPEC, DS_HAS_TYPE_QUAL } type;
-    union {
-        enum storage_class_specifier scs;
-        struct type_specifier *ts;
-        enum type_qualifier tq;
-    } me;
-    struct declaration_specifiers *right;
-};
+MAKE(ID,declaration_specifiers_subtype,
+        REFITEM(DS_HAS_STORAGE_CLASS)
+        REFITEM(DS_HAS_TYPE_SPEC)
+        REFITEM(DS_HAS_TYPE_QUAL)
+    )
 
-struct parameter_declaration {
-    struct declaration_specifiers base;
-    enum parameter_declaration_subtype { PD_HAS_NONE, PD_HAS_DECL, PD_HAS_ABSTRACT_DECL } type;
-    union {
-        struct declarator *decl;
-        struct abstract_declarator *abstract;
-    } decl;
-};
+MAKE(NODE,declaration_specifiers,
+    DEFITEM(TYPED(REF_ID(declaration_specifiers_subtype),type))
+    DEFITEM(CHOICE(me,
+            DEFITEM(TYPED(REF_ID(storage_class_specifier),scs))
+            DEFITEM(TYPED(PTR(REF_NODE(type_specifier)),ts))
+            DEFITEM(TYPED(REF_ID(type_qualifier),tq))
+        ))
+        DEFITEM(TYPED(PTR(REF_NODE(declaration_specifiers)),right))
+    )
 
-struct parameter_list {
-    struct parameter_declaration base;
-    struct parameter_list *left;
-};
+MAKE(ID,parameter_declaration_subtype,
+        REFITEM(PD_HAS_NONE)
+        REFITEM(PD_HAS_DECL)
+        REFITEM(PD_HAS_ABSTRACT_DECL)
+    )
 
-struct parameter_type_list {
-    struct parameter_list base;
-    bool has_ellipsis;
-};
+MAKE(NODE,parameter_declaration,
+    DEFITEM(TYPED(REF_NODE(declaration_specifiers),base))
+    DEFITEM(TYPED(REF_ID(parameter_declaration_subtype),type))
+    DEFITEM(CHOICE(decl,
+            DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
+            DEFITEM(TYPED(PTR(REF_NODE(abstract_declarator)),abstract))
+        ))
+    )
 
-struct identifier_list {
-    struct identifier base;
-    struct identifier_list *left;
-};
+MAKE(NODE,parameter_list,
+        DEFITEM(TYPED(REF_NODE(parameter_declaration),base))
+        DEFITEM(TYPED(PTR(REF_NODE(parameter_list)),left))
+    )
 
-struct direct_declarator {
-    enum direct_declarator_type {
-        DD_INVALID,
-        DD_IDENTIFIER,
-        DD_PARENTHESIZED,
-        DD_ARRAY,
-        DD_FUNCTION,
-    } type;
-    union {
-        struct identifier *id;
-        struct declarator *decl;
-        struct {
-            struct direct_declarator *left;
-            struct constant_expression *index;
-        } array;
-        struct {
-            struct direct_declarator *left;
-            enum function_declarator_subtype { FD_HAS_NONE, FD_HAS_PLIST, FD_HAS_ILIST } type;
-            union {
-                struct parameter_type_list *param;
-                struct identifier_list *ident;
-            } list;
-        } function;
+MAKE(NODE,parameter_type_list,
+    DEFITEM(TYPED(REF_NODE(parameter_list),base))
+    DEFITEM(TYPED(bool,has_ellipsis))
+    )
+
+MAKE(NODE,identifier_list,
+        DEFITEM(TYPED(REF_NODE(identifier),base))
+        DEFITEM(TYPED(PTR(REF_NODE(identifier_list)),left))
+    )
+
+MAKE(ID,direct_declarator_type,
+        REFITEM(DD_INVALID)
+        REFITEM(DD_IDENTIFIER)
+        REFITEM(DD_PARENTHESIZED)
+        REFITEM(DD_ARRAY)
+        REFITEM(DD_FUNCTION)
+    )
+
+MAKE(PRIV,array_direct_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(direct_declarator)),left))
+        DEFITEM(TYPED(PTR(REF_NODE(constant_expression)),index))
+    )
+
+MAKE(ID,function_declarator_subtype,
+        REFITEM(FD_HAS_NONE)
+        REFITEM(FD_HAS_PLIST)
+        REFITEM(FD_HAS_ILIST)
+    )
+
+MAKE(PRIV,function_direct_inner_,
+        DEFITEM(TYPED(PTR(REF_NODE(direct_declarator)),left))
+        DEFITEM(TYPED(REF_ID(function_declarator_subtype),type))
+        DEFITEM(CHOICE(list,
+                DEFITEM(TYPED(PTR(REF_NODE(parameter_type_list)),param))
+                DEFITEM(TYPED(PTR(REF_NODE(identifier_list)),ident))
+            ))
+    )
+
+MAKE(NODE,direct_declarator,
+    DEFITEM(TYPED(REF_ID(direct_declarator_type),type))
+    DEFITEM(CHOICE(c,
+            DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
+            DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
+            DEFITEM(TYPED(REF_NODE(array_direct_inner_),array))
+            DEFITEM(TYPED(REF_NODE(function_direct_inner_),function))
     /// @todo unify "me" and "val" synonyms / overlap
-    } c;
-};
+        ))
+    )
 
-struct declarator {
-    struct direct_declarator base;
-    bool has_pointer;
-};
+MAKE(NODE,declarator,
+        DEFITEM(TYPED(REF_NODE(direct_declarator),base))
+        DEFITEM(TYPED(bool,has_pointer))
+    )
 
-struct initializer {
-    enum initializer_subtype { I_ASSIGN, I_INIT_LIST } type;
-    union {
-        struct assignment_expression *ae;
-        struct initializer_list *il;
-    } me;
-};
+MAKE(ID,initializer_subtype,
+        REFITEM(I_ASSIGN)
+        REFITEM(I_INIT_LIST)
+    )
 
-struct initializer_list {
-    struct initializer me;
-    struct initializer_list *left;
-};
+MAKE(NODE,initializer,
+    DEFITEM(TYPED(REF_ID(initializer_subtype),type))
+    DEFITEM(CHOICE(me,
+            DEFITEM(TYPED(PTR(REF_NODE(assignment_expression)),ae))
+            DEFITEM(TYPED(PTR(REF_NODE(initializer_list)),il))
+        ))
+    )
 
-struct init_declarator {
-    struct declarator base;
-    struct initializer *init;
-};
+MAKE(NODE,initializer_list,
+        DEFITEM(TYPED(REF_NODE(initializer),me))
+        DEFITEM(TYPED(PTR(REF_NODE(initializer_list)),left))
+    )
 
-struct init_declarator_list {
-    struct init_declarator base;
-    struct init_declarator_list *left;
-};
+MAKE(NODE,init_declarator,
+        DEFITEM(TYPED(REF_NODE(declarator),base))
+        DEFITEM(TYPED(PTR(REF_NODE(initializer)),init))
+    )
 
-struct declaration {
-    struct declaration_specifiers base;
-    struct init_declarator_list *decl;
-};
+MAKE(NODE,init_declarator_list,
+        DEFITEM(TYPED(REF_NODE(init_declarator),base))
+        DEFITEM(TYPED(PTR(REF_NODE(init_declarator_list)),left))
+    )
 
-struct aggregate_declarator {
-    bool has_decl;
-    struct declarator *decl;
-    bool has_bitfield;
-    struct constant_expression *bf;
-};
+MAKE(NODE,declaration,
+        DEFITEM(TYPED(REF_NODE(declaration_specifiers),base))
+        DEFITEM(TYPED(PTR(REF_NODE(init_declarator_list)),decl))
+    )
 
-struct aggregate_declarator_list {
-    struct aggregate_declarator base;
-    struct aggregate_declarator_list *prev;
-};
+MAKE(NODE,aggregate_declarator,
+        DEFITEM(TYPED(bool,has_decl))
+        DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
+        DEFITEM(TYPED(bool,has_bitfield))
+        DEFITEM(TYPED(PTR(REF_NODE(constant_expression)),bf))
+    )
+
+MAKE(NODE,aggregate_declarator_list,
+        DEFITEM(TYPED(REF_NODE(aggregate_declarator),base))
+        DEFITEM(TYPED(PTR(REF_NODE(aggregate_declarator_list)),prev))
+    )
 
 // control
 
-struct expression_statement {
-    struct expression *expr;
-};
+MAKE(NODE,expression_statement,
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),expr))
+    )
 
-struct selection_statement {
-    enum selection_statement_subtype { ES_IF, ES_SWITCH } type;
-    struct expression *cond;
-    struct statement *if_stat;
-    struct statement *else_stat;
-};
+MAKE(ID,selection_statement_subtype,
+        REFITEM(ES_IF)
+        REFITEM(ES_SWITCH)
+    )
 
-struct labeled_statement {
-    enum labeled_statement_subtype {
-        LS_LABELED,
-        LS_CASE
-        // LS_CASE with case_id == NULL means default
-    } type;
-    struct statement *right;
-    union {
-        struct identifier *id;
-        struct constant_expression *case_id;
-    } me;
-};
+MAKE(NODE,selection_statement,
+        DEFITEM(TYPED(REF_ID(selection_statement_subtype),type))
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),cond))
+        DEFITEM(TYPED(PTR(REF_NODE(statement)),if_stat))
+        DEFITEM(TYPED(PTR(REF_NODE(statement)),else_stat))
+    )
 
-struct declaration_list {
-    struct declaration base;
-    struct declaration_list *left;
-};
+MAKE(ID,labeled_statement_subtype,
+        REFITEM(LS_LABELED)
+        REFITEM(LS_CASE)
+    )
 
-struct compound_statement {
+MAKE(NODE,labeled_statement,
+        DEFITEM(TYPED(REF_ID(labeled_statement_subtype),type))
+        DEFITEM(TYPED(PTR(REF_NODE(statement)),right))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
+                DEFITEM(TYPED(PTR(REF_NODE(constant_expression)),case_id))
+            ))
+    )
+
+MAKE(NODE,declaration_list,
+        DEFITEM(TYPED(REF_NODE(declaration),base))
+        DEFITEM(TYPED(PTR(REF_NODE(declaration_list)),left))
+    )
+
+MAKE(NODE,compound_statement,
     /// @todo support mixed declarations and statements as C99 demands
-    struct declaration_list *dl;
-    struct statement_list *st;
-};
+        DEFITEM(TYPED(PTR(REF_NODE(declaration_list)),dl))
+        DEFITEM(TYPED(PTR(REF_NODE(statement_list)),st))
+    )
 
-struct iteration_statement {
-    enum iteration_statement_subtype {
-        IST_WHILE, IST_DO_WHILE, IST_FOR
-    } type;
-    struct statement *action;
-    struct expression *before_expr;
-    struct expression *while_expr;
-    struct expression *after_expr;
-};
+MAKE(ID,iteration_statement_subtype,
+        REFITEM(IST_WHILE)
+        REFITEM(IST_DO_WHILE)
+        REFITEM(IST_FOR)
+    )
 
-struct jump_statement {
-    enum jump_statement_subtype {
-        JS_GOTO, JS_CONTINUE, JS_BREAK, JS_RETURN
-    } type;
-    union {
-        struct identifier *goto_id;
-        struct expression *return_expr;
-    } me;
-};
+MAKE(NODE,iteration_statement,
+        DEFITEM(TYPED(REF_ID(iteration_statement_subtype),type))
+        DEFITEM(TYPED(PTR(REF_NODE(statement)),action))
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),before_expr))
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),while_expr))
+        DEFITEM(TYPED(PTR(REF_NODE(expression)),after_expr))
+    )
 
-struct statement {
-    enum statement_type {
-        ST_LABELED,
-        ST_COMPOUND,
-        ST_EXPRESSION,
-        ST_SELECTION,
-        ST_ITERATION,
-        ST_JUMP
-    } type;
-    union {
-        struct labeled_statement *ls;
-        struct compound_statement *cs;
-        struct expression_statement *es;
-        struct selection_statement *ss;
-        struct iteration_statement *is;
-        struct jump_statement *js;
-    } me;
-};
+MAKE(ID,jump_statement_subtype,
+        REFITEM(JS_GOTO)
+        REFITEM(JS_CONTINUE)
+        REFITEM(JS_BREAK)
+        REFITEM(JS_RETURN)
+    )
 
-struct statement_list {
-    struct statement* st;
-    struct statement_list *prev;
-};
+MAKE(NODE,jump_statement,
+        DEFITEM(TYPED(REF_ID(jump_statement_subtype),type))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(PTR(REF_NODE(identifier)),goto_id))
+                DEFITEM(TYPED(PTR(REF_NODE(expression)),return_expr))
+            ))
+    )
+
+MAKE(ID,statement_type,
+        REFITEM(ST_LABELED)
+        REFITEM(ST_COMPOUND)
+        REFITEM(ST_EXPRESSION)
+        REFITEM(ST_SELECTION)
+        REFITEM(ST_ITERATION)
+        REFITEM(ST_JUMP)
+    )
+
+MAKE(NODE,statement,
+        DEFITEM(TYPED(REF_ID(statement_type),type))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(PTR(REF_NODE(labeled_statement)),ls))
+                DEFITEM(TYPED(PTR(REF_NODE(compound_statement)),cs))
+                DEFITEM(TYPED(PTR(REF_NODE(expression_statement)),es))
+                DEFITEM(TYPED(PTR(REF_NODE(selection_statement)),ss))
+                DEFITEM(TYPED(PTR(REF_NODE(iteration_statement)),is))
+                DEFITEM(TYPED(PTR(REF_NODE(jump_statement)),js))
+            ))
+        )
+
+MAKE(NODE,statement_list,
+        DEFITEM(TYPED(REF_NODE(statement*),st))
+        DEFITEM(TYPED(PTR(REF_NODE(statement_list)),prev))
+    )
 
 // top-levels
+MAKE(ID,external_declaration_subtype,
+        REFITEM(ED_FUNC_DEF)
+        REFITEM(ED_DECL)
+    )
 
-struct external_declaration {
-    enum external_declaration_subtype { ED_FUNC_DEF, ED_DECL } type;
-    union {
-        struct function_definition *func;
-        struct declaration *decl;
-    } me;
-};
+MAKE(NODE,external_declaration,
+        DEFITEM(TYPED(REF_ID(external_declaration_subtype),type))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(PTR(REF_NODE(function_definition)),func))
+                DEFITEM(TYPED(PTR(REF_NODE(declaration)),decl))
+            ))
+    )
 
-struct translation_unit {
-    struct external_declaration *right;
-    struct translation_unit *left;
-};
+MAKE(NODE,translation_unit,
+        DEFITEM(TYPED(PTR(REF_NODE(external_declaration)),right))
+        DEFITEM(TYPED(PTR(REF_NODE(translation_unit)),left))
+    )
 
-struct function_definition {
-    struct declaration_specifiers *decl_spec;
-    struct declarator *decl;
-    struct declaration_list *decl_list;
-    struct compound_statement *stat;
-};
+MAKE(NODE,function_definition,
+        DEFITEM(TYPED(PTR(REF_NODE(declaration_specifiers)),decl_spec))
+        DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
+        DEFITEM(TYPED(PTR(REF_NODE(declaration_list)),decl_list))
+        DEFITEM(TYPED(PTR(REF_NODE(compound_statement)),stat))
+    )
 
