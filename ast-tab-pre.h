@@ -6,7 +6,7 @@
 
 #define DEF_ID(Key,...)         enum Key { __VA_ARGS__ }
 #define REF_ID(Key)             enum Key
-#define DEF_NODE(Key,...)       struct Key { enum node_type node_type; __VA_ARGS__ }
+#define DEF_NODE(Key,...)       struct Key { __VA_ARGS__ }
 #define REF_NODE(Key)           struct Key
 #define DEF_PRIV(Key,...)       struct Key { __VA_ARGS__ }
 #define REF_PRIV(Key)           struct Key

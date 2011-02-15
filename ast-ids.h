@@ -3,9 +3,11 @@
 
 #include "ast-ids-pre.h"
 enum node_type {
-	#include "ast-gen2.h"
+	#include "ast.xi"
 };
 #include "ast-ids-post.h"
+
+extern const char *node_type_names[];
 
 #endif
 
