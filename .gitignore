@@ -1,5 +1,5 @@
 .*.sw?
-*.[oad]
+*.[oadsi]
 *.dSYM
 lexer.c
 pp_lexer.c
