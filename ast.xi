@@ -162,24 +162,25 @@ struct identifier {
     char *name;
 };
 
-struct integer {
-    size_t size;
-    bool is_signed;
-    union {
-        short s;
-        int i;
-        long l;
-        long long ll;
-        signed short ss;
-        signed int si;
-        signed long sl;
-        signed long long sll;
-        unsigned short us;
-        unsigned int ui;
-        unsigned long ul;
-        unsigned long long ull;
-    } me;
-};
+MAKE(NODE,integer,
+        DEFITEM(TYPED(size_t,size))
+        DEFITEM(TYPED(bool,is_signed))
+        DEFITEM(CHOICE(me,
+            // TODO typedef the multi-word types
+            DEFITEM(TYPED(short,s))
+            DEFITEM(TYPED(int,i))
+            DEFITEM(TYPED(long,l))
+            DEFITEM(TYPED(long long,ll))
+            DEFITEM(TYPED(signed short,ss))
+            DEFITEM(TYPED(signed int,si))
+            DEFITEM(TYPED(signed long,sl))
+            DEFITEM(TYPED(signed long long,sll))
+            DEFITEM(TYPED(unsigned short,us))
+            DEFITEM(TYPED(unsigned int,ui))
+            DEFITEM(TYPED(unsigned long,ul))
+            DEFITEM(TYPED(unsigned long long,ull))
+        ))
+    )
 
 struct character {
     /// @todo support wchars ?
