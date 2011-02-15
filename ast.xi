@@ -1,8 +1,3 @@
-#if 1
-#include <stdbool.h>
-#include <stddef.h>
-#endif
-
 #if DEBUG
 // easier to debug structs than unions when calloc()ed
 #define UNION_KEYWORD struct
@@ -72,87 +67,60 @@ struct node {
 };
 #endif
 
-enum type_class {
-    TC_INVALID,
-    TC_VOID,
-    TC_INT,
-    TC_FLOAT,
-    TC_STRUCT,
-    TC_UNION,
-    TC_max
-};
+MAKE(ID,type_class,
+        REFITEM_(TC_INVALID)
+        REFITEM_(TC_VOID)
+        REFITEM_(TC_INT)
+        REFITEM_(TC_FLOAT)
+        REFITEM_(TC_STRUCT)
+        REFITEM_(TC_UNION)
+        REFITEM_(TC_max)
+    )
 
-enum primary_expression_type {
-    PRET_INVALID,
-    PRET_IDENTIFIER,
-    PRET_INTEGER,
-    PRET_CHARACTER,
-    PRET_FLOATING,
-    PRET_STRING,
-    PRET_PARENTHESIZED
-};
+MAKE(ID,primary_expression_type,
+        REFITEM_(PRET_INVALID)
+        REFITEM_(PRET_IDENTIFIER)
+        REFITEM_(PRET_INTEGER)
+        REFITEM_(PRET_CHARACTER)
+        REFITEM_(PRET_FLOATING)
+        REFITEM_(PRET_STRING)
+        REFITEM_(PRET_PARENTHESIZED)
+    )
 
-enum expression_type {
-    ET_INVALID,
-    ET_CAST_EXPRESSION,
-    ET_MULTIPLICATIVE_EXRESSION,
-    /// @todo fill in the rest
-    ET_max
-};
+MAKE(ID,expression_type,
+        REFITEM_(ET_INVALID)
+        REFITEM_(ET_CAST_EXPRESSION)
+        REFITEM_(ET_MULTIPLICATIVE_EXRESSION)
+        /// @todo fill in the rest
+        REFITEM_(ET_max)
+    )
 
-enum unary_operator {
-    UO_INVALID,
-    UO_ADDRESS_OF     = '&',
-    UO_DEREFERENCE    = '*',
-    UO_PLUS           = '+',
-    UO_MINUS          = '-',
-    UO_BITWISE_INVERT = '~',
-    UO_LOGICAL_INVERT = '!'
-};
+MAKE(ID,unary_operator,
+        REFITEM_(UO_INVALID)
+        REFITEM_(ENUM_VAL(UO_ADDRESS_OF    ,'&'))
+        REFITEM_(ENUM_VAL(UO_DEREFERENCE   ,'*'))
+        REFITEM_(ENUM_VAL(UO_PLUS          ,'+'))
+        REFITEM_(ENUM_VAL(UO_MINUS         ,'-'))
+        REFITEM_(ENUM_VAL(UO_BITWISE_INVERT,'~'))
+        REFITEM_(ENUM_VAL(UO_LOGICAL_INVERT,'!'))
+    )
 
-enum binary_operator {
-    /// @todo but what about multi-character operators
-    BO_INVALID,
-    BO_ADD            = '+',
-    BO_SUBTRACT       = '-',
-    BO_MULTIPLY       = '*',
-    BO_DIVIDE         = '/',
-    BO_MODULUS        = '%',
-    BO_BITWISE_AND    = '&',
-    BO_max
-};
+MAKE(ID,binary_operator,
+        /// @todo but what about multi-character operators
+        REFITEM_(BO_INVALID)
+        REFITEM_(ENUM_VAL(BO_ADD        ,'+'))
+        REFITEM_(ENUM_VAL(BO_SUBTRACT   ,'-'))
+        REFITEM_(ENUM_VAL(BO_MULTIPLY   ,'*'))
+        REFITEM_(ENUM_VAL(BO_DIVIDE     ,'/'))
+        REFITEM_(ENUM_VAL(BO_MODULUS    ,'%'))
+        REFITEM_(ENUM_VAL(BO_BITWISE_AND,'&'))
+        REFITEM_(BO_max)
+    )
 
-enum increment_operator {
-    IO_INCREMENT,
-    IO_DECREMENT
-};
-
-#if 0
-struct assignment_expression {
-    bool has_op;
-    union {
-        struct conditional_expression *right;
-        struct {
-            struct unary_expression *left;
-            enum assignment_operator {
-                AO_INVALID,
-                AO_MULEQ,
-                AO_DIVEQ,
-                AO_MODEQ,
-                AO_ADDEQ,
-                AO_SUBEQ,
-                AO_SLEQ,
-                AO_SREQ,
-                AO_ANDEQ,
-                AO_XOREQ,
-                AO_OREQ,
-                AO_EQ = '='
-            } op;
-            struct assignment_expression *right;
-        } assn;
-    } c;
-};
-#endif
+MAKE(ID,increment_operator,
+        REFITEM_(IO_INCREMENT)
+        REFITEM_(IO_DECREMENT)
+    )
 
 MAKE(NODE,assignment_expression,
         DEFITEM_(TYPED_(bool,has_op))
@@ -172,11 +140,11 @@ struct specifier_qualifier_list {
     struct specifier_qualifier_list *next;
 };
 
-enum type_qualifier {
-    TQ_INVALID,
-    TQ_CONST,
-    TQ_VOLATILE
-};
+MAKE(ID,type_qualifier,
+        REFITEM_(TQ_INVALID)
+        REFITEM_(TQ_CONST)
+        REFITEM_(TQ_VOLATILE)
+    )
 
 struct type_qualifier_list {
     enum type_qualifier me;
@@ -490,14 +458,14 @@ struct type_specifier {
     } c;
 };
 
-enum storage_class_specifier {
-    SCS_INVALID,
-    SCS_TYPEDEF,
-    SCS_EXTERN,
-    SCS_STATIC,
-    SCS_AUTO,
-    SCS_REGISTER
-};
+MAKE(ID,storage_class_specifier,
+        REFITEM_(SCS_INVALID)
+        REFITEM_(SCS_TYPEDEF)
+        REFITEM_(SCS_EXTERN)
+        REFITEM_(SCS_STATIC)
+        REFITEM_(SCS_AUTO)
+        REFITEM_(SCS_REGISTER)
+    )
 
 struct declaration_specifiers {
     enum declaration_specifiers_subtype { DS_HAS_STORAGE_CLASS, DS_HAS_TYPE_SPEC, DS_HAS_TYPE_QUAL } type;
