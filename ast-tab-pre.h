@@ -1,12 +1,4 @@
-#if DEBUG
-// easier to debug structs than unions when calloc()ed
-#define UNION_KEYWORD struct
-#else
-#define UNION_KEYWORD union
-#endif
-
-#define MAKE(Sc,Key,...)        DEF_##Sc(Key,__VA_ARGS__); MAKE_TYPE(Sc,Key);
-#define MAKE_TYPE(Sc,Key)       typedef REF_##Sc(Key) T_##Key
+#define MAKE(Sc,Key,...)        DEF_##Sc(Key,__VA_ARGS__);
 #define DEF(Sc,Key,Name,...)    DEF_##Sc(Key,__VA_ARGS__)
 #define REF(Sc,Key)             REF_##Sc(Key)
 
@@ -25,4 +17,5 @@
 #define DEFITEM(...)            __VA_ARGS__;
 
 #define ENUM_VAL(X,V)           X = V
+
 

@@ -1,7 +1,3 @@
-MAKE(ID,node_type,
-        REFITEM(NT_max)
-    )
-
 MAKE(NODE,node,
         /* only node_type, already there */
     )
@@ -204,9 +200,9 @@ MAKE(NODE,floating,
     )
 
 MAKE(NODE,string,
-    DEFITEM(TYPED(size_t,size))
-    DEFITEM(TYPED(PTR(REF_NODE(character)),value))
-    DEFITEM(TYPED(char,*cached))
+        DEFITEM(TYPED(size_t,size))
+        DEFITEM(TYPED(PTR(REF_NODE(character)),value))
+        DEFITEM(TYPED(char,*cached))
     )
 
 MAKE(NODE,expression_having_type_,

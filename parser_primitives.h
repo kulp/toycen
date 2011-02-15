@@ -54,6 +54,7 @@ extern void *_tptr;
 #define NN(Type, ...) \
     ( (_tptr = (struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__)), \
       (debug(2, "allocating %p as %-25s with " #__VA_ARGS__, _tptr, #Type)), \
+	  (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
       _tptr) \
     )
 
@@ -70,7 +71,9 @@ extern void *_tptr;
 #define UN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
       (debug(2, "upgrading  %p to %-25s with " #__VA_ARGS__, Old, #Type)), \
-      ((struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)) \
+      (_tptr = (struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)), \
+	  (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
+	  (_tptr) \
     )
 
 /// @todo real lookup
