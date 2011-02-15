@@ -11,10 +11,11 @@
 #define DEF_PRIV(Key,...)       struct Key { __VA_ARGS__ }
 #define REF_PRIV(Key)           struct Key
 
+#define BASIC(T)                T
 #define PTR(X)                  X*
 #define TYPED(T,X)              T X
-#define REFITEM(...)            __VA_ARGS__,
-#define DEFITEM(...)            __VA_ARGS__;
+#define REFITEM(X)              X,
+#define DEFITEM(X)              X;
 
 #define ENUM_VAL(X,V)           X = V
 

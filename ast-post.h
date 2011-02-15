@@ -1,0 +1,10 @@
+#undef DEFITEM
+#undef REFITEM
+#undef BASE
+#undef MAKE
+#undef PTR
+#undef REF_NODE
+#undef REF_ID
+#undef TYPED
+#undef CHOICE
+#undef BASIC

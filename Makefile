@@ -1,6 +1,7 @@
 CPP = gcc -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
+CFLAGS += -save-temps
 endif
 
 TARGET = toycen
@@ -16,9 +17,8 @@ CFLAGS  += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES)) 
 LFLAGS  +=
 LDFLAGS += $(ARCHFLAGS)
 
-OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o pp_lexer.o ast-ids.o
+OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o
 
-CLEANFILES += tpp
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface
 
 toycen.o: CFLAGS += -Wno-unused-parameter
@@ -40,15 +40,21 @@ CLEANFILES += t/test_hash_table t/test_hash_table_interface
 t/%: CFLAGS += -I.
 t/test_hash_table t/test_hash_table_interface: hash_table.o
 
+ifeq ($(BUILD_PP),1)
+CLEANFILES += tpp
 tpp: hash_table.o pp_lexer.o
 pp_lexer.o: DEFINES += PREPROCESSOR_LEXING _XOPEN_SOURCE=500
 pp_lexer.o: WEXTRA =
 pp_lexer.l: lexer.l.pre lexer.l.rules lexer.l.post
+OBJECTS += pp_lexer.o
+CLEANFILES += pp_lexer.l
+.SECONDARY: pp_lexer.c
+endif
 
 lexer.o: DEFINES += _XOPEN_SOURCE=500
 
-.SECONDARY: parser.c lexer.c pp_lexer.c
-CLEANFILES += y.output parser_internal.h y.tab.h parser.c pp_lexer.l lexer.l
+.SECONDARY: parser.c lexer.c
+CLEANFILES += y.output parser_internal.h y.tab.h parser.c lexer.l
 
 ifeq ($(words $(filter clean,$(MAKECMDGOALS))),0)
 -include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
