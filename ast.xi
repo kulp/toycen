@@ -1,5 +1,5 @@
 MAKE(NODE,node,
-        /* only node_type, already there */
+        DEFITEM(TYPED(REF_ID(node_type),node_type))
     )
 
 MAKE(ID,assignment_operator,
@@ -79,6 +79,7 @@ MAKE(ID,increment_operator,
     )
 
 MAKE(NODE,assignment_expression,
+        BASE(node)
         DEFITEM(TYPED(bool,has_op))
         DEFITEM(CHOICE(c,
             DEFITEM(TYPED(PTR(REF_NODE(conditional_expression)),right))
@@ -87,6 +88,7 @@ MAKE(NODE,assignment_expression,
     )
 
 MAKE(NODE,expression,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(assignment_expression)),right))
         DEFITEM(TYPED(PTR(REF_NODE(expression)),left))
     )
@@ -97,6 +99,7 @@ MAKE(ID,sq_meta,
     )
 
 MAKE(NODE,specifier_qualifier_list,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(sq_meta),type))
         DEFITEM(TYPED(PTR(REF_NODE(specifier_qualifier_list)),next))
     )
@@ -108,11 +111,13 @@ MAKE(ID,type_qualifier,
     )
 
 MAKE(NODE,type_qualifier_list,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(type_qualifier),me))
         DEFITEM(TYPED(PTR(REF_NODE(type_qualifier_list)),left))
     )
 
 MAKE(NODE,pointer,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(type_qualifier_list)),tq))
         DEFITEM(TYPED(PTR(REF_NODE(pointer)),right))
     )
@@ -135,6 +140,7 @@ MAKE(PRIV,func_inner_,
     )
 
 MAKE(NODE,direct_abstract_declarator,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(direct_abstract_declarator_subtype),type))
         DEFITEM(CHOICE(me,
             DEFITEM(TYPED(PTR(REF_NODE(abstract_declarator)),abs))
@@ -144,21 +150,25 @@ MAKE(NODE,direct_abstract_declarator,
     )
 
 MAKE(NODE,abstract_declarator,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(pointer)),ptr))
         DEFITEM(TYPED(PTR(REF_NODE(direct_abstract_declarator)),right))
     )
 
 MAKE(NODE,type_name,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(specifier_qualifier_list)),list))
         DEFITEM(TYPED(PTR(REF_NODE(abstract_declarator)),decl))
     )
 
 MAKE(NODE,identifier,
+        BASE(node)
         DEFITEM(TYPED(size_t,len))
         DEFITEM(TYPED(PTR(char),name))
     )
 
 MAKE(NODE,integer,
+        BASE(node)
         DEFITEM(TYPED(size_t,size))
         DEFITEM(TYPED(bool,is_signed))
         DEFITEM(CHOICE(me,
@@ -179,33 +189,37 @@ MAKE(NODE,integer,
     )
 
 MAKE(NODE,character,
-    /// @todo support wchars ?
-    //size_t size;
-    DEFITEM(TYPED(bool,has_signage))
-    DEFITEM(TYPED(bool,is_signed))
-    DEFITEM(CHOICE(me,
-            DEFITEM(TYPED(char,c))
-            DEFITEM(TYPED(signed char,lc))
-            DEFITEM(TYPED(unsigned char,uc))
-        ))
+        BASE(node)
+        /// @todo support wchars ?
+        //size_t size;
+        DEFITEM(TYPED(bool,has_signage))
+        DEFITEM(TYPED(bool,is_signed))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(char,c))
+                DEFITEM(TYPED(signed char,lc))
+                DEFITEM(TYPED(unsigned char,uc))
+            ))
     )
 
 MAKE(NODE,floating,
-    DEFITEM(TYPED(size_t,size))
-    DEFITEM(CHOICE(me,
-            DEFITEM(TYPED(float,f))
-            DEFITEM(TYPED(double,d))
-            DEFITEM(TYPED(long double,ld))
-        ))
+        BASE(node)
+        DEFITEM(TYPED(size_t,size))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(float,f))
+                DEFITEM(TYPED(double,d))
+                DEFITEM(TYPED(long double,ld))
+            ))
     )
 
 MAKE(NODE,string,
+        BASE(node)
         DEFITEM(TYPED(size_t,size))
         DEFITEM(TYPED(PTR(REF_NODE(character)),value))
         DEFITEM(TYPED(char,*cached))
     )
 
 MAKE(NODE,expression_having_type_,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(expression_type),type))
     )
 
@@ -252,6 +266,7 @@ MAKE(PRIV,aggregate_postfix_inner_,
         DEFITEM(TYPED(PTR(REF_NODE(identifier)),designator))
     )
 MAKE(NODE,postfix_expression,
+        BASE(node)
     //struct primary_expression me;
         DEFITEM(TYPED(REF_ID(postfix_expression_type),type))
         DEFITEM(CHOICE(me,
@@ -280,6 +295,7 @@ MAKE(PRIV,ce_unary_inner_,
     )
 
 MAKE(NODE,unary_expression,
+        BASE(node)
         DEFITEM(TYPED(REF_NODE(postfix_expression),me))
         DEFITEM(TYPED(REF_ID(unary_expression_type),type))
         DEFITEM(CHOICE(c,
@@ -295,6 +311,7 @@ MAKE(PRIV,cast_inner_,
     )
 
 MAKE(NODE,cast_expression,
+        BASE(node)
     DEFITEM(CHOICE(me,
             DEFITEM(TYPED(PTR(REF_NODE(unary_expression)),unary))
             DEFITEM(TYPED(REF_NODE(cast_inner_),cast))
@@ -302,13 +319,13 @@ MAKE(NODE,cast_expression,
     )
 
 MAKE(NODE,multiplicative_expression,
-        DEFITEM(TYPED(REF_NODE(cast_expression),right))
+        DEFITEM(TYPED(REF_NODE(cast_expression),base))
         DEFITEM(TYPED(PTR(REF_NODE(multiplicative_expression)),left)) ///< may be NULL
         DEFITEM(TYPED(REF_ID(binary_operator),op))                ///< if @c is NULL, nonsensical
     )
 
 MAKE(NODE,additive_expression,
-        DEFITEM(TYPED(REF_NODE(multiplicative_expression),right))
+        DEFITEM(TYPED(REF_NODE(multiplicative_expression),base))
         DEFITEM(TYPED(PTR(REF_NODE(additive_expression)),left))       ///< may be NULL
         DEFITEM(TYPED(REF_ID(binary_operator),op))                ///< if @c is NULL, nonsensical
     )
@@ -332,69 +349,73 @@ MAKE(ID,relational_operator,
     )
 
 MAKE(NODE,relational_expression,
-        DEFITEM(TYPED(REF_NODE(shift_expression),right))
+        DEFITEM(TYPED(REF_NODE(shift_expression),base))
         DEFITEM(TYPED(REF_ID(relational_operator),op))
         DEFITEM(TYPED(PTR(REF_NODE(relational_expression)),left))
     )
 
 MAKE(NODE,equality_expression,
-        DEFITEM(TYPED(REF_NODE(relational_expression),right))
+        DEFITEM(TYPED(REF_NODE(relational_expression),base))
         DEFITEM(TYPED(bool,eq))
         DEFITEM(TYPED(PTR(REF_NODE(equality_expression)),left))
     )
 
 MAKE(NODE,and_expression,
-        DEFITEM(TYPED(REF_NODE(equality_expression),right))
+        DEFITEM(TYPED(REF_NODE(equality_expression),base))
         DEFITEM(TYPED(PTR(REF_NODE(and_expression)),left))
     )
 
 MAKE(NODE,exclusive_or_expression,
-        DEFITEM(TYPED(REF_NODE(and_expression),right))
+        DEFITEM(TYPED(REF_NODE(and_expression),base))
         DEFITEM(TYPED(PTR(REF_NODE(exclusive_or_expression)),left))
     )
 
 MAKE(NODE,inclusive_or_expression,
-        DEFITEM(TYPED(REF_NODE(exclusive_or_expression),right))
+        DEFITEM(TYPED(REF_NODE(exclusive_or_expression),base))
         DEFITEM(TYPED(PTR(REF_NODE(inclusive_or_expression)),left))
     )
 
 MAKE(NODE,logical_and_expression,
-        DEFITEM(TYPED(REF_NODE(inclusive_or_expression),right))
+        DEFITEM(TYPED(REF_NODE(inclusive_or_expression),base))
         DEFITEM(TYPED(PTR(REF_NODE(logical_and_expression)),left))
     )
 
 MAKE(NODE,logical_or_expression,
-        DEFITEM(TYPED(REF_NODE(logical_and_expression),right))
+        DEFITEM(TYPED(REF_NODE(logical_and_expression),base))
         DEFITEM(TYPED(PTR(REF_NODE(logical_or_expression)),left))
     )
 
 MAKE(NODE,conditional_expression,
-        DEFITEM(TYPED(REF_NODE(logical_or_expression),right))
+        DEFITEM(TYPED(REF_NODE(logical_or_expression),base))
         DEFITEM(TYPED(bool,is_ternary))
         DEFITEM(TYPED(PTR(REF_NODE(expression)),if_expr))
         DEFITEM(TYPED(PTR(REF_NODE(conditional_expression)),else_expr))
     )
 
 MAKE(NODE,constant_expression,
-        DEFITEM(TYPED(REF_NODE(conditional_expression),right))
+        DEFITEM(TYPED(REF_NODE(conditional_expression),base))
         DEFITEM(TYPED(char,dummy)) ///< to avoid warnings about empty initializer braces, since there is nothing to initialize
     )
 
 MAKE(NODE,aggregate_definition,
+        BASE(node)
         DEFITEM(TYPED(bool,TODO)) /// @todo
     )
 
 MAKE(NODE,aggregate_definition_list,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(aggregate_definition)),me))
         DEFITEM(TYPED(PTR(REF_NODE(aggregate_definition_list)),prev))
     )
 
 MAKE(NODE,aggregate_declaration,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(specifier_qualifier_list)),sq))
         DEFITEM(TYPED(PTR(REF_NODE(aggregate_declarator_list)),decl))
     )
 
 MAKE(NODE,aggregate_declaration_list,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(aggregate_declaration)),me))
         DEFITEM(TYPED(PTR(REF_NODE(aggregate_declaration_list)),prev))
     )
@@ -414,11 +435,13 @@ MAKE(NODE,aggregate_specifier,
     )
 
 MAKE(NODE,enumerator,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
         DEFITEM(TYPED(PTR(REF_NODE(constant_expression)),val))
     )
 
 MAKE(NODE,enumerator_list,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(enumerator)),me))
         DEFITEM(TYPED(PTR(REF_NODE(enumerator_list)),prev))
     )
@@ -473,12 +496,13 @@ MAKE(ID,declaration_specifiers_subtype,
     )
 
 MAKE(NODE,declaration_specifiers,
-    DEFITEM(TYPED(REF_ID(declaration_specifiers_subtype),type))
-    DEFITEM(CHOICE(me,
-            DEFITEM(TYPED(REF_ID(storage_class_specifier),scs))
-            DEFITEM(TYPED(PTR(REF_NODE(type_specifier)),ts))
-            DEFITEM(TYPED(REF_ID(type_qualifier),tq))
-        ))
+        BASE(node)
+        DEFITEM(TYPED(REF_ID(declaration_specifiers_subtype),type))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(REF_ID(storage_class_specifier),scs))
+                DEFITEM(TYPED(PTR(REF_NODE(type_specifier)),ts))
+                DEFITEM(TYPED(REF_ID(type_qualifier),tq))
+            ))
         DEFITEM(TYPED(PTR(REF_NODE(declaration_specifiers)),right))
     )
 
@@ -541,14 +565,15 @@ MAKE(PRIV,function_direct_inner_,
     )
 
 MAKE(NODE,direct_declarator,
-    DEFITEM(TYPED(REF_ID(direct_declarator_type),type))
-    DEFITEM(CHOICE(c,
-            DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
-            DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
-            DEFITEM(TYPED(REF_NODE(array_direct_inner_),array))
-            DEFITEM(TYPED(REF_NODE(function_direct_inner_),function))
-    /// @todo unify "me" and "val" synonyms / overlap
-        ))
+        BASE(node)
+        DEFITEM(TYPED(REF_ID(direct_declarator_type),type))
+        DEFITEM(CHOICE(c,
+                DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))
+                DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
+                DEFITEM(TYPED(REF_NODE(array_direct_inner_),array))
+                DEFITEM(TYPED(REF_NODE(function_direct_inner_),function))
+        /// @todo unify "me" and "val" synonyms / overlap
+            ))
     )
 
 MAKE(NODE,declarator,
@@ -562,14 +587,16 @@ MAKE(ID,initializer_subtype,
     )
 
 MAKE(NODE,initializer,
-    DEFITEM(TYPED(REF_ID(initializer_subtype),type))
-    DEFITEM(CHOICE(me,
-            DEFITEM(TYPED(PTR(REF_NODE(assignment_expression)),ae))
-            DEFITEM(TYPED(PTR(REF_NODE(initializer_list)),il))
-        ))
+        BASE(node)
+        DEFITEM(TYPED(REF_ID(initializer_subtype),type))
+        DEFITEM(CHOICE(me,
+                DEFITEM(TYPED(PTR(REF_NODE(assignment_expression)),ae))
+                DEFITEM(TYPED(PTR(REF_NODE(initializer_list)),il))
+            ))
     )
 
 MAKE(NODE,initializer_list,
+        BASE(node)
         DEFITEM(TYPED(REF_NODE(initializer),me))
         DEFITEM(TYPED(PTR(REF_NODE(initializer_list)),left))
     )
@@ -590,6 +617,7 @@ MAKE(NODE,declaration,
     )
 
 MAKE(NODE,aggregate_declarator,
+        BASE(node)
         DEFITEM(TYPED(bool,has_decl))
         DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
         DEFITEM(TYPED(bool,has_bitfield))
@@ -604,6 +632,7 @@ MAKE(NODE,aggregate_declarator_list,
 // control
 
 MAKE(NODE,expression_statement,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(expression)),expr))
     )
 
@@ -613,6 +642,7 @@ MAKE(ID,selection_statement_subtype,
     )
 
 MAKE(NODE,selection_statement,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(selection_statement_subtype),type))
         DEFITEM(TYPED(PTR(REF_NODE(expression)),cond))
         DEFITEM(TYPED(PTR(REF_NODE(statement)),if_stat))
@@ -625,6 +655,7 @@ MAKE(ID,labeled_statement_subtype,
     )
 
 MAKE(NODE,labeled_statement,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(labeled_statement_subtype),type))
         DEFITEM(TYPED(PTR(REF_NODE(statement)),right))
         DEFITEM(CHOICE(me,
@@ -639,7 +670,8 @@ MAKE(NODE,declaration_list,
     )
 
 MAKE(NODE,compound_statement,
-    /// @todo support mixed declarations and statements as C99 demands
+        BASE(node)
+        /// @todo support mixed declarations and statements as C99 demands
         DEFITEM(TYPED(PTR(REF_NODE(declaration_list)),dl))
         DEFITEM(TYPED(PTR(REF_NODE(statement_list)),st))
     )
@@ -651,6 +683,7 @@ MAKE(ID,iteration_statement_subtype,
     )
 
 MAKE(NODE,iteration_statement,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(iteration_statement_subtype),type))
         DEFITEM(TYPED(PTR(REF_NODE(statement)),action))
         DEFITEM(TYPED(PTR(REF_NODE(expression)),before_expr))
@@ -666,6 +699,7 @@ MAKE(ID,jump_statement_subtype,
     )
 
 MAKE(NODE,jump_statement,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(jump_statement_subtype),type))
         DEFITEM(CHOICE(me,
                 DEFITEM(TYPED(PTR(REF_NODE(identifier)),goto_id))
@@ -683,6 +717,7 @@ MAKE(ID,statement_type,
     )
 
 MAKE(NODE,statement,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(statement_type),type))
         DEFITEM(CHOICE(me,
                 DEFITEM(TYPED(PTR(REF_NODE(labeled_statement)),ls))
@@ -695,6 +730,7 @@ MAKE(NODE,statement,
         )
 
 MAKE(NODE,statement_list,
+        BASE(node)
         DEFITEM(TYPED(REF_NODE(statement*),st))
         DEFITEM(TYPED(PTR(REF_NODE(statement_list)),prev))
     )
@@ -706,6 +742,7 @@ MAKE(ID,external_declaration_subtype,
     )
 
 MAKE(NODE,external_declaration,
+        BASE(node)
         DEFITEM(TYPED(REF_ID(external_declaration_subtype),type))
         DEFITEM(CHOICE(me,
                 DEFITEM(TYPED(PTR(REF_NODE(function_definition)),func))
@@ -714,11 +751,13 @@ MAKE(NODE,external_declaration,
     )
 
 MAKE(NODE,translation_unit,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(external_declaration)),right))
         DEFITEM(TYPED(PTR(REF_NODE(translation_unit)),left))
     )
 
 MAKE(NODE,function_definition,
+        BASE(node)
         DEFITEM(TYPED(PTR(REF_NODE(declaration_specifiers)),decl_spec))
         DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
         DEFITEM(TYPED(PTR(REF_NODE(declaration_list)),decl_list))

@@ -12,6 +12,8 @@
 
 #define CHOICE(Name,...)        UNION_KEYWORD { __VA_ARGS__ } Name
 
+#define BASE(Key) 				REF_NODE(Key) base;
+
 #define DEF_ID(Key,...)         enum Key { __VA_ARGS__ }
 #define REF_ID(Key)             enum Key
 #define DEF_NODE(Key,...)       struct Key { __VA_ARGS__ }
