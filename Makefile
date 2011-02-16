@@ -52,6 +52,7 @@ CLEANFILES += basic-types.xi
 basic-types.xi: ast-basics-pre.h ast.xi
 	$(CPP) -include ast-basics-pre.h ast.xi | tr ' ' '\012' | sort | uniq - $@
 
+# GCC bug 47772 : http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47772
 ast-ids.o: CFLAGS += -Wno-missing-field-initializers
 
 ifeq ($(BUILD_PP),1)
