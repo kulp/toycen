@@ -1,5 +1,6 @@
 #include "ast-pre.h"
 #include "ast-ids.h"
+#include "ast-ids-priv.h"
 #include "ast.h"
 
 #define STR_(Str) STR__(Str)
@@ -71,8 +72,9 @@ struct node_parentage node_parentages[] = {
 #define REF_NODE(Key)           .meta = META_IS_NODE, \
                                 .c = { .node = &node_recs[NODE_TYPE_##Key] },
 #define REF_ID(Key)             .meta = META_IS_ID, \
-                                .c = { .id   =   &id_recs[ID_TYPE_##Key  ] },
-#define REF_PRIV(Key)           /*TODO*/
+                                .c = { .id   =   &id_recs[  ID_TYPE_##Key] },
+#define REF_PRIV(Key)           .meta = META_IS_PRIV, \
+                                .c = { .priv = &priv_recs[PRIV_TYPE_##Key] },
 #define PTR(...)                .is_pointer = true, __VA_ARGS__
 #define MAKE_NODE(Key,...) \
     [NODE_TYPE_##Key] = { .type  = NODE_TYPE_##Key, \
@@ -80,6 +82,18 @@ struct node_parentage node_parentages[] = {
                           .items = (struct node_item[]){ __VA_ARGS__ EOC } },
 
 const struct node_rec node_recs[] = {
+    #include "ast.xi"
+};
+
+#undef MAKE_NODE
+#define MAKE_NODE(...)
+#undef MAKE_PRIV
+#define MAKE_PRIV(Key,...) \
+    [PRIV_TYPE_##Key] = { .type  = PRIV_TYPE_##Key, \
+                          .name  = STR_(Key), \
+                          .items = (struct node_item[]){ __VA_ARGS__ EOC } },
+
+const struct priv_rec priv_recs[] = {
     #include "ast.xi"
 };
 
@@ -102,4 +116,6 @@ const struct node_rec node_recs[] = {
 //------------------------------------------------------------------------------
 
 #undef MAKE
+
+/* vi:set ts=4 sw=4 et syntax=c.doxygen: */
 
