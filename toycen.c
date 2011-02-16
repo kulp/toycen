@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
     result = yyparse();
 
     struct translation_unit *top = get_top_of_parse_result();
+    (void)top;
 
     parser_teardown(&ps);
     lexer_teardown();
