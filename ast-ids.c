@@ -7,6 +7,8 @@
 
 #define MAKE(Sc,Key,...)        MAKE_##Sc(Key,__VA_ARGS__)
 
+//------------------------------------------------------------------------------
+
 #define MAKE_ID(Key,...)        [ID_TYPE_##Key] = { ID_TYPE_##Key, STR_(Key) },
 #define MAKE_PRIV(...)
 #define MAKE_NODE(Key,...)
@@ -19,6 +21,16 @@ const struct id_rec id_recs[] = {
 #undef MAKE_ID
 #undef MAKE_PRIV
 #undef MAKE_NODE
+
+//------------------------------------------------------------------------------
+
+const struct basic_rec basic_recs[] = {
+    #define R_(X) [BASIC_TYPE_##X] = { BASIC_TYPE_##X, #X, STR_(X), sizeof(X) },
+    #include "basic-types.xi"
+    #undef R_
+};
+
+//------------------------------------------------------------------------------
 
 #define DEFITEM(...)
 #define BASE(Key)               .base     = NODE_TYPE_##Key, \
@@ -41,6 +53,8 @@ struct node_parentage node_parentages[] = {
 #undef MAKE_PRIV
 #undef MAKE_NODE
 
+//------------------------------------------------------------------------------
+
 #define BASE(Key)
 #define MAKE_ID(Key,...)
 #define MAKE_PRIV(...)
@@ -48,7 +62,7 @@ struct node_parentage node_parentages[] = {
 // end-of-chain sentinel
 #define EOC { .meta = META_IS_INVALID }
 
-#define BASIC(T)                .meta = META_IS_BASIC, /*TODO*/
+#define BASIC(T)                .meta = META_IS_BASIC, .c.basic = &basic_recs[BASIC_TYPE_##T],
 #define DEFITEM(...)            { __VA_ARGS__ },
 #define CHOICE(Name,...)        .meta     = META_IS_CHOICE, \
                                 .c.choice = (struct node_item[]){ __VA_ARGS__ EOC },

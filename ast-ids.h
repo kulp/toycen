@@ -25,6 +25,14 @@ struct id_rec {
 	const char *name;
 };
 
+struct basic_rec {
+	enum basic_type type;
+	const char *defname;
+	/// this is different only for _Bool so far. do we really want it ?
+	const char *rawname;
+	size_t size;
+};
+
 struct node_parentage {
 	enum node_type type,
 				   base;
@@ -46,11 +54,10 @@ struct node_item {
 	bool is_pointer;
 	const char *name;
 	union {
-		//enum node_type node_type;
 		const struct node_rec *node;
-		//enum id_type id_type;
 		const struct id_rec *id;
-		struct node_item *choice;
+		const struct node_item *choice;
+		const struct basic_rec *basic;
 	} c;
 };
 
@@ -64,6 +71,7 @@ struct node_rec {
 extern const struct node_rec node_recs[];
 extern const struct id_rec id_recs[];
 extern struct node_parentage node_parentages[];
+extern const struct basic_rec basic_recs[];
 #endif
 
 #endif
