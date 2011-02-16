@@ -1,0 +1,13 @@
+#undef REF_PRIV
+#undef REF_ID
+#undef REF_NODE
+#undef CHOICE
+#undef BASE
+#undef PTR
+#undef TYPED
+#undef BASIC
+#undef DEFITEM
+#undef MAKE
+#undef MAKE_ID
+#undef MAKE_PRIV
+#undef MAKE_NODE
