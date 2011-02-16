@@ -17,3 +17,5 @@ Session.vim
 ast-gen.h
 ast-gen2.h
 basic-types.xi
+*.pbxuser
+*.mode1v3
