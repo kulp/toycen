@@ -295,8 +295,7 @@ MAKE(PRIV,ce_unary_inner_,
     )
 
 MAKE(NODE,unary_expression,
-        BASE(node)
-        DEFITEM(TYPED(REF_NODE(postfix_expression),me))
+        BASE(postfix_expression)
         DEFITEM(TYPED(REF_ID(unary_expression_type),type))
         DEFITEM(CHOICE(c,
                 DEFITEM(TYPED(PTR(REF_NODE(unary_expression)),ue))
