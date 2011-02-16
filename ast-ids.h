@@ -14,6 +14,12 @@ enum id_type {
 };
 #include "ast-ids-post.h"
 
+enum basic_type {
+	#define R_(X) BASIC_TYPE_##X,
+	#include "basic-types.xi"
+	#undef R_
+};
+
 struct id_rec {
 	enum id_type type;
 	const char *name;

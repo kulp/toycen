@@ -40,6 +40,10 @@ CLEANFILES += t/test_hash_table t/test_hash_table_interface
 t/%: CFLAGS += -I.
 t/test_hash_table t/test_hash_table_interface: hash_table.o
 
+CLEANFILES += basic-types.xi
+basic-types.xi: ast-basics-pre.h ast.xi
+	$(CPP) -include ast-basics-pre.h ast.xi | tr ' ' '\012' | sort | uniq - $@
+
 ifeq ($(BUILD_PP),1)
 CLEANFILES += tpp
 tpp: hash_table.o pp_lexer.o

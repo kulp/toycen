@@ -172,19 +172,18 @@ MAKE(NODE,integer,
         DEFITEM(TYPED(BASIC(size_t),size))
         DEFITEM(TYPED(BASIC(bool),is_signed))
         DEFITEM(CHOICE(me,
-            // TODO typedef the multi-word types
             DEFITEM(TYPED(BASIC(short),s))
             DEFITEM(TYPED(BASIC(int),i))
             DEFITEM(TYPED(BASIC(long),l))
-            DEFITEM(TYPED(BASIC(long long),ll))
-            DEFITEM(TYPED(BASIC(signed short),ss))
-            DEFITEM(TYPED(BASIC(signed int),si))
-            DEFITEM(TYPED(BASIC(signed long),sl))
-            DEFITEM(TYPED(BASIC(signed long long),sll))
-            DEFITEM(TYPED(BASIC(unsigned short),us))
-            DEFITEM(TYPED(BASIC(unsigned int),ui))
-            DEFITEM(TYPED(BASIC(unsigned long),ul))
-            DEFITEM(TYPED(BASIC(unsigned long long),ull))
+            DEFITEM(TYPED(BASIC(long_long),ll))
+            DEFITEM(TYPED(BASIC(signed_short),ss))
+            DEFITEM(TYPED(BASIC(signed_int),si))
+            DEFITEM(TYPED(BASIC(signed_long),sl))
+            DEFITEM(TYPED(BASIC(signed_long_long),sll))
+            DEFITEM(TYPED(BASIC(unsigned_short),us))
+            DEFITEM(TYPED(BASIC(unsigned_int),ui))
+            DEFITEM(TYPED(BASIC(unsigned_long),ul))
+            DEFITEM(TYPED(BASIC(unsigned_long_long),ull))
         ))
     )
 
@@ -196,8 +195,8 @@ MAKE(NODE,character,
         DEFITEM(TYPED(BASIC(bool),is_signed))
         DEFITEM(CHOICE(me,
                 DEFITEM(TYPED(BASIC(char),c))
-                DEFITEM(TYPED(BASIC(signed char),lc))
-                DEFITEM(TYPED(BASIC(unsigned char),uc))
+                DEFITEM(TYPED(BASIC(signed_char),lc))
+                DEFITEM(TYPED(BASIC(unsigned_char),uc))
             ))
     )
 
@@ -207,7 +206,7 @@ MAKE(NODE,floating,
         DEFITEM(CHOICE(me,
                 DEFITEM(TYPED(BASIC(float),f))
                 DEFITEM(TYPED(BASIC(double),d))
-                DEFITEM(TYPED(BASIC(long double),ld))
+                DEFITEM(TYPED(BASIC(long_double),ld))
             ))
     )
 
