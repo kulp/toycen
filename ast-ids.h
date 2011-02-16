@@ -14,6 +14,11 @@ enum id_type {
 };
 #include "ast-ids-post.h"
 
+struct id_rec {
+	enum id_type type;
+	const char *name;
+};
+
 struct node_parentage {
 	enum node_type type,
 				   base;
@@ -35,20 +40,23 @@ struct node_item {
 	bool is_pointer;
 	const char *name;
 	union {
-		enum node_type node_type;
-		enum id_type id_type;
+		//enum node_type node_type;
+		const struct node_rec *node;
+		//enum id_type id_type;
+		const struct id_rec *id;
 		struct node_item *choice;
 	} c;
 };
 
-struct node_field {
+struct node_rec {
 	enum node_type type;
+	const char *name;
 	struct node_item *items;
 };
 
 #if EXPOSE
-extern const char *node_type_names[];
-extern const char *id_type_names[];
+extern const struct node_rec node_recs[];
+extern const struct id_rec id_recs[];
 extern struct node_parentage node_parentages[];
 #endif
 
