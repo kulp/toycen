@@ -22,7 +22,6 @@
 		23AF4AFF1307298200362BAB /* lexer.l.rules */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lexer.l.rules; sourceTree = "<group>"; };
 		23AF4B001307298200362BAB /* parser_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser_internal.h; sourceTree = "<group>"; };
 		23AF4B011307298200362BAB /* parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parser.c; sourceTree = "<group>"; };
-		23AF4B031307298200362BAB /* y.tab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = y.tab.h; sourceTree = "<group>"; };
 		23AF4B80130735CD00362BAB /* parser.y */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.yacc; path = parser.y; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -78,7 +77,6 @@
 			children = (
 				23AF4B001307298200362BAB /* parser_internal.h */,
 				23AF4B011307298200362BAB /* parser.c */,
-				23AF4B031307298200362BAB /* y.tab.h */,
 			);
 			name = Generated;
 			sourceTree = "<group>";
@@ -158,6 +156,8 @@
 					i386,
 					ppc,
 				);
+				DEBUG = 1;
+				DEFINES = "DEBUG=1";
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				ONLY_ACTIVE_ARCH = YES;
