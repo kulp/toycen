@@ -4,6 +4,12 @@ DEFINES += DEBUG=$(DEBUG)
 # easier to debug calloc()ed structs than unions
 DEFINES += union=struct
 CFLAGS += -save-temps
+else
+CFLAGS += -O3
+endif
+
+ifeq ($(NDEBUG),1)
+DEFINES += NDEBUG
 endif
 
 TARGET = toycen
