@@ -11,9 +11,9 @@ WEXTRA = -Wextra
 
 ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 
-CPPFLAGS += -std=c99
+CPPFLAGS += -std=c99 $(patsubst %,-D%,$(DEFINES))
 YFLAGS  += -dv
-CFLAGS  += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(patsubst %,-D%,$(DEFINES)) $(ARCHFLAGS)
+CFLAGS  += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(ARCHFLAGS)
 LFLAGS  +=
 LDFLAGS += $(ARCHFLAGS)
 
