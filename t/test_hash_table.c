@@ -5,6 +5,8 @@
 
 #define countof(X) (sizeof (X) / sizeof (X)[0])
 
+FILE *DEBUG_FILE = NULL;
+
 static const char *toput[] = {
     "hi",  "foo",
     "bye", "bar",
@@ -31,6 +33,8 @@ static const char *atlast[] = {
 
 int main()
 {
+	DEBUG_FILE = stderr;
+
     hash_table_t ht;
     hash_table_create(&ht, 1);
 

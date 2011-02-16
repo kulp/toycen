@@ -1,16 +1,9 @@
-#if DEBUG
-// easier to debug structs than unions when calloc()ed
-#define UNION_KEYWORD struct
-#else
-#define UNION_KEYWORD union
-#endif
-
 #define MAKE(Sc,Key,...)        DEF_##Sc(Key,__VA_ARGS__); MAKE_TYPE(Sc,Key);
 #define MAKE_TYPE(Sc,Key)       typedef REF_##Sc(Key) T_##Key
 #define DEF(Sc,Key,Name,...)    DEF_##Sc(Key,__VA_ARGS__)
 #define REF(Sc,Key)             REF_##Sc(Key)
 
-#define CHOICE(Name,...)        UNION_KEYWORD { __VA_ARGS__ } Name
+#define CHOICE(Name,...)        union { __VA_ARGS__ } Name
 
 #define BASE(Key)               DEFITEM(TYPED(REF_NODE(Key),base))
 

@@ -1,6 +1,8 @@
 CPP = gcc -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
+# easier to debug calloc()ed structs than unions
+DEFINES += union=struct
 CFLAGS += -save-temps
 endif
 
@@ -43,6 +45,8 @@ t/test_hash_table t/test_hash_table_interface: hash_table.o
 CLEANFILES += basic-types.xi
 basic-types.xi: ast-basics-pre.h ast.xi
 	$(CPP) -include ast-basics-pre.h ast.xi | tr ' ' '\012' | sort | uniq - $@
+
+ast-ids.o: CFLAGS += -Wno-missing-field-initializers
 
 ifeq ($(BUILD_PP),1)
 CLEANFILES += tpp

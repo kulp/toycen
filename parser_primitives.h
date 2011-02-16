@@ -70,7 +70,7 @@ extern void *_tptr;
 /// upgrade node (descend from existing node, replacing old node)
 #define UN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
-      (debug(2, "upgrading  %p to %-25s with " #__VA_ARGS__, Old, #Type)), \
+      (debug(2, "upgrading  %p to %-25s with " #__VA_ARGS__, (void*)Old, #Type)), \
       (_tptr = (struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)), \
 	  (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
 	  (_tptr) \
@@ -94,7 +94,7 @@ void my_free(void*);
 #define Anon(Type,...) ((struct Type){ __VA_ARGS__ })
 #define PAnon(Type,...) &Anon(Type,__VA_ARGS__)
 
-void debug(int level, const char *fmt, ...);
+#define debug(...) _debug(__VA_ARGS__)
 
 parser_state_t *get_parser_state(void);
 void set_parser_state(parser_state_t *ps);

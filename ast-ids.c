@@ -62,15 +62,16 @@ struct node_parentage node_parentages[] = {
 // end-of-chain sentinel
 #define EOC { .meta = META_IS_INVALID }
 
-#define BASIC(T)                .meta = META_IS_BASIC, .c.basic = &basic_recs[BASIC_TYPE_##T],
+#define BASIC(T)                .meta = META_IS_BASIC, .c = { .basic = &basic_recs[BASIC_TYPE_##T] },
 #define DEFITEM(...)            { __VA_ARGS__ },
-#define CHOICE(Name,...)        .meta     = META_IS_CHOICE, \
-                                .c.choice = (struct node_item[]){ __VA_ARGS__ EOC },
+#define CHOICE(Name,...)        .meta = META_IS_CHOICE, \
+                                .name = STR_(Name), \
+                                .c = { .choice = (struct node_item[]){ __VA_ARGS__ EOC } },
 #define TYPED(T,X)              .name = STR_(X), T
 #define REF_NODE(Key)           .meta = META_IS_NODE, \
-                                .c.node = &node_recs[NODE_TYPE_##Key],
+                                .c = { .node = &node_recs[NODE_TYPE_##Key] },
 #define REF_ID(Key)             .meta = META_IS_ID, \
-                                .c.id   = &id_recs[ID_TYPE_##Key],
+                                .c = { .id   =   &id_recs[ID_TYPE_##Key  ] },
 #define REF_PRIV(Key)           /*TODO*/
 #define PTR(...)                .is_pointer = true, __VA_ARGS__
 #define MAKE_NODE(Key,...) \

@@ -60,18 +60,6 @@ void parser_teardown(parser_state_t *ps)
     /// @todo implement
 }
 
-/// @todo define this elswhere
-void debug(int level, const char *fmt, ...)
-{
-    if (level <= DEBUG_LEVEL && DEBUG_FILE) {
-        va_list vl;
-        va_start(vl, fmt);
-        vfprintf(DEBUG_FILE, fmt, vl);
-        putc('\n', DEBUG_FILE);
-        va_end(vl);
-    }
-}
-
 void *my_malloc(size_t size)
 {
     void *result = malloc(size);
@@ -121,11 +109,10 @@ struct string* intern_string(parser_state_t *ps, const char *str)
         result->size = len;
         result->value = my_malloc(len * sizeof *result->value);
         for (unsigned i = 0; i < len; i++) {
-            result->value[i] = (struct character){
-                .has_signage = false,
-                .is_signed = false,
-                .me.c = str[i],
-            };
+			struct character *p = &result->value[i];
+			p->has_signage = false;
+			p->is_signed= false;
+			p->me.c = str[i];
         }
         hash_table_put(ps->constants.strings, str, result);
     }

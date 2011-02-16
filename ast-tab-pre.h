@@ -2,7 +2,7 @@
 #define DEF(Sc,Key,Name,...)    DEF_##Sc(Key,__VA_ARGS__)
 #define REF(Sc,Key)             REF_##Sc(Key)
 
-#define CHOICE(Name,...)        UNION_KEYWORD { __VA_ARGS__ } Name
+#define CHOICE(Name,...)        union { __VA_ARGS__ } Name
 
 #define DEF_ID(Key,...)         enum Key { __VA_ARGS__ }
 #define REF_ID(Key)             enum Key

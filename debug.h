@@ -1,19 +1,19 @@
 #ifndef DEBUG_H_F828480A004155BCAD874C168AB38287
 #define DEBUG_H_F828480A004155BCAD874C168AB38287
 
-/// @todo use redirectable output streams
-
-#if DEBUG
+#if defined(DEBUG) && DEBUG > 0
 #include <stdio.h>
+extern FILE *DEBUG_FILE;
 #define _debug(n,...) \
-    do \
-		if (n <= DEBUG) { \
-			fprintf(stderr, __VA_ARGS__); \
-			fprintf(stderr, "\n"); \
-		} \
-	while (0)
+    ( \
+		(n <= DEBUG && DEBUG_FILE) ? \
+            (fprintf(DEBUG_FILE, __VA_ARGS__), \
+            putc('\n', DEBUG_FILE), \
+            (void)0) \
+        : (void)0 \
+      )
 #else
-#define _debug(...)
+#define _debug(...) (void)0
 #endif
 
 #define _error(...) \
