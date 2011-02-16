@@ -7,10 +7,14 @@
 #include "lexer.h"
 #include "hash_table.h"
 
+FILE *DEBUG_FILE = NULL;
+
 #define countof(X) (sizeof (X) / sizeof (X)[0])
 
 int main()
 {
+	DEBUG_FILE = stderr;
+
     hash_table_t ht = NULL;
 
     char buf[128];
