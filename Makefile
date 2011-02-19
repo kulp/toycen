@@ -23,12 +23,12 @@ CFLAGS  += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(ARCHFLAGS)
 LFLAGS  +=
 LDFLAGS += $(ARCHFLAGS)
 
-OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-walk.o
+OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
 
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface
 
 toycen.o: CFLAGS += -Wno-unused-parameter
-toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o
+toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
 parser.o: CFLAGS += -Wno-missing-field-initializers
 
 CLEANFILES += ast-gen.h ast-gen2.h
