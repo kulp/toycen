@@ -11,6 +11,7 @@
 
 %{
     #define _XOPEN_SOURCE 500
+
 	#include "pp_lexer.h"
     #include <stdio.h>
 

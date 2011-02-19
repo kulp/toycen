@@ -32,6 +32,8 @@
 %option noyywrap
 
 %{
+	#define _XOPEN_SOURCE 500
+
     #include <ctype.h>
     #include <stdio.h>
 

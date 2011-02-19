@@ -32,6 +32,8 @@
  */
 
 %{
+    #define _XOPEN_SOURCE 600
+
     #include "parser.h"
     #include "parser_primitives.h"
     #include "lexer.h"
