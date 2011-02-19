@@ -41,10 +41,10 @@ int _format_BASIC(struct type_formatter *fmt, int *size, char buf[*size], void *
     #undef P_
     #undef R_
 
-    if (need > *size)
+    if (need >= *size)
         *size = -1;
     else
-        memcpy(buf, temp, *size = need);
+        memcpy(buf, temp, *size = need + 1);
 
     return 0;
 }
