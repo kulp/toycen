@@ -1,8 +1,6 @@
 CPP = gcc -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
-# easier to debug calloc()ed structs than unions
-DEFINES += union=struct
 CFLAGS += -save-temps
 else
 CFLAGS += -O3

@@ -3,24 +3,28 @@
 
 #include "ast-nodes-pre.h"
 enum node_type {
+    NODE_TYPE_INVALID,
     #include "ast.xi"
 };
 #include "ast-nodes-post.h"
 
 #include "ast-privs-pre.h"
 enum priv_type {
+    PRIV_TYPE_INVALID,
     #include "ast.xi"
 };
 #include "ast-privs-post.h"
 
 #include "ast-ids-pre.h"
 enum id_type {
+    ID_TYPE_INVALID,
     ID_TYPE_node_type,
     #include "ast.xi"
 };
 #include "ast-ids-post.h"
 
 enum basic_type {
+    BASIC_TYPE_INVALID,
     #define R_(X) BASIC_TYPE_##X,
     #include "basic-types.xi"
     #undef R_

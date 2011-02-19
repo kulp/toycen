@@ -4,12 +4,14 @@
 struct node_rec {
     enum node_type type;
     const char *name;
+    size_t * const * const offp; ///< pointer to array due to limitations in preprocessor
     struct node_item *items;
 };
 
 struct priv_rec {
     enum priv_type type;
     const char *name;
+    size_t * const * const offp; ///< pointer to array due to limitations in preprocessor
     struct node_item *items;
 };
 
@@ -42,12 +44,24 @@ enum meta_type {
     META_IS_BASIC,
 };
 
+struct node_offset {
+    enum node_type type;
+    size_t *items;
+};
+
+struct priv_offset {
+    enum priv_type type;
+    size_t *items;
+};
+
 struct node_item {
     enum meta_type meta;
     bool is_pointer;
     const char *name;
-    // TODO
-    //size_t offset;
+    // we would like to have here the size for this node, but we don't have the
+    // argument passed to the REF_*() macro that would tell us the first
+    // argument to offsetof(), so we keep a parallel array in the node_recs[]
+    //size_t *offp; ///< pointer due to limitations in preprocessor
     union {
         const struct node_rec *node;
         const struct priv_rec *priv;
