@@ -40,7 +40,7 @@ const struct basic_rec basic_recs[] = {
 #define MAKE_PRIV(...)
 #define MAKE_NODE(Key,...) \
     [NODE_TYPE_##Key] = { .type = NODE_TYPE_##Key, \
-                          .size = sizeof(struct Key), \
+                          .size = sizeof(T_##Key), \
                           __VA_ARGS__ },
 
 struct node_parentage node_parentages[] = {
@@ -56,7 +56,7 @@ struct node_parentage node_parentages[] = {
 
 //------------------------------------------------------------------------------
 
-#define ONE_(Key,F) offsetof(struct Key, F)
+#define ONE_(Key,F) offsetof(T_##Key, F)
 #define OFF_9(Key,F,...) ONE_(Key,F), OFF_8(Key,__VA_ARGS__)
 #define OFF_8(Key,F,...) ONE_(Key,F), OFF_7(Key,__VA_ARGS__)
 #define OFF_7(Key,F,...) ONE_(Key,F), OFF_6(Key,__VA_ARGS__)
