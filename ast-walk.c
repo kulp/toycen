@@ -7,9 +7,47 @@ struct ast_walk_data {
     int dummy;
 };
 
-static int ast_walk_recursive(enum node_type type, struct node *node,
-        ast_walk_cb cb, int flags, struct ast_walk_ops *ops, void *userdata,
-        void *cookie)
+static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
+        int flags, struct ast_walk_ops *ops, void *userdata, void *cookie);
+
+static int recurse_any(enum meta_type meta, const struct node_item *parent, void *what, ast_walk_cb
+        cb, int flags, struct ast_walk_ops *ops, void *userdata, void *cookie)
+{
+    #define CALLBACK(Mode) \
+        cb(Mode, meta, parent->c.node->type, what, userdata, ops, cookie)
+
+    int result   = -1,
+        cbresult = -1;
+
+    switch (meta) {
+        case META_IS_NODE:
+            cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
+            if (what)
+                result = recurse_node(((struct node*)what)->node_type, what, cb, flags, ops, userdata, cookie);
+            break;
+        // TODO
+        case META_IS_BASIC:
+            cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
+            break;
+        case META_IS_CHOICE: {
+            int j = 0;
+            while (parent->c.choice[j].meta != META_IS_INVALID) {
+                const struct node_item *citem = &parent->c.choice[j];
+                result = recurse_any(citem->meta, citem, what, cb, flags, ops, userdata, cookie);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    #undef CALLBACK
+
+    return result;
+}
+
+static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
+        int flags, struct ast_walk_ops *ops, void *userdata, void *cookie)
 {
     // TODO move parent-handling based on flags
     // TODO do something with results
@@ -19,37 +57,17 @@ static int ast_walk_recursive(enum node_type type, struct node *node,
 
     const struct node_rec *rec = &node_recs[type];
     int i = 0;
-//#define HANDLE_PARENT
     /// @todo give flags control of BASE recursing
     enum node_type parent_type = node_parentages[type].base;
     if (parent_type != NODE_TYPE_INVALID)
-        result = ast_walk_recursive(parent_type, node, cb, flags, ops, userdata, cookie);
+        result = recurse_node(parent_type, node, cb, flags, ops, userdata, cookie);
 
     /// @todo what if flags doesn't contain a BEFORE or AFTER ?
     while (rec->items[i].meta != META_IS_INVALID) {
         struct node_item *item = &rec->items[i];
         void *childaddr = (char*)node + (*rec->offp)[i];
-        struct node *child = item->is_pointer ? *(void**)childaddr : childaddr;
-        #define CALLBACK(Mode) \
-            cb(Mode, item->meta, item->c.node->type, child, userdata, ops, cookie)
-
-        switch (item->meta) {
-            case META_IS_NODE:
-                cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
-                if (child)
-                    result = ast_walk_recursive(child->node_type, child, cb, flags, ops, userdata, cookie);
-                break;
-            // TODO
-            case META_IS_BASIC:
-                cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
-                break;
-            case META_IS_CHOICE:
-                break;
-            default:
-                break;
-        }
-
-        #undef CALLBACK
+        void *child = item->is_pointer ? *(void**)childaddr : childaddr;
+        result = recurse_any(item->meta, item, child, cb, flags, ops, userdata, cookie);
         i++;
     }
 
@@ -68,7 +86,7 @@ int ast_walk(struct node *top, ast_walk_cb cb, int flags, void *userdata)
         return -1;
     }
 
-    return ast_walk_recursive(top->node_type, top, cb, flags, &ops, userdata, &cookie);
+    return recurse_node(top->node_type, top, cb, flags, &ops, userdata, &cookie);
 }
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */
