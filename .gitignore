@@ -19,3 +19,4 @@ ast-gen2.h
 basic-types.xi
 *.pbxuser
 *.mode1v3
+ast-walk-test

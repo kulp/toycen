@@ -164,7 +164,7 @@ MAKE(NODE,type_name,
 MAKE(NODE,identifier,
         BASE(node)
         DEFITEM(TYPED(BASIC(size_t),len))
-        DEFITEM(TYPED(PTR(BASIC(char)),name))
+        DEFITEM(TYPED(BASIC(char_ptr),name))
     )
 
 MAKE(NODE,integer,

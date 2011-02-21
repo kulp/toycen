@@ -232,7 +232,7 @@ primary_expression
 
 identifier
     : IDENTIFIER
-        { $$ = NN(identifier, .name = strdup(yylval.str)); }
+        { $$ = NN(identifier, .len = strlen(yylval.str), .name = strdup(yylval.str)); }
     ;
 
 postfix_expression

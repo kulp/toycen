@@ -7,6 +7,7 @@
 #include "ast-formatters.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 extern int yyparse();
 
@@ -34,11 +35,13 @@ static int walk_cb(
             int size = 128;
             char buf[size];
             int result = fmt_call(meta, type, &size, buf, data);
-            printf("result = %d, val = %s\n", result, buf);
+            printf("result = %d, val = %s, type = %s/%s\n", result, buf,
+                    basic_recs[type].defname, basic_recs[type].rawname);
             break;
         }
         default:
-            __asm__("int3");
+            // TODO implement
+            abort();
     }
 
     return 0;

@@ -10,44 +10,48 @@ struct ast_walk_data {
 static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
         int flags, struct ast_walk_ops *ops, void *userdata, void *cookie);
 
-static int recurse_any(enum meta_type meta, const struct node_item *parent, void *what, ast_walk_cb
+static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
         cb, int flags, struct ast_walk_ops *ops, void *userdata, void *cookie)
 {
-    #define CALLBACK(Mode) \
-        cb(Mode, meta, parent->c.node->type, what, userdata, ops, cookie)
-
     int result   = -1,
+        // TODO use cbresult
         cbresult = -1;
 
-    switch (meta) {
+    void *deref = *(void**)what;
+
+    switch (parent->meta) {
         case META_IS_NODE:
-            cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
-            if (what)
-                result = recurse_node(((struct node*)what)->node_type, what, cb, flags, ops, userdata, cookie);
+            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, parent->meta,
+                    parent->c.node->type, deref, userdata, ops, cookie);
+
+            if (deref)
+                result = recurse_node(((struct node*)deref)->node_type,
+                        deref, cb, flags, ops, userdata, cookie);
             break;
-        // TODO
         case META_IS_BASIC:
-            //cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
-            cb(AST_WALK_BETWEEN_CHILDREN, meta, parent->c.node->type, &what, userdata, ops, cookie);
+            // TODO correct flags
+            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, parent->meta,
+                    parent->c.node->type, what, userdata, ops, cookie);
             break;
         case META_IS_CHOICE: {
             // CHOICE structs wrappers have as their first member an int
-            // describing which member is selected. Zero means none ...
-            int type = *(int*)what;
-            if (type > 0) {
+            // describing which member is selected.
+            // TODO ensure this cast is portable; long double should ensure
+            // alignment for any primitive ?
+            struct { int idx; union { long double dummy; } c; } *generic = deref;
+            // Zero means none ...
+            if (generic->idx > 0) {
                 // ... so we subtract one from the index.
-                const struct node_item *citem = &parent->c.choice[type - 1];
-                // XXX offset what by how much ? alignment issues
-                struct { int dummy; union { struct anything* inner; } c; } *temp = what;
-                result = recurse_any(citem->meta, citem, temp->c.inner, cb, flags, ops, userdata, cookie);
+                const struct node_item *citem = &parent->c.choice[generic->idx - 1];
+                result = recurse_any(citem, &generic->c, cb, flags, ops,
+                        userdata, cookie);
             }
             break;
         }
+        // TODO remaining META_IS_*
         default:
             break;
     }
-
-    #undef CALLBACK
 
     return result;
 }
@@ -72,8 +76,16 @@ static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
     while (rec->items[i].meta != META_IS_INVALID) {
         struct node_item *item = &rec->items[i];
         void *childaddr = (char*)node + (*rec->offp)[i];
-        void *child = item->is_pointer ? *(void**)childaddr : childaddr;
-        result = recurse_any(item->meta, item, child, cb, flags, ops, userdata, cookie);
+        void *child;
+        if (item->is_pointer || item->meta == META_IS_BASIC) {
+            // if BASIC, unwrap, because we rewrap in recurse_any()
+            child = *(void**)childaddr;
+        } else {
+            child = childaddr;
+        }
+
+        if (child)
+            result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
         i++;
     }
 

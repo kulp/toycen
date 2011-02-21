@@ -1,4 +1,5 @@
 #include "ast-ids.h"
+#include "ast-pre.h"
 
 #include "ast-formatters-priv.h"
 

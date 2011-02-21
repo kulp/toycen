@@ -7,6 +7,8 @@
 typedef long long          long_long;
 typedef long double        long_double;
 
+typedef char * char_ptr;
+
 typedef signed char        signed_char;
 typedef signed short       signed_short;
 typedef signed int         signed_int;
