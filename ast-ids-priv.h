@@ -18,6 +18,7 @@ struct priv_offset {
     size_t *items;
 };
 
+// TODO encapsulate these
 extern const struct node_rec node_recs[];
 extern const struct priv_rec priv_recs[];
 extern const struct id_rec id_recs[];

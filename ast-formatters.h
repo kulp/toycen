@@ -1,13 +1,7 @@
 #ifndef AST_FORMATTERS_H_
 #define AST_FORMATTERS_H_
 
-struct type_formatter {
-    enum meta_type meta;
-    unsigned type;
-    int (*format)(struct type_formatter *fmt, int *size, char buf[*size], void *data);
-};
-
-extern const struct type_formatter *type_formatters[];
+int fmt_call(enum meta_type meta, int type, int *size, char buf[*size], void *data);
 
 #endif
 

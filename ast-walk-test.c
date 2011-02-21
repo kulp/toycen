@@ -4,6 +4,7 @@
 #include "hash_table.h"
 #include "ast-walk.h"
 #include "ast-ids-priv.h"
+#include "ast-formatters.h"
 
 #include <stdio.h>
 
@@ -13,7 +14,7 @@ int DEBUG_LEVEL = 2;
 FILE* DEBUG_FILE;
 
 static int walk_cb(
-		int flags,
+        int flags,
         enum meta_type meta,
         unsigned type,
         void *data,
@@ -22,18 +23,25 @@ static int walk_cb(
         walkdata cookie
     )
 {
-	switch (meta) {
-		case META_IS_NODE : {
-			const struct node_rec *rec = &node_recs[type];
-			if (data && flags & AST_WALK_BEFORE_CHILDREN)
-				printf("node name = %s\n", rec->name);
-			break;
-		}
-		default:
-			__asm__("int3");
-	}
+    switch (meta) {
+        case META_IS_NODE: {
+            const struct node_rec *rec = &node_recs[type];
+            if (data && flags & AST_WALK_BEFORE_CHILDREN)
+                printf("node name = %s\n", rec->name);
+            break;
+        }
+        case META_IS_BASIC: {
+            int size = 128;
+            char buf[size];
+            int result = fmt_call(meta, type, &size, buf, data);
+            printf("result = %d, val = %s\n", result, buf);
+            break;
+        }
+        default:
+            __asm__("int3");
+    }
 
-	return 0;
+    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -53,7 +61,7 @@ int main(int argc, char *argv[])
 
     struct translation_unit *top = get_top_of_parse_result();
 
-	ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN, 0);
+    ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN, 0);
 
     parser_teardown(&ps);
     lexer_teardown();

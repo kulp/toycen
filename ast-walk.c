@@ -27,13 +27,19 @@ static int recurse_any(enum meta_type meta, const struct node_item *parent, void
             break;
         // TODO
         case META_IS_BASIC:
-            cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
+            //cbresult = CALLBACK(AST_WALK_BETWEEN_CHILDREN);
+            cb(AST_WALK_BETWEEN_CHILDREN, meta, parent->c.node->type, &what, userdata, ops, cookie);
             break;
         case META_IS_CHOICE: {
-            int j = 0;
-            while (parent->c.choice[j].meta != META_IS_INVALID) {
-                const struct node_item *citem = &parent->c.choice[j];
-                result = recurse_any(citem->meta, citem, what, cb, flags, ops, userdata, cookie);
+            // CHOICE structs wrappers have as their first member an int
+            // describing which member is selected. Zero means none ...
+            int type = *(int*)what;
+            if (type > 0) {
+                // ... so we subtract one from the index.
+                const struct node_item *citem = &parent->c.choice[type - 1];
+                // XXX offset what by how much ? alignment issues
+                struct { int dummy; union { struct anything* inner; } c; } *temp = what;
+                result = recurse_any(citem->meta, citem, temp->c.inner, cb, flags, ops, userdata, cookie);
             }
             break;
         }

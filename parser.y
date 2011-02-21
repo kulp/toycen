@@ -52,6 +52,7 @@
 
     extern int lineno, column;
 
+    // XXX not reentrant
     void *_tptr;
 
     static struct translation_unit *top;
@@ -394,7 +395,7 @@ assignment_expression
     : conditional_expression
         { $$ = NN(assignment_expression, .has_op = false, .c = CHOICE(0,right,$1)); }
     | unary_expression assignment_operator assignment_expression
-        { $$ = NN(assignment_expression, .c = CHOICE(1,assn,{ .left = $1, .op = $2, .right = $3 })); }
+        { $$ = NN(assignment_expression, .has_op = true,  .c = CHOICE(1,assn,{ .left = $1, .op = $2, .right = $3 })); }
     ;
 
 assignment_operator
