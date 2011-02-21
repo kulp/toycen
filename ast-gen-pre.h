@@ -3,7 +3,7 @@
 #define DEF(Sc,Key,Name,...)    DEF_##Sc(Key,__VA_ARGS__)
 #define REF(Sc,Key)             REF_##Sc(Key)
 
-#define CHOICE(Name,...)        union { __VA_ARGS__ } Name
+#define CHOICE(Name,...)        struct { int idx; union { __VA_ARGS__ } choice; } Name
 
 #define BASE(Key)               DEFITEM(TYPED(REF_NODE(Key),base))
 

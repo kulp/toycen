@@ -112,7 +112,7 @@ struct string* intern_string(parser_state_t *ps, const char *str)
 			struct character *p = &result->value[i];
 			p->has_signage = false;
 			p->is_signed= false;
-			p->me.c = str[i];
+			p->me.choice.c = str[i];
         }
         hash_table_put(ps->constants.strings, str, result);
     }

@@ -45,6 +45,11 @@
     #include <string.h>
     #include <stdint.h>
 
+    // see ast-gen-pre.h's CHOICE(...)
+    // TODO permit Idx to be computed symbolically instead of specified literally
+    // Idx = 0 means "none"
+    #define CHOICE(Idx,Name,...) { .idx = (Idx + 1), .choice.Name = __VA_ARGS__ }
+
     extern int lineno, column;
 
     void *_tptr;
@@ -208,20 +213,20 @@
 
 primary_expression
     : identifier
-        { $$ = NN(primary_expression, .type = PRET_IDENTIFIER, .me.id = $1); }
+        { $$ = NN(primary_expression, .type = PRET_IDENTIFIER, .me = CHOICE(0,id,$1)); }
     | INTEGER
         { struct integer *temp = NN(integer, /** @todo size */.size = 4,
                                              /** @todo is_signed */.is_signed = true,
-                                             .me.i = strtol(yylval.str, NULL, 0));
-          $$ = NN(primary_expression, .type = PRET_INTEGER   , .me.i  = temp); }
+                                             .me = CHOICE(1,i,strtol(yylval.str, NULL, 0)));
+          $$ = NN(primary_expression, .type = PRET_INTEGER   , .me = CHOICE(1,i,temp)); }
     | CHARACTER
-        { $$ = NN(primary_expression, .type = PRET_CHARACTER , .me.c  = /* TODO */NULL); }
+        { $$ = NN(primary_expression, .type = PRET_CHARACTER , .me = CHOICE(2,c,/* TODO */NULL)); }
     | FLOATING
-        { $$ = NN(primary_expression, .type = PRET_FLOATING  , .me.f  = /* TODO */NULL); }
+        { $$ = NN(primary_expression, .type = PRET_FLOATING  , .me = CHOICE(3,f,/* TODO */NULL)); }
     | STRING
-        { $$ = NN(primary_expression, .type = PRET_STRING    , .me.s  = intern_string(get_parser_state(),$1)); }
+        { $$ = NN(primary_expression, .type = PRET_STRING    , .me = CHOICE(4,s,intern_string(get_parser_state(),$1))); }
     | '(' expression ')'
-        { $$ = NN(primary_expression, .type = PRET_PARENTHESIZED, .me.e = $2); }
+        { $$ = NN(primary_expression, .type = PRET_PARENTHESIZED, .me = CHOICE(5,e,$2)); }
     ;
 
 identifier
@@ -231,21 +236,21 @@ identifier
 
 postfix_expression
     : primary_expression
-        { $$ = NN(postfix_expression, .type = PET_PRIMARY, .me.pri = $1); }
+        { $$ = NN(postfix_expression, .type = PET_PRIMARY, .me = CHOICE(0,pri,$1)); }
     | postfix_expression '[' expression ']'
-        { $$ = NN(postfix_expression, .type = PET_ARRAY_INDEX, .me.array = { .left = $1, .index = $3 }); }
+        { $$ = NN(postfix_expression, .type = PET_ARRAY_INDEX, .me = CHOICE(2,array,{ .left = $1, .index = $3 })); }
     | postfix_expression '(' argument_expression_list ')'
-        { $$ = NN(postfix_expression, .type = PET_FUNCTION_CALL, .me.function = { .left = $1, .ael = $3 }); }
+        { $$ = NN(postfix_expression, .type = PET_FUNCTION_CALL, .me = CHOICE(3,function,{ .left = $1, .ael = $3 })); }
     | postfix_expression '(' ')'
-        { $$ = NN(postfix_expression, .type = PET_FUNCTION_CALL, .me.function = { .left = $1, .ael = NULL }); }
+        { $$ = NN(postfix_expression, .type = PET_FUNCTION_CALL, .me = CHOICE(3,function,{ .left = $1, .ael = NULL })); }
     | postfix_expression '.' identifier
-        { $$ = NN(postfix_expression, .type = PET_AGGREGATE_SELECTION, .me.aggregate = { .left = $1, .designator = $3 }); }
+        { $$ = NN(postfix_expression, .type = PET_AGGREGATE_SELECTION, .me = CHOICE(4,aggregate,{ .left = $1, .designator = $3 })); }
     | postfix_expression ARROW identifier
-        { $$ = NN(postfix_expression, .type = PET_AGGREGATE_PTR_SELECTION, .me.aggregate = { .left = $1, .designator = $3 }); }
+        { $$ = NN(postfix_expression, .type = PET_AGGREGATE_PTR_SELECTION, .me = CHOICE(4,aggregate,{ .left = $1, .designator = $3 })); }
     | postfix_expression PLUSPLUS
-        { $$ = NN(postfix_expression, .type = PET_POSTINCREMENT, .me.left = $1); }
+        { $$ = NN(postfix_expression, .type = PET_POSTINCREMENT, .me = CHOICE(1,left,$1)); }
     | postfix_expression MINUSMINUS
-        { $$ = NN(postfix_expression, .type = PET_POSTDECREMENT, .me.left = $1); }
+        { $$ = NN(postfix_expression, .type = PET_POSTDECREMENT, .me = CHOICE(1,left,$1)); }
     ;
 
 argument_expression_list
@@ -259,15 +264,15 @@ unary_expression
     : postfix_expression
         { $$ = UN(unary_expression, $1, .type = UET_POSTFIX); }
     | PLUSPLUS unary_expression
-        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREINCREMENT, .c.ue = $2); }
+        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREINCREMENT, .c = CHOICE(0,ue,$2)); }
     | MINUSMINUS unary_expression
-        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREDECREMENT, .c.ue = $2); }
+        { /** @todo .me */ $$ = NN(unary_expression, .type = UET_PREDECREMENT, .c = CHOICE(0,ue,$2)); }
     | unary_operator cast_expression
-        { $$ = NN(unary_expression, .type = UET_UNARY_OP, .c.ce = { .uo = $1, .ce = $2 }); }
+        { $$ = NN(unary_expression, .type = UET_UNARY_OP, .c = CHOICE(1,ce,{ .uo = $1, .ce = $2 })); }
     | SIZEOF unary_expression
-        { $$ = NN(unary_expression, .type = UET_SIZEOF_EXPR, .c.ue = $2); }
+        { $$ = NN(unary_expression, .type = UET_SIZEOF_EXPR, .c = CHOICE(0,ue,$2)); }
     | SIZEOF '(' type_name ')'
-        { $$ = NN(unary_expression, .type = UET_SIZEOF_TYPE, .c.tn = $3); }
+        { $$ = NN(unary_expression, .type = UET_SIZEOF_TYPE, .c = CHOICE(2,tn,$3)); }
     ;
 
 unary_operator
@@ -287,9 +292,9 @@ unary_operator
 
 cast_expression
     : unary_expression
-        { $$ = NN(cast_expression, .me.unary = $1); }
+        { $$ = NN(cast_expression, .me = CHOICE(0,unary,$1)); }
     | '(' type_name ')' cast_expression
-        { $$ = NN(cast_expression, .me.cast = { .tn = $2, .ce = $4 }); }
+        { $$ = NN(cast_expression, .me = CHOICE(1,cast,{ .tn = $2, .ce = $4 })); }
     ;
 
 multiplicative_expression
@@ -387,9 +392,9 @@ conditional_expression
 
 assignment_expression
     : conditional_expression
-        { $$ = NN(assignment_expression, .has_op = false, .c.right = $1); }
+        { $$ = NN(assignment_expression, .has_op = false, .c = CHOICE(0,right,$1)); }
     | unary_expression assignment_operator assignment_expression
-        { $$ = NN(assignment_expression, .c.assn = { .left = $1, .op = $2, .right = $3 }); }
+        { $$ = NN(assignment_expression, .c = CHOICE(1,assn,{ .left = $1, .op = $2, .right = $3 })); }
     ;
 
 assignment_operator
@@ -422,10 +427,10 @@ declaration
     : declaration_specifiers init_declarator_list ';'
         { $$ = UN(declaration, $1, .decl = $2);
           /// @todo this is a very naïve way of handling types : replace it
-          if (($1)->type == DS_HAS_STORAGE_CLASS && ($1)->me.scs == SCS_TYPEDEF) {
+          if (($1)->type == DS_HAS_STORAGE_CLASS && ($1)->me.choice.scs == SCS_TYPEDEF) {
               struct init_declarator_list *head = $2;
               while (head) {
-                  add_typename(NULL, head->base.base.base.c.id->name);
+                  add_typename(NULL, head->base.base.base.c.choice.id->name);
                   head = head->left;
               }
           }
@@ -436,17 +441,17 @@ declaration
 
 declaration_specifiers
     : storage_class_specifier declaration_specifiers
-        { $$ = NN(declaration_specifiers, .type = DS_HAS_STORAGE_CLASS, .me.scs = $1, .right = $2); }
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_STORAGE_CLASS, .me = CHOICE(0,scs,$1), .right = $2); }
     | storage_class_specifier
-        { $$ = NN(declaration_specifiers, .type = DS_HAS_STORAGE_CLASS, .me.scs = $1, .right = NULL); }
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_STORAGE_CLASS, .me = CHOICE(0,scs,$1), .right = NULL); }
     | type_specifier declaration_specifiers
-        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_SPEC, .me.ts = $1, .right = $2); }
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_SPEC, .me = CHOICE(1,ts,$1), .right = $2); }
     | type_specifier
-        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_SPEC, .me.ts = $1, .right = NULL); }
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_SPEC, .me = CHOICE(1,ts,$1), .right = NULL); }
     | type_qualifier declaration_specifiers
-        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_QUAL, .me.tq = $1, .right = $2); }
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_QUAL, .me = CHOICE(2,tq,$1), .right = $2); }
     | type_qualifier
-        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_QUAL, .me.tq = $1, .right = NULL); }
+        { $$ = NN(declaration_specifiers, .type = DS_HAS_TYPE_QUAL, .me = CHOICE(2,tq,$1), .right = NULL); }
     ;
 
 init_declarator_list
@@ -496,11 +501,11 @@ type_specifier
     | UNSIGNED
         { $$ = NN(type_specifier, .type = TS_UNSIGNED); }
     | struct_or_union_specifier
-        { $$ = NN(type_specifier, .type = TS_STRUCT_OR_UNION_SPEC, .c.as = $1); }
+        { $$ = NN(type_specifier, .type = TS_STRUCT_OR_UNION_SPEC, .c = CHOICE(0,as,$1)); }
     | enum_specifier
-        { $$ = NN(type_specifier, .type = TS_ENUM_SPEC, .c.es = $1); }
+        { $$ = NN(type_specifier, .type = TS_ENUM_SPEC, .c = CHOICE(1,es,$1)); }
     | TYPEDEF_NAME
-        { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .c.tn = NULL /* TODO str2type_name(yylval.str)*/); }
+        { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .c = CHOICE(2,tn,NULL /* TODO str2type_name(yylval.str))*/)); }
     ;
 
 struct_or_union_specifier
@@ -607,19 +612,19 @@ declarator
 
 direct_declarator
     : identifier
-        { $$ = NN(direct_declarator, .type = DD_IDENTIFIER, .c.id = $1); }
+        { $$ = NN(direct_declarator, .type = DD_IDENTIFIER, .c = CHOICE(0,id,$1)); }
     | '(' declarator ')'
-        { $$ = NN(direct_declarator, .type = DD_PARENTHESIZED, .c.decl = $2); }
+        { $$ = NN(direct_declarator, .type = DD_PARENTHESIZED, .c = CHOICE(1,decl,$2)); }
     | direct_declarator '[' constant_expression ']'
-        { $$ = NN(direct_declarator, .type = DD_ARRAY, .c.array = { .left = $1, .index = $3 }); }
+        { $$ = NN(direct_declarator, .type = DD_ARRAY, .c = CHOICE(2,array,{ .left = $1, .index = $3 })); }
     | direct_declarator '[' ']'
-        { $$ = NN(direct_declarator, .type = DD_ARRAY, .c.array = { .left = $1, .index = NULL }); }
+        { $$ = NN(direct_declarator, .type = DD_ARRAY, .c = CHOICE(2,array,{ .left = $1, .index = NULL })); }
     | direct_declarator '(' parameter_type_list ')'
-        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c.function = { .left = $1, .type = FD_HAS_PLIST, .list.param = $3 }); }
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c = CHOICE(3,function,{ .left = $1, .type = FD_HAS_PLIST, .list = CHOICE(0,param,$3) })); }
     | direct_declarator '(' identifier_list ')'
-        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c.function = { .left = $1, .type = FD_HAS_ILIST, .list.ident = $3 }); }
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c = CHOICE(3,function,{ .left = $1, .type = FD_HAS_ILIST, .list = CHOICE(1,ident,$3) })); }
     | direct_declarator '(' ')'
-        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c.function = { .left = $1, .type = FD_HAS_NONE }); }
+        { $$ = NN(direct_declarator, .type = DD_FUNCTION, .c = CHOICE(3,function,{ .left = $1, .type = FD_HAS_NONE })); }
     ;
 
 pointer
@@ -656,9 +661,9 @@ parameter_list
 
 parameter_declaration
     : declaration_specifiers declarator
-        { $$ = UN(parameter_declaration, $1, .type = PD_HAS_DECL, .decl.decl = $2); }
+        { $$ = UN(parameter_declaration, $1, .type = PD_HAS_DECL, .decl = CHOICE(0,decl,$2)); }
     | declaration_specifiers abstract_declarator
-        { $$ = UN(parameter_declaration, $1, .type = PD_HAS_DECL, .decl.abstract = $2); }
+        { $$ = UN(parameter_declaration, $1, .type = PD_HAS_DECL, .decl = CHOICE(1,abstract,$2)); }
     | declaration_specifiers
         { $$ = UN(parameter_declaration, $1, .type = PD_HAS_NONE); }
     ;
@@ -688,32 +693,32 @@ abstract_declarator
 
 direct_abstract_declarator
     : '(' abstract_declarator ')'
-        { $$ = NN(direct_abstract_declarator, .type = DA_PARENTHESIZED, .me.abs = $2); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_PARENTHESIZED, .me = CHOICE(0,abs,$2)); }
     | '[' ']'
-        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = NULL, .idx = NULL }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me = CHOICE(1,array,{ .left = NULL, .idx = NULL })); }
     | '[' constant_expression ']'
-        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = NULL, .idx = $2 }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me = CHOICE(1,array,{ .left = NULL, .idx = $2 })); }
     | direct_abstract_declarator '[' ']'
-        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = $1, .idx = NULL }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me = CHOICE(1,array,{ .left = $1, .idx = NULL })); }
     | direct_abstract_declarator '[' constant_expression ']'
-        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me.array = { .left = $1, .idx = $3 }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_ARRAY_INDEX, .me = CHOICE(1,array,{ .left = $1, .idx = $3 })); }
     | '(' ')'
-        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = NULL, .params = NULL }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me = CHOICE(2,function,{ .left = NULL, .params = NULL })); }
     | '(' parameter_type_list ')'
-        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = NULL, .params = $2 }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me = CHOICE(2,function,{ .left = NULL, .params = $2 })); }
     | direct_abstract_declarator '(' ')'
-        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = $1, .params = NULL }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me = CHOICE(2,function,{ .left = $1, .params = NULL })); }
     | direct_abstract_declarator '(' parameter_type_list ')'
-        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me.function = { .left = $1, .params = $3 }); }
+        { $$ = NN(direct_abstract_declarator, .type = DA_FUNCTION_CALL, .me = CHOICE(2,function,{ .left = $1, .params = $3 })); }
     ;
 
 initializer
     : assignment_expression
-        { $$ = NN(initializer, .me.ae = $1); }
+        { $$ = NN(initializer, .me = CHOICE(0,ae,$1)); }
     | '{' initializer_list '}'
-        { $$ = NN(initializer, .me.il = $2); }
+        { $$ = NN(initializer, .me = CHOICE(1,il,$2)); }
     | '{' initializer_list ',' '}'
-        { $$ = NN(initializer, .me.il = $2); }
+        { $$ = NN(initializer, .me = CHOICE(1,il,$2)); }
     ;
 
 initializer_list
@@ -727,26 +732,26 @@ initializer_list
 
 statement
     : labeled_statement
-        { $$ = NN(statement, .type = ST_LABELED, .me.ls = $1); }
+        { $$ = NN(statement, .type = ST_LABELED, .me = CHOICE(0,ls,$1)); }
     | compound_statement
-        { $$ = NN(statement, .type = ST_COMPOUND, .me.cs = $1); }
+        { $$ = NN(statement, .type = ST_COMPOUND, .me = CHOICE(1,cs,$1)); }
     | expression_statement
-        { $$ = NN(statement, .type = ST_EXPRESSION, .me.es = $1); }
+        { $$ = NN(statement, .type = ST_EXPRESSION, .me = CHOICE(2,es,$1)); }
     | selection_statement
-        { $$ = NN(statement, .type = ST_SELECTION, .me.ss = $1); }
+        { $$ = NN(statement, .type = ST_SELECTION, .me = CHOICE(3,ss,$1)); }
     | iteration_statement
-        { $$ = NN(statement, .type = ST_ITERATION, .me.is = $1); }
+        { $$ = NN(statement, .type = ST_ITERATION, .me = CHOICE(4,is,$1)); }
     | jump_statement
-        { $$ = NN(statement, .type = ST_JUMP, .me.js = $1); }
+        { $$ = NN(statement, .type = ST_JUMP, .me = CHOICE(5,js,$1)); }
     ;
 
 labeled_statement
     : identifier ':' statement
-        { $$ = NN(labeled_statement, .type = LS_LABELED, .me.id = $1, .right = $3); }
+        { $$ = NN(labeled_statement, .type = LS_LABELED, .me = CHOICE(0,id,$1), .right = $3); }
     | CASE constant_expression ':' statement
-        { $$ = NN(labeled_statement, .type = LS_CASE, .me.case_id = $2, .right = $4); }
+        { $$ = NN(labeled_statement, .type = LS_CASE, .me = CHOICE(1,case_id,$2), .right = $4); }
     | DEFAULT ':' statement
-        { $$ = NN(labeled_statement, .type = LS_CASE, .me.case_id = NULL, .right = $3); }
+        { $$ = NN(labeled_statement, .type = LS_CASE, .me = CHOICE(1,case_id,NULL), .right = $3); }
     ;
 
 compound_statement
@@ -815,15 +820,15 @@ iteration_statement
 
 jump_statement
     : GOTO identifier ';'
-        { $$ = NN(jump_statement, .type = JS_GOTO, .me.goto_id = $2); }
+        { $$ = NN(jump_statement, .type = JS_GOTO, .me = CHOICE(0,goto_id,$2)); }
     | CONTINUE ';'
         { $$ = NN(jump_statement, .type = JS_CONTINUE); }
     | BREAK ';'
         { $$ = NN(jump_statement, .type = JS_BREAK); }
     | RETURN ';'
-        { $$ = NN(jump_statement, .type = JS_RETURN, .me.return_expr = NULL); }
+        { $$ = NN(jump_statement, .type = JS_RETURN, .me = CHOICE(1,return_expr,NULL)); }
     | RETURN expression ';'
-        { $$ = NN(jump_statement, .type = JS_RETURN, .me.return_expr = $2); }
+        { $$ = NN(jump_statement, .type = JS_RETURN, .me = CHOICE(1,return_expr,$2)); }
     ;
 
 /* B.2.4 External definitions. */
@@ -837,9 +842,9 @@ translation_unit
 
 external_declaration
     : function_definition
-        { $$ = NN(external_declaration, .type = ED_FUNC_DEF, .me.func = $1); }
+        { $$ = NN(external_declaration, .type = ED_FUNC_DEF, .me = CHOICE(0,func,$1)); }
     | declaration
-        { $$ = NN(external_declaration, .type = ED_DECL, .me.decl = $1); }
+        { $$ = NN(external_declaration, .type = ED_DECL, .me = CHOICE(1,decl,$1)); }
     ;
 
 function_definition

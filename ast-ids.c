@@ -56,22 +56,11 @@ struct node_parentage node_parentages[] = {
 
 //------------------------------------------------------------------------------
 
+#include "ast-recurse.h"
 #define ONE_(Key,F) offsetof(T_##Key, F)
-#define OFF_9(Key,F,...) ONE_(Key,F), OFF_8(Key,__VA_ARGS__)
-#define OFF_8(Key,F,...) ONE_(Key,F), OFF_7(Key,__VA_ARGS__)
-#define OFF_7(Key,F,...) ONE_(Key,F), OFF_6(Key,__VA_ARGS__)
-#define OFF_6(Key,F,...) ONE_(Key,F), OFF_5(Key,__VA_ARGS__)
-#define OFF_5(Key,F,...) ONE_(Key,F), OFF_4(Key,__VA_ARGS__)
-#define OFF_4(Key,F,...) ONE_(Key,F), OFF_3(Key,__VA_ARGS__)
-#define OFF_3(Key,F,...) ONE_(Key,F), OFF_2(Key,__VA_ARGS__)
-#define OFF_2(Key,F,...) ONE_(Key,F), OFF_1(Key,__VA_ARGS__)
-#define OFF_1(Key,F) /* base case */
 
 #define NARGS(...) NARGS_IMPL(__VA_ARGS__,9,8,7,6,5,4,3,2,1)
 #define NARGS_IMPL(_1,_2,_3,_4,_5,_6,_7,_8,_9,N,...) N
-
-#define CAT(X,Y) X##Y
-#define OFF_(N) CAT(OFF_,N)
 
 #define BASE(X) /* always at 0 */
 #define CHOICE(Name,...) Name /* don't need to recurse, union => same offset */
