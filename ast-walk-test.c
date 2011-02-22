@@ -39,8 +39,11 @@ static int walk_cb(
                     basic_recs[type].defname, basic_recs[type].rawname);
             break;
         }
-        default:
+        case META_IS_CHOICE:
             // TODO implement
+            break;
+        default:
+            // TODO handle
             abort();
     }
 

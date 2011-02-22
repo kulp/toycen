@@ -2,16 +2,20 @@
 #include "ast-ids-priv.h"
 
 #include <errno.h>
+#include <stdlib.h>
 
 struct ast_walk_data {
-    int dummy;
+    struct stack {
+        const char *name;
+        struct stack *next;
+    } *stack;
 };
 
 static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
-        int flags, struct ast_walk_ops *ops, void *userdata, void *cookie);
+        int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie);
 
 static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
-        cb, int flags, struct ast_walk_ops *ops, void *userdata, void *cookie)
+        cb, int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
 {
     int result   = -1,
         // TODO use cbresult
@@ -34,6 +38,8 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
                     parent->c.node->type, what, userdata, ops, cookie);
             break;
         case META_IS_CHOICE: {
+            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, parent->meta,
+                    parent->c.node->type, what, userdata, ops, cookie);
             // CHOICE structs wrappers have as their first member an int
             // describing which member is selected.
             // TODO ensure this cast is portable; long double should ensure
@@ -43,8 +49,17 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
             if (generic->idx > 0) {
                 // ... so we subtract one from the index.
                 const struct node_item *citem = &parent->c.choice[generic->idx - 1];
+                struct stack *s = calloc(1, sizeof *s);
+                s->name = citem->name;
+                s->next = cookie->stack;
+                cookie->stack = s;
+
                 result = recurse_any(citem, &generic->c, cb, flags, ops,
                         userdata, cookie);
+
+                s = cookie->stack;
+                cookie->stack = s->next;
+                free(s);
             }
             break;
         }
@@ -57,13 +72,15 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
 }
 
 static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
-        int flags, struct ast_walk_ops *ops, void *userdata, void *cookie)
+        int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
 {
     // TODO move parent-handling based on flags
     // TODO do something with results
-    int cbresult, result;
+    int cbresult = -1,
+        result   = -1;
 
-    cbresult = cb(AST_WALK_BEFORE_CHILDREN, META_IS_NODE, type, node, userdata, ops, cookie);
+    if (flags & AST_WALK_BEFORE_CHILDREN)
+        cbresult = cb(AST_WALK_BEFORE_CHILDREN, META_IS_NODE, type, node, userdata, ops, cookie);
 
     const struct node_rec *rec = &node_recs[type];
     int i = 0;
@@ -84,18 +101,44 @@ static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
             child = childaddr;
         }
 
-        if (child)
-            result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
+        struct stack *s = calloc(1, sizeof *s);
+        s->name = item->name;
+        s->next = cookie->stack;
+        cookie->stack = s;
+
+        result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
+
+        s = cookie->stack;
+        cookie->stack = s->next;
+        free(s);
+
         i++;
     }
 
-    return -1;
+    if (flags & AST_WALK_AFTER_CHILDREN)
+        cbresult = cb(AST_WALK_AFTER_CHILDREN, META_IS_NODE, type, node, userdata, ops, cookie);
+
+    return result;
+}
+
+static int get_name(walkdata cookie, const char **name)
+{
+    struct ast_walk_data *data = cookie;
+    if (!data->stack) {
+        errno = EFAULT;
+        return -1;
+    }
+
+    *name = data->stack->name;
+    return 0;
 }
 
 int ast_walk(struct node *top, ast_walk_cb cb, int flags, void *userdata)
 {
     struct ast_walk_data cookie = { 0 };
-    struct ast_walk_ops ops = { .prune = 0 };
+    struct ast_walk_ops ops = {
+        .get_name = get_name,
+    };
 
     if (top->node_type > NODE_TYPE_max ||
         top->node_type == NODE_TYPE_INVALID)

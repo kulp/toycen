@@ -9,18 +9,19 @@ struct ast_walk_ops {
     int (*get_childcnt)(walkdata cookie, int *count);
     int (*get_children)(walkdata cookie, struct node_item **children);
     int (*get_parent  )(walkdata cookie, struct node_item **parent);
+    int (*get_name    )(walkdata cookie, const char **name);
 
     int (*prune)(walkdata cookie, int flags);
 };
 
 enum ast_walk_flags {
-    AST_WALK_DEFAULT = 0,
+    //AST_WALK_DEFAULT = 0,
 
     AST_WALK_BEFORE_CHILDREN  = 1,
     AST_WALK_AFTER_CHILDREN   = 2,
     AST_WALK_BETWEEN_CHILDREN = 4,
 
-    AST_WALK_PRUNE_SIBLINGS = 1,
+    AST_WALK_PRUNE_SIBLINGS = 8,
 };
 
 /**

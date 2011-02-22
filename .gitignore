@@ -20,3 +20,4 @@ basic-types.xi
 *.pbxuser
 *.mode1v3
 ast-walk-test
+ast-walk-graphviz
