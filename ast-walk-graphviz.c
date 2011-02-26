@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+#include <inttypes.h>
+#include <assert.h>
+#include <stdbool.h>
 
 extern int yyparse();
 
@@ -17,22 +19,25 @@ int DEBUG_LEVEL = 2;
 FILE* DEBUG_FILE;
 
 struct nodedata {
+    struct link {
+        struct {
+            char node[64];
+            const char *port;
+        } from, to;
+        struct link *next;
+    } *links;
     struct parent {
+        // TODO either unify rec and type or distinguish them
         enum node_type type;
-        struct node *parent;
+        struct node *node;
         const struct node_rec *rec;
+        const char *name;
         struct label {
             const char *tag;
-            char *label;
+            char before[128],
+                 after [128];
             struct label *next;
         } *labels;
-        struct link {
-            struct {
-                char node[64];
-                const char *port;
-            } from, to;
-            struct link *next;
-        } *links;
         struct parent *next;
     } *ancestry;
 };
@@ -40,30 +45,84 @@ struct nodedata {
 static int collect_node(const char *name, enum node_type type, struct node *node, struct nodedata *nodes)
 {
     struct parent *p = nodes->ancestry;
+    bool rooted = !p;
+    bool has_parent = !rooted && p->next;
+    bool not_parent = has_parent && node != p->next->node;
+    bool recursing_base = has_parent && !not_parent && type != p->next->node->node_type;
 
-    if (p) {
-        //struct link *L = p->links;
-        if (p->next) {
-            const struct node_rec *rec = &node_recs[type];
-            struct link *L = calloc(1, sizeof *L);
-            // XXX
-            const char *realname = node_recs[type].name;
-            snprintf(L->from.node, sizeof L->from.node, "_%lu_%s", (long)(uintptr_t)p->parent, realname);
-            snprintf(L->to  .node, sizeof L->to  .node, "_%lu_%s", (long)(uintptr_t)node     , realname);
+    assert(!rooted);
+    // XXX wrong
+    //assert(has_parent);
 
-            L->from.port = node_recs[p->next->type].name;
-            L->to.port   = node_recs[         type].name;
+    //const struct node_rec *rec = &node_recs[type];
 
-            char *longer = NULL;
-            // XXX stop using asprintf
-            asprintf(&longer, "{ <%s> %s | }", name, name);
-            struct label *lab = calloc(1, sizeof *lab);
-            lab->tag = node_recs[type].name;
-            lab->label = longer;
-            lab->next = nodes->ancestry->labels;
-            nodes->ancestry->labels = lab;
-        }
+    if (!has_parent) {
+        // XXX this is wrong
+        printf("_%" PRIxPTR "_%s [label=<", (uintptr_t)p->node, p->name);
     }
+
+    // don't draw arrows to ourselves
+    if (not_parent) {
+        struct link *link = calloc(1, sizeof *link);
+        const char *realname = node_recs[type].name;
+        const char *pname = node_recs[p->next->node->node_type].name;
+        snprintf(link->from.node, sizeof link->from.node, "_%" PRIxPTR "_%s", (uintptr_t)p->next->node, pname);
+        snprintf(link->to  .node, sizeof link->to  .node, "_%" PRIxPTR "_%s", (uintptr_t)node, realname);
+
+        link->from.port = p->name;
+        link->to.port   = name;
+
+        link->next = nodes->links;
+        nodes->links = link;
+    } else if (recursing_base) {
+        // base
+        // TODO
+        struct label *lab = calloc(1, sizeof *lab);
+        //int len = snprintf(lab->before, sizeof lab->before, "{ <%s> %s | }", name, name);
+        int len = snprintf(lab->before, sizeof lab->before,
+                "<tr>"
+                    "<td port=\"base\">"
+                #if STYLE
+                       "<font face=\"courier\" color=\"#777777\">"
+                #endif
+                            "base"
+                #if STYLE
+                       "</font>"
+                #endif
+                    "</td>"
+                    "<td>"
+                        //"<table>"
+                );
+        snprintf(lab->after, sizeof lab->after,
+                        //"</table>"
+                    "</td>"
+                "</tr>"
+                );
+        assert(len <= (signed)sizeof lab->before); // XXX <
+        lab->tag = node_recs[type].name;
+        lab->next = p->labels;
+        p->labels = lab;
+    }
+
+    struct label *lab = calloc(1, sizeof *lab);
+    //int len = snprintf(lab->before, sizeof lab->before, "{ <%s> %s | }", name, name);
+    int len = snprintf(lab->before, sizeof lab->before,
+            "<tr>"
+                "<td port=\"%s\">"
+            #if STYLE
+                   "<font face=\"courier\" color=\"#777777\">"
+            #endif
+                        "%s"
+            #if STYLE
+                   "</font>"
+            #endif
+                "<td>*</td>"
+            "</tr>"
+            , name, name);
+    assert(len <= (signed)sizeof lab->before); // XXX <
+    lab->tag = node_recs[type].name;
+    lab->next = p->labels;
+    p->labels = lab;
 
     return 0;
 }
@@ -73,15 +132,27 @@ static int collect_basic(const char *name, enum basic_type type, void *data, str
     char buf[128];
     int size = sizeof buf;
     int result = fmt_call(META_IS_BASIC, type, &size, buf, data);
-    char *longer = NULL;
-    // XXX stop using asprintf
-    asprintf(&longer, "{ <%s> %s | %s }", name, name, buf);
-    struct label *L = calloc(1, sizeof *L);
-    L->tag = name;
-    L->label = longer;
-    L->next = nodes->ancestry->labels;
-    nodes->ancestry->labels = L;
-    return 0;
+    struct label *label = calloc(1, sizeof *label);
+    //int len = snprintf(label->before, sizeof label->before, "{ <%s> %s | %s }", name, name, buf);
+    int len = snprintf(label->before, sizeof label->before,
+            "<tr>"
+            "    <td port=\"%s\">"
+            #if STYLE
+            "       <font face=\"courier\" color=\"#777777\">"
+            #endif
+                        "%s"
+            #if STYLE
+            "       </font>"
+            #endif
+            "    </td>"
+            "    <td>%s</td>"
+            "</tr>"
+            , name, name, buf);
+    assert(len <= (signed)sizeof label->before); // XXX <
+    label->tag = name;
+    label->next = nodes->ancestry->labels;
+    nodes->ancestry->labels = label;
+    return result;
 }
 
 static int walk_cb(
@@ -94,40 +165,68 @@ static int walk_cb(
         walkdata cookie
     )
 {
+    int result = 0;
+
     struct nodedata *nodes = userdata;
 
     switch (meta) {
         case META_IS_NODE: {
             const struct node_rec *rec = &node_recs[type];
             if (flags & AST_WALK_BEFORE_CHILDREN) {
+                const char *name = NULL;
+                ops->get_name(cookie, &name);
                 struct parent *p = calloc(1, sizeof *p);
-                p->parent = data;
+                p->node = data;
                 p->rec = rec;
                 p->type = type;
                 p->next = nodes->ancestry;
+                p->name = name;
                 nodes->ancestry = p;
+
+                if (!p->next) {
+                    printf("_%" PRIxPTR "_%s [label=<", (uintptr_t)p->node, p->name);
+                }
             } else if (flags & AST_WALK_AFTER_CHILDREN) {
                 struct parent *p = nodes->ancestry;
                 nodes->ancestry = p->next;
                 // TODO print things
                 // can't just use address due to BASE and namespace clash
-                printf("_%lu_%s [label=\"", (long)(uintptr_t)p->parent, rec->name);
-                struct label *L = p->labels;
-                while (L) {
-                    printf("%s", L->label);
-                    L = L->next;
-                    if (L)
-                        printf(" | ");
+                printf("<table"
+                       #if STYLE
+                       "       cellpadding=\"4\""
+                       "       cellspacing=\"0\""
+                       "       border=\"0\""
+                       #endif
+                       ">");
+                struct label *label = p->labels;
+                struct label *back = label;
+                while (label) {
+                    if (label->before[0])
+                        printf("%s", label->before);
+                    label = label->next;
+                    // TODO fix backward list
+                    back->next = label;
+                    if (back->next)
+                        back->next->next = NULL;
                 }
-                printf("\"];\n");
+
+                while (back) {
+                    if (back->after[0])
+                        printf("AFTER:%s", back->after);
+                    back = back->next;
+                    // TODO free
+                }
+
+                printf("</table>\n");
                 free(p);
+                if (!p->next) {
+                    printf(">];\n");
+                }
             }
 
             if (data && (flags & AST_WALK_BEFORE_CHILDREN)) {
-                char *name = NULL;
-                ops->get_name(cookie, &name);
-                collect_node(name, type, data, userdata);
-                printf("node name = %s\n", rec->name);
+                collect_node(nodes->ancestry->name, type, data, userdata);
+                //printf("node name = %s\n", rec->name);
             }
             break;
         }
@@ -135,9 +234,11 @@ static int walk_cb(
             if (flags & AST_WALK_AFTER_CHILDREN) {
                 int size = 128;
                 char buf[size];
-                int result = fmt_call(meta, type, &size, buf, data);
+                result = fmt_call(meta, type, &size, buf, data);
+                #if 0
                 printf("result = %d, val = %s, type = %s/%s\n", result, buf,
                         basic_recs[type].defname, basic_recs[type].rawname);
+                #endif
                 const char *name = NULL;
                 ops->get_name(cookie, &name);
                 collect_basic(name, type, data, userdata);
@@ -150,7 +251,7 @@ static int walk_cb(
             abort();
     }
 
-    return 0;
+    return result;
 }
 
 int main(int argc, char *argv[])
@@ -174,8 +275,15 @@ int main(int argc, char *argv[])
     memset(&nodes, 0, sizeof nodes);
 
     puts("digraph structs {");
-    puts("    node [shape=record];");
+    puts("    node [shape=none];");
     ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN, &nodes);
+    struct link *link = nodes.links;
+    while (link) {
+        //printf("%s:%s -> %s:%s;\n", link->from.node, link->from.port, link->to.node, link->to.port);
+        // XXX remove to-port from struct
+        printf("%s:%s -> %s:_name;\n", link->from.node, link->from.port, link->to.node);
+        link = link->next;
+    }
     puts("}");
 
     parser_teardown(&ps);
