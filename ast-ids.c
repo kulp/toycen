@@ -12,25 +12,35 @@
 #undef ENUM_DFL
 #undef ENUM_VAL
 
-#define MAKE_ID(Key,...)        [ID_TYPE_##Key] = { .type = ID_TYPE_##Key, \
-                                                    .name = STR_(Key), \
-                                                    .values = (struct id_value[]){ \
-                                                        __VA_ARGS__ \
-                                                        { .val = 0 } \
-                                                    } },
+#define MAKE_ID(...)
 #define MAKE_PRIV(...)
-#define MAKE_NODE(Key,...)
 #define ENUM_VAL(K,V)           { .val = K, .name = STR_(K) }, // TODO
 #define ENUM_DFL(K)             { .val = K, .name = STR_(K) },
 #define REFITEM(X)              X
 
 const struct id_rec id_recs[] = {
-    [ID_TYPE_node_type] = { ID_TYPE_node_type, "node_type", (struct id_value[]){ { .val = 0 } } }, // TODO
+    [ID_TYPE_node_type] = { ID_TYPE_node_type, "node_type", (struct id_value[]){
+        #define MAKE_NODE(Key,...) \
+            [NODE_TYPE_##Key] = { .val = NODE_TYPE_##Key, .name = STR_(Key) },
+        #include "ast.xi"
+        #undef MAKE_NODE
+        { .val = 0 }
+    } },
+
+    #define MAKE_NODE(Key,...)
+    #undef MAKE_ID
+    #define MAKE_ID(Key,...) \
+        [ID_TYPE_##Key] = { .type = ID_TYPE_##Key, \
+                            .name = STR_(Key), \
+                            .values = (struct id_value[]){ \
+                                __VA_ARGS__ \
+                                { .val = 0 } \
+                            } },
     #include "ast.xi"
+    #undef MAKE_ID
 };
 
 #undef REFITEM
-#undef MAKE_ID
 #undef MAKE_PRIV
 #undef MAKE_NODE
 #undef ENUM_DFL
