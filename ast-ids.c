@@ -15,7 +15,7 @@
 #define MAKE_NODE(Key,...)
 
 const struct id_rec id_recs[] = {
-    [ID_TYPE_node_type] = { ID_TYPE_node_type, "node" },
+    [ID_TYPE_node_type] = { ID_TYPE_node_type, "node_type" },
     #include "ast.xi"
 };
 

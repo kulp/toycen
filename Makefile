@@ -25,9 +25,12 @@ LDFLAGS += $(ARCHFLAGS)
 
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
 
-all: $(TARGET) t/test_hash_table t/test_hash_table_interface ast-walk-test ast-walk-graphviz
+WALKERS = demo graphviz test
+WALKBINS = $(addprefix ast-walk-,$(WALKERS))
+CLEANFILES += $(WALKBINS)
+all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 
-ast-walk-graphviz ast-walk-test: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
+$(WALKBINS) : ast-walk-% : parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
 
 toycen.o: CFLAGS += -Wno-unused-parameter
 toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o

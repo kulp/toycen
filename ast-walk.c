@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#define countof(X) (sizeof (X) / sizeof (X)[0])
+
 struct ast_walk_data {
     struct stack {
         const char *name;
@@ -21,25 +23,37 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
         // TODO use cbresult
         cbresult = -1;
 
+    if (!what) {
+        errno = EFAULT;
+        return -1;
+    }
+
     void *deref = *(void**)what;
+
+    static const int walk_each[] = {
+        AST_WALK_BEFORE_CHILDREN,
+        AST_WALK_BETWEEN_CHILDREN,
+        AST_WALK_AFTER_CHILDREN,
+    };
 
     switch (parent->meta) {
         case META_IS_NODE:
-            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, parent->meta,
-                    parent->c.node->type, deref, userdata, ops, cookie);
-
             if (deref)
                 result = recurse_node(((struct node*)deref)->node_type,
                         deref, cb, flags, ops, userdata, cookie);
             break;
+        case META_IS_ID:
         case META_IS_BASIC:
             // TODO correct flags
-            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, parent->meta,
-                    parent->c.node->type, what, userdata, ops, cookie);
+            for (int i = 0; i < countof(walk_each); i++)
+                if (flags & walk_each[i])
+                    cbresult = cb(walk_each[i], parent->meta,
+                            parent->c.node->type, what, userdata, ops, cookie);
             break;
         case META_IS_CHOICE: {
-            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, parent->meta,
-                    parent->c.node->type, what, userdata, ops, cookie);
+            if (flags & AST_WALK_BEFORE_CHILDREN)
+                cbresult = cb(AST_WALK_BEFORE_CHILDREN, parent->meta,
+                        parent->c.node->type, what, userdata, ops, cookie);
             // CHOICE structs wrappers have as their first member an int
             // describing which member is selected.
             // TODO ensure this cast is portable; long double should ensure
@@ -74,7 +88,7 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
 static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
         int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
 {
-    // TODO move parent-handling based on flags
+    // TODO move parent-handling based on flagsx
     // TODO do something with results
     int cbresult = -1,
         result   = -1;
@@ -107,6 +121,10 @@ static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
         cookie->stack = s;
 
         result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
+
+        if (flags & AST_WALK_BETWEEN_CHILDREN)
+            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, META_IS_NODE,
+                    type, node, userdata, ops, cookie);
 
         s = cookie->stack;
         cookie->stack = s->next;
