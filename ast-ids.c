@@ -3,25 +3,38 @@
 #include "ast-ids-priv.h"
 #include "ast.h"
 
-#define STR_(Str) STR__(Str)
-#define STR__(Str) #Str
+#include "util.h"
 
 #define MAKE(Sc,Key,...)        MAKE_##Sc(Key,__VA_ARGS__)
 
 //------------------------------------------------------------------------------
 
-#define MAKE_ID(Key,...)        [ID_TYPE_##Key] = { ID_TYPE_##Key, STR_(Key) },
+#undef ENUM_DFL
+#undef ENUM_VAL
+
+#define MAKE_ID(Key,...)        [ID_TYPE_##Key] = { .type = ID_TYPE_##Key, \
+                                                    .name = STR_(Key), \
+                                                    .values = (struct id_value[]){ \
+                                                        __VA_ARGS__ \
+                                                        { .val = 0 } \
+                                                    } },
 #define MAKE_PRIV(...)
 #define MAKE_NODE(Key,...)
+#define ENUM_VAL(K,V)           { .val = K, .name = STR_(K) }, // TODO
+#define ENUM_DFL(K)             { .val = K, .name = STR_(K) },
+#define REFITEM(X)              X
 
 const struct id_rec id_recs[] = {
-    [ID_TYPE_node_type] = { ID_TYPE_node_type, "node_type" },
+    [ID_TYPE_node_type] = { ID_TYPE_node_type, "node_type", (struct id_value[]){ { .val = 0 } } }, // TODO
     #include "ast.xi"
 };
 
+#undef REFITEM
 #undef MAKE_ID
 #undef MAKE_PRIV
 #undef MAKE_NODE
+#undef ENUM_DFL
+#undef ENUM_VAL
 
 //------------------------------------------------------------------------------
 

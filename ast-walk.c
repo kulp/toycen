@@ -44,11 +44,8 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
             break;
         case META_IS_ID:
         case META_IS_BASIC:
-            // TODO correct flags
-            for (int i = 0; i < countof(walk_each); i++)
-                if (flags & walk_each[i])
-                    cbresult = cb(walk_each[i], parent->meta,
-                            parent->c.node->type, what, userdata, ops, cookie);
+            cbresult = cb(flags & ~0x7, parent->meta, parent->c.node->type,
+                    what, userdata, ops, cookie);
             break;
         case META_IS_CHOICE: {
             if (flags & AST_WALK_BEFORE_CHILDREN)
@@ -75,6 +72,9 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
                 cookie->stack = s->next;
                 free(s);
             }
+            if (flags & AST_WALK_AFTER_CHILDREN)
+                cbresult = cb(AST_WALK_AFTER_CHILDREN, parent->meta,
+                        parent->c.node->type, what, userdata, ops, cookie);
             break;
         }
         // TODO remaining META_IS_*

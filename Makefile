@@ -13,7 +13,7 @@ endif
 TARGET = toycen
 
 PEDANTIC = $(if $(INHIBIT_PEDANTRY),,-pedantic)
-WEXTRA = -Wextra
+WEXTRA = -Wextra -Wno-unused
 
 ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 

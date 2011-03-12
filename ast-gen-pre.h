@@ -20,5 +20,6 @@
 #define REFITEM(X)              X,
 #define DEFITEM(X)              X;
 
-#define ENUM_VAL(X,V)           X = V
+#define ENUM_VAL(K,V)           K = V
+#define ENUM_DFL(K)             K
 

@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern int yyparse();
 
@@ -53,7 +54,7 @@ static int walk_cb(
     static const struct flag_rec {
         char *prefix;
         signed indent;
-    } flag_recs[] = {
+    } flag_recs[8] = {
         [AST_WALK_BEFORE_CHILDREN ] = { "{ " ,  4 },
         [AST_WALK_BETWEEN_CHILDREN] = { " | ",  0 },
         [AST_WALK_AFTER_CHILDREN  ] = { " }" , -4 },
@@ -90,7 +91,8 @@ static int walk_cb(
     printf(spaces);
     c->indent += f->indent;
 
-    printf("%s", f->prefix);
+    if (f->prefix)
+        printf("%s", f->prefix);
 
     if (!ignore && before)
         printf("%s, ", meta_names[meta]);
@@ -103,17 +105,21 @@ static int walk_cb(
             break;
         }
         case META_IS_BASIC: {
-            int size = 128;
-            char buf[size];
+            char buf[128];
+            int size = sizeof buf;
             int result = fmt_call(meta, type, &size, buf, data);
-            if (before)
+            //if (before)
                 printf(" = (%s) %s, ", basic_recs[type].defname, buf);
             break;
         }
-        case META_IS_ID:
-            if (before)
-                printf("ID_TYPE_%s, ", id_recs[type].name);
+        case META_IS_ID: {
+            char buf[128];
+            int size = sizeof buf;
+            int result = fmt_call(meta, type, &size, buf, data);
+            //if (before)
+                printf("ID_TYPE_%s, %s", id_recs[type].name, buf);
             break;
+        }
         case META_IS_CHOICE:
             // TODO implement
             break;

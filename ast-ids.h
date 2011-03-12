@@ -64,6 +64,10 @@ struct priv_rec {
 struct id_rec {
     enum id_type type;
     const char *name;
+    const struct id_value {
+        int val;
+        const char *name;
+    } *values;
 };
 
 struct basic_rec {
