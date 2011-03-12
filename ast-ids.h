@@ -66,6 +66,7 @@ struct id_rec {
     const char *name;
     const struct id_value {
         int val;
+        const char *prefix;
         const char *name;
     } *values;
 };

@@ -88,7 +88,7 @@ static int walk_cb(
     char spaces[c->indent + 1];
     memset(spaces, ' ', sizeof spaces);
     spaces[c->indent] = 0;
-    printf(spaces);
+    fputs(spaces, stdout);
     c->indent += f->indent;
 
     if (f->prefix)
@@ -152,7 +152,9 @@ int main(int argc, char *argv[])
     struct translation_unit *top = get_top_of_parse_result();
 
     struct mydata data = { 0 };
-    ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN | AST_WALK_BETWEEN_CHILDREN | AST_WALK_AFTER_CHILDREN, &data);
+    ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN |
+                                         //AST_WALK_BETWEEN_CHILDREN |
+                                         AST_WALK_AFTER_CHILDREN, &data);
 
     parser_teardown(&ps);
     lexer_teardown();

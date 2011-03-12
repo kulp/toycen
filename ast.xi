@@ -3,18 +3,18 @@ MAKE(NODE,node,
     )
 
 MAKE(ID,assignment_operator,
-        REFITEM(ENUM_DFL(AO_INVALID))
-        REFITEM(ENUM_DFL(AO_MULEQ))
-        REFITEM(ENUM_DFL(AO_DIVEQ))
-        REFITEM(ENUM_DFL(AO_MODEQ))
-        REFITEM(ENUM_DFL(AO_ADDEQ))
-        REFITEM(ENUM_DFL(AO_SUBEQ))
-        REFITEM(ENUM_DFL(AO_SLEQ))
-        REFITEM(ENUM_DFL(AO_SREQ))
-        REFITEM(ENUM_DFL(AO_ANDEQ))
-        REFITEM(ENUM_DFL(AO_XOREQ))
-        REFITEM(ENUM_DFL(AO_OREQ))
-        REFITEM(ENUM_VAL(AO_EQ,'='))
+        REFITEM(ENUM_DFL(AO,INVALID))
+        REFITEM(ENUM_DFL(AO,MULEQ))
+        REFITEM(ENUM_DFL(AO,DIVEQ))
+        REFITEM(ENUM_DFL(AO,MODEQ))
+        REFITEM(ENUM_DFL(AO,ADDEQ))
+        REFITEM(ENUM_DFL(AO,SUBEQ))
+        REFITEM(ENUM_DFL(AO,SLEQ))
+        REFITEM(ENUM_DFL(AO,SREQ))
+        REFITEM(ENUM_DFL(AO,ANDEQ))
+        REFITEM(ENUM_DFL(AO,XOREQ))
+        REFITEM(ENUM_DFL(AO,OREQ))
+        REFITEM(ENUM_VAL(AO,EQ,'='))
     )
 
 MAKE(PRIV,assignment_inner_,
@@ -24,59 +24,59 @@ MAKE(PRIV,assignment_inner_,
     )
 
 MAKE(ID,type_class,
-        REFITEM(ENUM_DFL(TC_INVALID))
-        REFITEM(ENUM_DFL(TC_VOID))
-        REFITEM(ENUM_DFL(TC_INT))
-        REFITEM(ENUM_DFL(TC_FLOAT))
-        REFITEM(ENUM_DFL(TC_STRUCT))
-        REFITEM(ENUM_DFL(TC_UNION))
-        REFITEM(ENUM_DFL(TC_max))
+        REFITEM(ENUM_DFL(TC,INVALID))
+        REFITEM(ENUM_DFL(TC,VOID))
+        REFITEM(ENUM_DFL(TC,INT))
+        REFITEM(ENUM_DFL(TC,FLOAT))
+        REFITEM(ENUM_DFL(TC,STRUCT))
+        REFITEM(ENUM_DFL(TC,UNION))
+        REFITEM(ENUM_DFL(TC,max))
     )
 
 MAKE(ID,primary_expression_type,
-        REFITEM(ENUM_DFL(PRET_INVALID))
-        REFITEM(ENUM_DFL(PRET_IDENTIFIER))
-        REFITEM(ENUM_DFL(PRET_INTEGER))
-        REFITEM(ENUM_DFL(PRET_CHARACTER))
-        REFITEM(ENUM_DFL(PRET_FLOATING))
-        REFITEM(ENUM_DFL(PRET_STRING))
-        REFITEM(ENUM_DFL(PRET_PARENTHESIZED))
+        REFITEM(ENUM_DFL(PRET,INVALID))
+        REFITEM(ENUM_DFL(PRET,IDENTIFIER))
+        REFITEM(ENUM_DFL(PRET,INTEGER))
+        REFITEM(ENUM_DFL(PRET,CHARACTER))
+        REFITEM(ENUM_DFL(PRET,FLOATING))
+        REFITEM(ENUM_DFL(PRET,STRING))
+        REFITEM(ENUM_DFL(PRET,PARENTHESIZED))
     )
 
 MAKE(ID,expression_type,
-        REFITEM(ENUM_DFL(ET_INVALID))
-        REFITEM(ENUM_DFL(ET_CAST_EXPRESSION))
-        REFITEM(ENUM_DFL(ET_MULTIPLICATIVE_EXRESSION))
+        REFITEM(ENUM_DFL(ET,INVALID))
+        REFITEM(ENUM_DFL(ET,CAST_EXPRESSION))
+        REFITEM(ENUM_DFL(ET,MULTIPLICATIVE_EXRESSION))
         /// @todo fill in the rest
-        REFITEM(ENUM_DFL(ET_max))
+        REFITEM(ENUM_DFL(ET,max))
     )
 
 MAKE(ID,unary_operator,
-        REFITEM(ENUM_DFL(UO_INVALID))
-        REFITEM(ENUM_VAL(UO_ADDRESS_OF    ,'&'))
-        REFITEM(ENUM_VAL(UO_DEREFERENCE   ,'*'))
-        REFITEM(ENUM_VAL(UO_PLUS          ,'+'))
-        REFITEM(ENUM_VAL(UO_MINUS         ,'-'))
-        REFITEM(ENUM_VAL(UO_BITWISE_INVERT,'~'))
-        REFITEM(ENUM_VAL(UO_LOGICAL_INVERT,'!'))
-        REFITEM(ENUM_DFL(UO_max))
+        REFITEM(ENUM_DFL(UO,INVALID))
+        REFITEM(ENUM_VAL(UO,ADDRESS_OF    ,'&'))
+        REFITEM(ENUM_VAL(UO,DEREFERENCE   ,'*'))
+        REFITEM(ENUM_VAL(UO,PLUS          ,'+'))
+        REFITEM(ENUM_VAL(UO,MINUS         ,'-'))
+        REFITEM(ENUM_VAL(UO,BITWISE_INVERT,'~'))
+        REFITEM(ENUM_VAL(UO,LOGICAL_INVERT,'!'))
+        REFITEM(ENUM_DFL(UO,max))
     )
 
 MAKE(ID,binary_operator,
         /// @todo but what about multi-character operators
-        REFITEM(ENUM_DFL(BO_INVALID))
-        REFITEM(ENUM_VAL(BO_ADD        ,'+'))
-        REFITEM(ENUM_VAL(BO_SUBTRACT   ,'-'))
-        REFITEM(ENUM_VAL(BO_MULTIPLY   ,'*'))
-        REFITEM(ENUM_VAL(BO_DIVIDE     ,'/'))
-        REFITEM(ENUM_VAL(BO_MODULUS    ,'%'))
-        REFITEM(ENUM_VAL(BO_BITWISE_AND,'&'))
-        REFITEM(ENUM_DFL(BO_max))
+        REFITEM(ENUM_DFL(BO,INVALID))
+        REFITEM(ENUM_VAL(BO,ADD        ,'+'))
+        REFITEM(ENUM_VAL(BO,SUBTRACT   ,'-'))
+        REFITEM(ENUM_VAL(BO,MULTIPLY   ,'*'))
+        REFITEM(ENUM_VAL(BO,DIVIDE     ,'/'))
+        REFITEM(ENUM_VAL(BO,MODULUS    ,'%'))
+        REFITEM(ENUM_VAL(BO,BITWISE_AND,'&'))
+        REFITEM(ENUM_DFL(BO,max))
     )
 
 MAKE(ID,increment_operator,
-        REFITEM(ENUM_DFL(IO_INCREMENT))
-        REFITEM(ENUM_DFL(IO_DECREMENT))
+        REFITEM(ENUM_DFL(IO,INCREMENT))
+        REFITEM(ENUM_DFL(IO,DECREMENT))
     )
 
 MAKE(NODE,assignment_expression,
@@ -95,8 +95,8 @@ MAKE(NODE,expression,
     )
 
 MAKE(ID,sq_meta,
-        REFITEM(ENUM_DFL(SQ_HAS_TYPE_SPEC))
-        REFITEM(ENUM_DFL(SQ_HAS_TYPE_QUAL))
+        REFITEM(ENUM_DFL(SQ,HAS_TYPE_SPEC))
+        REFITEM(ENUM_DFL(SQ,HAS_TYPE_QUAL))
     )
 
 MAKE(NODE,specifier_qualifier_list,
@@ -106,9 +106,9 @@ MAKE(NODE,specifier_qualifier_list,
     )
 
 MAKE(ID,type_qualifier,
-        REFITEM(ENUM_DFL(TQ_INVALID))
-        REFITEM(ENUM_DFL(TQ_CONST))
-        REFITEM(ENUM_DFL(TQ_VOLATILE))
+        REFITEM(ENUM_DFL(TQ,INVALID))
+        REFITEM(ENUM_DFL(TQ,CONST))
+        REFITEM(ENUM_DFL(TQ,VOLATILE))
     )
 
 MAKE(NODE,type_qualifier_list,
@@ -124,10 +124,10 @@ MAKE(NODE,pointer,
     )
 
 MAKE(ID,direct_abstract_declarator_subtype,
-        REFITEM(ENUM_DFL(DA_INVALID))
-        REFITEM(ENUM_DFL(DA_PARENTHESIZED))
-        REFITEM(ENUM_DFL(DA_ARRAY_INDEX))
-        REFITEM(ENUM_DFL(DA_FUNCTION_CALL))
+        REFITEM(ENUM_DFL(DA,INVALID))
+        REFITEM(ENUM_DFL(DA,PARENTHESIZED))
+        REFITEM(ENUM_DFL(DA,ARRAY_INDEX))
+        REFITEM(ENUM_DFL(DA,FUNCTION_CALL))
     )
 
 MAKE(PRIV,array_inner_,
@@ -242,14 +242,14 @@ MAKE(NODE,argument_expression_list,
     )
 
 MAKE(ID,postfix_expression_type,
-        REFITEM(ENUM_DFL(PET_INVALID))
-        REFITEM(ENUM_DFL(PET_PRIMARY))
-        REFITEM(ENUM_DFL(PET_ARRAY_INDEX))
-        REFITEM(ENUM_DFL(PET_FUNCTION_CALL))
-        REFITEM(ENUM_DFL(PET_AGGREGATE_SELECTION))
-        REFITEM(ENUM_DFL(PET_AGGREGATE_PTR_SELECTION))
-        REFITEM(ENUM_DFL(PET_POSTINCREMENT))
-        REFITEM(ENUM_DFL(PET_POSTDECREMENT))
+        REFITEM(ENUM_DFL(PET,INVALID))
+        REFITEM(ENUM_DFL(PET,PRIMARY))
+        REFITEM(ENUM_DFL(PET,ARRAY_INDEX))
+        REFITEM(ENUM_DFL(PET,FUNCTION_CALL))
+        REFITEM(ENUM_DFL(PET,AGGREGATE_SELECTION))
+        REFITEM(ENUM_DFL(PET,AGGREGATE_PTR_SELECTION))
+        REFITEM(ENUM_DFL(PET,POSTINCREMENT))
+        REFITEM(ENUM_DFL(PET,POSTDECREMENT))
     )
 
 MAKE(PRIV,array_postfix_inner_,
@@ -280,13 +280,13 @@ MAKE(NODE,postfix_expression,
     )
 
 MAKE(ID,unary_expression_type,
-        REFITEM(ENUM_DFL(UET_INVALID))
-        REFITEM(ENUM_DFL(UET_POSTFIX))
-        REFITEM(ENUM_DFL(UET_PREINCREMENT))
-        REFITEM(ENUM_DFL(UET_PREDECREMENT))
-        REFITEM(ENUM_DFL(UET_UNARY_OP))
-        REFITEM(ENUM_DFL(UET_SIZEOF_EXPR))
-        REFITEM(ENUM_DFL(UET_SIZEOF_TYPE))
+        REFITEM(ENUM_DFL(UET,INVALID))
+        REFITEM(ENUM_DFL(UET,POSTFIX))
+        REFITEM(ENUM_DFL(UET,PREINCREMENT))
+        REFITEM(ENUM_DFL(UET,PREDECREMENT))
+        REFITEM(ENUM_DFL(UET,UNARY_OP))
+        REFITEM(ENUM_DFL(UET,SIZEOF_EXPR))
+        REFITEM(ENUM_DFL(UET,SIZEOF_TYPE))
     )
 
 MAKE(PRIV,ce_unary_inner_,
@@ -330,8 +330,8 @@ MAKE(NODE,additive_expression,
     )
 
 MAKE(ID,shift_operator,
-        REFITEM(ENUM_DFL(SO_LSH))
-        REFITEM(ENUM_DFL(SO_RSH))
+        REFITEM(ENUM_DFL(SO,LSH))
+        REFITEM(ENUM_DFL(SO,RSH))
     )
 
 MAKE(NODE,shift_expression,
@@ -341,10 +341,10 @@ MAKE(NODE,shift_expression,
     )
 
 MAKE(ID,relational_operator,
-        REFITEM(ENUM_DFL(RO_LT))
-        REFITEM(ENUM_DFL(RO_GT))
-        REFITEM(ENUM_DFL(RO_LTEQ))
-        REFITEM(ENUM_DFL(RO_GTEQ))
+        REFITEM(ENUM_DFL(RO,LT))
+        REFITEM(ENUM_DFL(RO,GT))
+        REFITEM(ENUM_DFL(RO,LTEQ))
+        REFITEM(ENUM_DFL(RO,GTEQ))
     )
 
 MAKE(NODE,relational_expression,
@@ -420,8 +420,8 @@ MAKE(NODE,aggregate_declaration_list,
     )
 
 MAKE(ID,aggregate_type,
-        REFITEM(ENUM_DFL(AT_UNION))
-        REFITEM(ENUM_DFL(AT_STRUCT))
+        REFITEM(ENUM_DFL(AT,UNION))
+        REFITEM(ENUM_DFL(AT,STRUCT))
     )
 
 MAKE(NODE,aggregate_specifier,
@@ -454,19 +454,19 @@ MAKE(NODE,enum_specifier,
     )
 
 MAKE(ID,type_specifier_type,
-        REFITEM(ENUM_DFL(TS_INVALID))
-        REFITEM(ENUM_DFL(TS_VOID))
-        REFITEM(ENUM_DFL(TS_CHAR))
-        REFITEM(ENUM_DFL(TS_SHORT))
-        REFITEM(ENUM_DFL(TS_INT))
-        REFITEM(ENUM_DFL(TS_LONG))
-        REFITEM(ENUM_DFL(TS_FLOAT))
-        REFITEM(ENUM_DFL(TS_DOUBLE))
-        REFITEM(ENUM_DFL(TS_SIGNED))
-        REFITEM(ENUM_DFL(TS_UNSIGNED))
-        REFITEM(ENUM_DFL(TS_STRUCT_OR_UNION_SPEC))
-        REFITEM(ENUM_DFL(TS_ENUM_SPEC))
-        REFITEM(ENUM_DFL(TS_TYPEDEF_NAME))
+        REFITEM(ENUM_DFL(TS,INVALID))
+        REFITEM(ENUM_DFL(TS,VOID))
+        REFITEM(ENUM_DFL(TS,CHAR))
+        REFITEM(ENUM_DFL(TS,SHORT))
+        REFITEM(ENUM_DFL(TS,INT))
+        REFITEM(ENUM_DFL(TS,LONG))
+        REFITEM(ENUM_DFL(TS,FLOAT))
+        REFITEM(ENUM_DFL(TS,DOUBLE))
+        REFITEM(ENUM_DFL(TS,SIGNED))
+        REFITEM(ENUM_DFL(TS,UNSIGNED))
+        REFITEM(ENUM_DFL(TS,STRUCT_OR_UNION_SPEC))
+        REFITEM(ENUM_DFL(TS,ENUM_SPEC))
+        REFITEM(ENUM_DFL(TS,TYPEDEF_NAME))
     )
 
 MAKE(NODE,type_specifier,
@@ -480,18 +480,18 @@ MAKE(NODE,type_specifier,
     )
 
 MAKE(ID,storage_class_specifier,
-        REFITEM(ENUM_DFL(SCS_INVALID))
-        REFITEM(ENUM_DFL(SCS_TYPEDEF))
-        REFITEM(ENUM_DFL(SCS_EXTERN))
-        REFITEM(ENUM_DFL(SCS_STATIC))
-        REFITEM(ENUM_DFL(SCS_AUTO))
-        REFITEM(ENUM_DFL(SCS_REGISTER))
+        REFITEM(ENUM_DFL(SCS,INVALID))
+        REFITEM(ENUM_DFL(SCS,TYPEDEF))
+        REFITEM(ENUM_DFL(SCS,EXTERN))
+        REFITEM(ENUM_DFL(SCS,STATIC))
+        REFITEM(ENUM_DFL(SCS,AUTO))
+        REFITEM(ENUM_DFL(SCS,REGISTER))
     )
 
 MAKE(ID,declaration_specifiers_subtype,
-        REFITEM(ENUM_DFL(DS_HAS_STORAGE_CLASS))
-        REFITEM(ENUM_DFL(DS_HAS_TYPE_SPEC))
-        REFITEM(ENUM_DFL(DS_HAS_TYPE_QUAL))
+        REFITEM(ENUM_DFL(DS,HAS_STORAGE_CLASS))
+        REFITEM(ENUM_DFL(DS,HAS_TYPE_SPEC))
+        REFITEM(ENUM_DFL(DS,HAS_TYPE_QUAL))
     )
 
 MAKE(NODE,declaration_specifiers,
@@ -506,9 +506,9 @@ MAKE(NODE,declaration_specifiers,
     )
 
 MAKE(ID,parameter_declaration_subtype,
-        REFITEM(ENUM_DFL(PD_HAS_NONE))
-        REFITEM(ENUM_DFL(PD_HAS_DECL))
-        REFITEM(ENUM_DFL(PD_HAS_ABSTRACT_DECL))
+        REFITEM(ENUM_DFL(PD,HAS_NONE))
+        REFITEM(ENUM_DFL(PD,HAS_DECL))
+        REFITEM(ENUM_DFL(PD,HAS_ABSTRACT_DECL))
     )
 
 MAKE(NODE,parameter_declaration,
@@ -536,11 +536,11 @@ MAKE(NODE,identifier_list,
     )
 
 MAKE(ID,direct_declarator_type,
-        REFITEM(ENUM_DFL(DD_INVALID))
-        REFITEM(ENUM_DFL(DD_IDENTIFIER))
-        REFITEM(ENUM_DFL(DD_PARENTHESIZED))
-        REFITEM(ENUM_DFL(DD_ARRAY))
-        REFITEM(ENUM_DFL(DD_FUNCTION))
+        REFITEM(ENUM_DFL(DD,INVALID))
+        REFITEM(ENUM_DFL(DD,IDENTIFIER))
+        REFITEM(ENUM_DFL(DD,PARENTHESIZED))
+        REFITEM(ENUM_DFL(DD,ARRAY))
+        REFITEM(ENUM_DFL(DD,FUNCTION))
     )
 
 MAKE(PRIV,array_direct_inner_,
@@ -549,9 +549,9 @@ MAKE(PRIV,array_direct_inner_,
     )
 
 MAKE(ID,function_declarator_subtype,
-        REFITEM(ENUM_DFL(FD_HAS_NONE))
-        REFITEM(ENUM_DFL(FD_HAS_PLIST))
-        REFITEM(ENUM_DFL(FD_HAS_ILIST))
+        REFITEM(ENUM_DFL(FD,HAS_NONE))
+        REFITEM(ENUM_DFL(FD,HAS_PLIST))
+        REFITEM(ENUM_DFL(FD,HAS_ILIST))
     )
 
 MAKE(PRIV,function_direct_inner_,
@@ -581,8 +581,8 @@ MAKE(NODE,declarator,
     )
 
 MAKE(ID,initializer_subtype,
-        REFITEM(ENUM_DFL(I_ASSIGN))
-        REFITEM(ENUM_DFL(I_INIT_LIST))
+        REFITEM(ENUM_DFL(I,ASSIGN))
+        REFITEM(ENUM_DFL(I,INIT_LIST))
     )
 
 MAKE(NODE,initializer,
@@ -636,8 +636,8 @@ MAKE(NODE,expression_statement,
     )
 
 MAKE(ID,selection_statement_subtype,
-        REFITEM(ENUM_DFL(ES_IF))
-        REFITEM(ENUM_DFL(ES_SWITCH))
+        REFITEM(ENUM_DFL(ES,IF))
+        REFITEM(ENUM_DFL(ES,SWITCH))
     )
 
 MAKE(NODE,selection_statement,
@@ -649,8 +649,8 @@ MAKE(NODE,selection_statement,
     )
 
 MAKE(ID,labeled_statement_subtype,
-        REFITEM(ENUM_DFL(LS_LABELED))
-        REFITEM(ENUM_DFL(LS_CASE))
+        REFITEM(ENUM_DFL(LS,LABELED))
+        REFITEM(ENUM_DFL(LS,CASE))
     )
 
 MAKE(NODE,labeled_statement,
@@ -676,9 +676,9 @@ MAKE(NODE,compound_statement,
     )
 
 MAKE(ID,iteration_statement_subtype,
-        REFITEM(ENUM_DFL(IST_WHILE))
-        REFITEM(ENUM_DFL(IST_DO_WHILE))
-        REFITEM(ENUM_DFL(IST_FOR))
+        REFITEM(ENUM_DFL(IST,WHILE))
+        REFITEM(ENUM_DFL(IST,DO_WHILE))
+        REFITEM(ENUM_DFL(IST,FOR))
     )
 
 MAKE(NODE,iteration_statement,
@@ -691,10 +691,10 @@ MAKE(NODE,iteration_statement,
     )
 
 MAKE(ID,jump_statement_subtype,
-        REFITEM(ENUM_DFL(JS_GOTO))
-        REFITEM(ENUM_DFL(JS_CONTINUE))
-        REFITEM(ENUM_DFL(JS_BREAK))
-        REFITEM(ENUM_DFL(JS_RETURN))
+        REFITEM(ENUM_DFL(JS,GOTO))
+        REFITEM(ENUM_DFL(JS,CONTINUE))
+        REFITEM(ENUM_DFL(JS,BREAK))
+        REFITEM(ENUM_DFL(JS,RETURN))
     )
 
 MAKE(NODE,jump_statement,
@@ -707,12 +707,12 @@ MAKE(NODE,jump_statement,
     )
 
 MAKE(ID,statement_type,
-        REFITEM(ENUM_DFL(ST_LABELED))
-        REFITEM(ENUM_DFL(ST_COMPOUND))
-        REFITEM(ENUM_DFL(ST_EXPRESSION))
-        REFITEM(ENUM_DFL(ST_SELECTION))
-        REFITEM(ENUM_DFL(ST_ITERATION))
-        REFITEM(ENUM_DFL(ST_JUMP))
+        REFITEM(ENUM_DFL(ST,LABELED))
+        REFITEM(ENUM_DFL(ST,COMPOUND))
+        REFITEM(ENUM_DFL(ST,EXPRESSION))
+        REFITEM(ENUM_DFL(ST,SELECTION))
+        REFITEM(ENUM_DFL(ST,ITERATION))
+        REFITEM(ENUM_DFL(ST,JUMP))
     )
 
 MAKE(NODE,statement,
@@ -736,8 +736,8 @@ MAKE(NODE,statement_list,
 
 // top-levels
 MAKE(ID,external_declaration_subtype,
-        REFITEM(ENUM_DFL(ED_FUNC_DEF))
-        REFITEM(ENUM_DFL(ED_DECL))
+        REFITEM(ENUM_DFL(ED,FUNC_DEF))
+        REFITEM(ENUM_DFL(ED,DECL))
     )
 
 MAKE(NODE,external_declaration,

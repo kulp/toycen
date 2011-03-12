@@ -14,14 +14,16 @@
 
 #define MAKE_ID(...)
 #define MAKE_PRIV(...)
-#define ENUM_VAL(K,V)           { .val = K, .name = STR_(K) }, // TODO
-#define ENUM_DFL(K)             { .val = K, .name = STR_(K) },
+#define ENUM_VAL(P,K,V)         { .val = P##_##K, .prefix = STR_(P), .name = STR_(K) }, // TODO
+#define ENUM_DFL(P,K)           { .val = P##_##K, .prefix = STR_(P), .name = STR_(K) },
 #define REFITEM(X)              X
 
 const struct id_rec id_recs[] = {
     [ID_TYPE_node_type] = { ID_TYPE_node_type, "node_type", (struct id_value[]){
         #define MAKE_NODE(Key,...) \
-            [NODE_TYPE_##Key] = { .val = NODE_TYPE_##Key, .name = STR_(Key) },
+            [NODE_TYPE_##Key] = { .val = NODE_TYPE_##Key, \
+                                  .prefix = "NODE_TYPE", \
+                                  .name = STR_(Key) },
         #include "ast.xi"
         #undef MAKE_NODE
         { .val = 0 }

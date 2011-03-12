@@ -7,6 +7,7 @@
 
 #include "util.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
@@ -56,6 +57,8 @@ static int _format_ID(const struct type_formatter *fmt, int *size, char buf[*siz
 {
     if (fmt->meta != META_IS_ID ||
         fmt->type >= ID_TYPE_max ||
+        !data ||
+        !*(int**)data ||
         size == NULL ||
         *size <= 0)
     {
@@ -65,13 +68,16 @@ static int _format_ID(const struct type_formatter *fmt, int *size, char buf[*siz
 
     int need = -1;
     int idx = **(int**)data;
+    // XXX when assert, when return
+    assert(idx >= 0);
 
     char temp[*size + 2];
-    #define PRINT(Type,Fmt,Expr) \
-        need = snprintf(temp, sizeof temp, Fmt, Expr)
+    #define PRINT(Type,Fmt,...) \
+        need = snprintf(temp, sizeof temp, Fmt, __VA_ARGS__)
     switch (fmt->type) {
+        #define THING(K,I) (id_recs[ID_TYPE_##K].values[I])
         #define MAKE_ID(Key,...) \
-            case ID_TYPE_##Key: PRINT(Key,"%s",id_recs[ID_TYPE_##Key].values[idx].name); break;
+            case ID_TYPE_##Key: PRINT(Key,"%s_%s",THING(Key,idx).prefix,THING(Key,idx).name); break;
         #define MAKE_PRIV(...)
         #define MAKE_NODE(Key,...)
 
