@@ -55,9 +55,9 @@ static int walk_cb(
         char *prefix;
         signed indent;
     } flag_recs[8] = {
-        [AST_WALK_BEFORE_CHILDREN ] = { "{ " ,  4 },
-        [AST_WALK_BETWEEN_CHILDREN] = { " | ",  0 },
-        [AST_WALK_AFTER_CHILDREN  ] = { " }" , -4 },
+        [AST_WALK_BEFORE_CHILDREN ] = { "{ ",  4 },
+        [AST_WALK_BETWEEN_CHILDREN] = { "| ",  0 },
+        [AST_WALK_AFTER_CHILDREN  ] = { "} ", -4 },
     };
 
     bool before  = flags & AST_WALK_BEFORE_CHILDREN;
@@ -82,6 +82,9 @@ static int walk_cb(
     ignore = false;
     #endif
 
+    const char *name = NULL;
+    ops->get_name(cookie, &name);
+
     //printf("%s | %s | ", flags_names[flags & 0x7], meta_names[meta]);
     const struct flag_rec *f = &flag_recs[flags & 0x7];
     assert(c->indent < 128);
@@ -93,6 +96,9 @@ static int walk_cb(
 
     if (f->prefix)
         printf("%s", f->prefix);
+
+    if (before || meta == META_IS_BASIC || meta == META_IS_ID)
+        printf("%s = ", name);
 
     if (!ignore && before)
         printf("%s, ", meta_names[meta]);
@@ -109,7 +115,7 @@ static int walk_cb(
             int size = sizeof buf;
             int result = fmt_call(meta, type, &size, buf, data);
             //if (before)
-                printf(" = (%s) %s, ", basic_recs[type].defname, buf);
+                printf("(%s) %s, ", basic_recs[type].defname, buf);
             break;
         }
         case META_IS_ID: {
