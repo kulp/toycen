@@ -21,3 +21,6 @@ basic-types.xi
 *.mode1v3
 ast-walk-test
 ast-walk-graphviz
+ast-walk-demo
+*.pdf
+*.dot
