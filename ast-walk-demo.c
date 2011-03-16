@@ -64,28 +64,9 @@ static int walk_cb(
     bool after   = flags & AST_WALK_AFTER_CHILDREN;
     bool between = flags & AST_WALK_BETWEEN_CHILDREN;
 
-    bool ignore = true;
-
-    #if 0
-    switch (meta) {
-        case META_IS_ID:
-        case META_IS_BASIC:
-            //if (before)
-        case META_IS_CHOICE:
-        case META_IS_NODE:
-                ignore = false;
-            break;
-        default:
-            break;
-    }
-    #else
-    ignore = false;
-    #endif
-
     const char *name = NULL;
     ops->get_name(cookie, &name);
 
-    //printf("%s | %s | ", flags_names[flags & 0x7], meta_names[meta]);
     const struct flag_rec *f = &flag_recs[flags & 0x7];
     assert(c->indent < 128);
     char spaces[c->indent + 1];
@@ -98,9 +79,9 @@ static int walk_cb(
         printf("%s", f->prefix);
 
     if (before || meta == META_IS_BASIC || meta == META_IS_ID)
-        printf("%s = ", name);
+        printf("%s = ", name ? name : "[top]");
 
-    if (!ignore && before)
+    if (before)
         printf("%s, ", meta_names[meta]);
 
     switch (meta) {
@@ -114,8 +95,7 @@ static int walk_cb(
             char buf[128];
             int size = sizeof buf;
             int result = fmt_call(meta, type, &size, buf, data);
-            //if (before)
-                printf("(%s) %s, ", basic_recs[type].defname, buf);
+            printf("(%s) %s, ", basic_recs[type].defname, buf);
             break;
         }
         case META_IS_ID: {
@@ -127,15 +107,13 @@ static int walk_cb(
             break;
         }
         case META_IS_CHOICE:
-            // TODO implement
             break;
         default:
             // TODO handle
             abort();
     }
 
-    if (!ignore)
-        puts("");
+    puts("");
 
     return 0;
 }
@@ -159,7 +137,6 @@ int main(int argc, char *argv[])
 
     struct mydata data = { 0 };
     ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN |
-                                         //AST_WALK_BETWEEN_CHILDREN |
                                          AST_WALK_AFTER_CHILDREN, &data);
 
     parser_teardown(&ps);
