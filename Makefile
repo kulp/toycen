@@ -1,9 +1,17 @@
 CPP = gcc -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
-CFLAGS += -save-temps
+SAVE_TEMPS = 1
 else
 CFLAGS += -O3
+endif
+
+ifneq ($(NDEBUG),1)
+CFLAGS += -g
+endif
+
+ifneq ($(SAVE_TEMPS),)
+CFLAGS += -save-temps
 endif
 
 ifeq ($(NDEBUG),1)
@@ -19,7 +27,7 @@ ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 
 CPPFLAGS += -std=c99 $(patsubst %,-D%,$(DEFINES))
 YFLAGS  += -dv
-CFLAGS  += -Wall $(WEXTRA) -g -std=c99 $(PEDANTIC) $(ARCHFLAGS)
+CFLAGS  += -Wall $(WEXTRA) -std=c99 $(PEDANTIC) $(ARCHFLAGS)
 LFLAGS  +=
 LDFLAGS += $(ARCHFLAGS)
 
@@ -86,4 +94,4 @@ endif
 	cat $(filter %.l.pre,$^) blank.l $(filter %.l.rules,$^) blank.l $(filter %.l.post,$^) > $@
 
 clean:
-	-rm -f $(CLEANFILES) *.[od] $(TARGET)
+	$(RM) -fr $(CLEANFILES) *.[odsi] *.dSYM $(TARGET)
