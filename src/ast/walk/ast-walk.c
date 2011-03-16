@@ -57,6 +57,11 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
             if (flags & AST_WALK_BEFORE_CHILDREN)
                 cbresult = cb(AST_WALK_BEFORE_CHILDREN, parent->meta,
                         parent->c.node->type, what, userdata, ops, cookie);
+			#if INHIBIT_INTROSPECTION
+			// inhibited introspection prevents us from knowing which CHOICE
+			// branch to follow
+			#error "Inspection introhibited: can't walk"
+			#endif
             // CHOICE structs wrappers have as their first member an int
             // describing which member is selected.
             // TODO ensure this cast is portable

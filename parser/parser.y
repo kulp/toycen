@@ -45,11 +45,6 @@
     #include <string.h>
     #include <stdint.h>
 
-    // see ast-gen-pre.h's CHOICE(...)
-    // TODO permit Idx to be computed symbolically instead of specified literally
-    // Idx = 0 means "none"
-    #define CHOICE(Idx,Name,...) { .idx = (Idx + 1), .choice.Name = __VA_ARGS__ }
-
     extern int lineno, column;
 
     // XXX not reentrant
@@ -428,10 +423,10 @@ declaration
     : declaration_specifiers init_declarator_list ';'
         { $$ = UN(declaration, $1, .decl = $2);
           /// @todo this is a very naïve way of handling types : replace it
-          if (($1)->type == DS_HAS_STORAGE_CLASS && ($1)->me.choice.scs == SCS_TYPEDEF) {
+          if (($1)->type == DS_HAS_STORAGE_CLASS && CHOICE_REF(&($1)->me,scs) == SCS_TYPEDEF) {
               struct init_declarator_list *head = $2;
               while (head) {
-                  add_typename(NULL, head->base.base.base.c.choice.id->name);
+                  add_typename(NULL, CHOICE_REF(&head->base.base.base.c,id)->name);
                   head = head->left;
               }
           }

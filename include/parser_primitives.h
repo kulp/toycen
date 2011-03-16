@@ -101,5 +101,16 @@ void set_parser_state(parser_state_t *ps);
 
 struct string* intern_string(parser_state_t *ps, const char *str);
 
+// see ast-gen-pre.h's CHOICE(...)
+#if INHIBIT_INTROSPECTION
+#define CHOICE(Idx,Name,...) { .Name = __VA_ARGS__ }
+#define CHOICE_REF(Ptr,Field) ((Ptr)->Field)
+#else
+// TODO permit Idx to be computed symbolically instead of specified literally
+// Idx = 0 means "none"
+#define CHOICE(Idx,Name,...) { .idx = (Idx + 1), .choice.Name = __VA_ARGS__ }
+#define CHOICE_REF(Ptr,Field) ((Ptr)->choice.Field)
+#endif
+
 #endif
 

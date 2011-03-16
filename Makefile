@@ -15,6 +15,7 @@ CFLAGS += -save-temps
 endif
 
 ifeq ($(NDEBUG),1)
+INHIBIT_INTROSPECTION = 1
 DEFINES += NDEBUG
 endif
 
@@ -29,6 +30,10 @@ vpath %.y  		parser
 vpath %.c  		$(SRC)
 vpath %.h  		$(INCLUDE)
 vpath %.xi 		xi
+
+ifeq ($(INHIBIT_INTROSPECTION),1)
+DEFINES += INHIBIT_INTROSPECTION
+endif
 
 TARGET = toycen
 
@@ -45,8 +50,11 @@ LDFLAGS += $(ARCHFLAGS)
 
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
 
+ifneq ($(INHIBIT_INTROSPECTION),1)
 WALKERS = demo graphviz test c
 WALKBINS = $(addprefix ast-walk-,$(WALKERS))
+endif
+
 CLEANFILES += $(WALKBINS)
 OBJECTS += $(addsuffix .o,$(WALKBINS))
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
@@ -54,7 +62,7 @@ all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 $(WALKBINS) : ast-walk-% : parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
 
 toycen.o: CFLAGS += -Wno-unused-parameter
-toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
+toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
 parser.o: CFLAGS += -Wno-missing-field-initializers
 
 CLEANFILES += ast-gen.h ast-gen2.h
