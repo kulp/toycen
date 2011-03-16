@@ -22,6 +22,7 @@ basic-types.xi
 ast-walk-test
 ast-walk-graphviz
 ast-walk-demo
+ast-walk-c
 *.pdf
 *.dot
 .DS_Store
