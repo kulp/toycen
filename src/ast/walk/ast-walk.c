@@ -8,6 +8,7 @@
 
 struct ast_walk_data {
     struct stack {
+        const struct node_item *item;
         const char *name;
         struct stack *next;
     } *stack;
@@ -62,6 +63,7 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
                 // ... so we subtract one from the index.
                 const struct node_item *citem = &parent->c.choice[generic->idx - 1];
                 struct stack *s = calloc(1, sizeof *s);
+                s->item = citem;
                 s->name = citem->name;
                 s->next = cookie->stack;
                 cookie->stack = s;
@@ -123,6 +125,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         }
 
         struct stack *s = calloc(1, sizeof *s);
+        s->item = item;
         s->name = item->name;
         s->next = cookie->stack;
         cookie->stack = s;
@@ -159,12 +162,32 @@ static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
 static int get_name(walkdata cookie, const char **name)
 {
     struct ast_walk_data *data = cookie;
+
     if (!data->stack) {
         errno = EFAULT;
         return -1;
     }
 
     *name = data->stack->name;
+
+    return 0;
+}
+
+static int get_childcnt(walkdata cookie, int *count)
+{
+    struct ast_walk_data *data = cookie;
+
+    if (!data->stack) {
+        errno = EFAULT;
+        return -1;
+    }
+
+    struct node_item *item = data->stack->item->c.node->items;
+    int tick = 0;
+    do tick++; while ((item++)->meta != META_IS_INVALID);
+
+    *count = tick;
+
     return 0;
 }
 
@@ -172,7 +195,8 @@ int ast_walk(struct node *top, ast_walk_cb cb, int flags, void *userdata)
 {
     struct ast_walk_data cookie = { 0 };
     struct ast_walk_ops ops = {
-        .get_name = get_name,
+        .get_name     = get_name,
+        .get_childcnt = get_childcnt,
     };
 
     if (top->node_type > NODE_TYPE_max ||
