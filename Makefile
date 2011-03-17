@@ -101,8 +101,9 @@ endif
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
-%.l: %.l.pre %.l.rules %.l.post
-	cat $(filter %.l.pre,$^) blank.l $(filter %.l.rules,$^) blank.l $(filter %.l.post,$^) > $@
+CLEANFILES += lexer.c
+%.l: %.l.pre blank.l %.l.rules %.l.post
+	cat $(filter %.l.pre,$^) $(filter %blank.l,$^) $(filter %.l.rules,$^) $(filter %blank.l,$^) $(filter %.l.post,$^) > $@
 
 clean:
 	$(RM) -fr $(CLEANFILES) *.[odsi] *.dSYM $(TARGET)
