@@ -44,9 +44,10 @@ LDFLAGS += $(ARCHFLAGS)
 
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
 
-WALKERS = demo graphviz test
+WALKERS = demo graphviz test c
 WALKBINS = $(addprefix ast-walk-,$(WALKERS))
 CLEANFILES += $(WALKBINS)
+OBJECTS += $(addsuffix .o,$(WALKBINS))
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 
 $(WALKBINS) : ast-walk-% : parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
