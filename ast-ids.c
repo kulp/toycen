@@ -14,8 +14,8 @@
 
 #define MAKE_ID(...)
 #define MAKE_PRIV(...)
-#define ENUM_VAL(P,K,V)         { .val = P##_##K, .prefix = STR_(P), .name = STR_(K) }, // TODO
-#define ENUM_DFL(P,K)           { .val = P##_##K, .prefix = STR_(P), .name = STR_(K) },
+#define ENUM_VAL(P,K,V)         [V] = { .val = P##_##K, .prefix = STR_(P), .name = STR_(K) },
+#define ENUM_DFL(P,K)                 { .val = P##_##K, .prefix = STR_(P), .name = STR_(K) },
 #define REFITEM(X)              X
 
 const struct id_rec id_recs[] = {
@@ -192,8 +192,6 @@ const struct priv_rec priv_recs[] = {
 #undef MAKE_ID
 #undef MAKE_PRIV
 #undef MAKE_NODE
-
-// TODO offsetof ?
 
 //------------------------------------------------------------------------------
 

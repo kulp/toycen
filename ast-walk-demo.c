@@ -68,7 +68,7 @@ static int walk_cb(
     ops->get_name(cookie, &name);
 
     const struct flag_rec *f = &flag_recs[flags & 0x7];
-    assert(c->indent < 128);
+    assert(c->indent < 256);
     char spaces[c->indent + 1];
     memset(spaces, ' ', sizeof spaces);
     spaces[c->indent] = 0;
@@ -85,6 +85,12 @@ static int walk_cb(
         printf("%s, ", meta_names[meta]);
 
     switch (meta) {
+        case META_IS_PRIV: {
+            const struct priv_rec *rec = &priv_recs[type];
+            if (before)
+                printf("%s, ", rec->name);
+            break;
+        }
         case META_IS_NODE: {
             const struct node_rec *rec = &node_recs[type];
             if (before)
