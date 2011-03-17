@@ -71,8 +71,9 @@ t/%: CFLAGS += -I.
 t/test_hash_table t/test_hash_table_interface: hash_table.o
 
 CLEANFILES += basic-types.xi
+# TODO fragile rule : depends on specific ordering of deps
 basic-types.xi: ast-basics-pre.h ast.xi
-	$(CPP) -include ast-basics-pre.h ast.xi | tr ' ' '\012' | sort | uniq - $@
+	$(CPP) $(CPPFLAGS) -include $^ | tr ' ' '\012' | sort | uniq - $@
 
 # GCC bug 47772 : http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47772
 ast-ids.o: CFLAGS += -Wno-missing-field-initializers
