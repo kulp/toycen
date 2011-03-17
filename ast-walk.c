@@ -55,7 +55,7 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
             // CHOICE structs wrappers have as their first member an int
             // describing which member is selected.
             // TODO ensure this cast is portable; long double should ensure
-            // alignment for any primitive ?
+            // alignment for any primitive ? requires C99
             struct { int idx; union { long double dummy; } c; } *generic = deref;
             // Zero means none ...
             if (generic->idx > 0) {
@@ -86,9 +86,10 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
     return result;
 }
 
-// TODO combine common parts of recurse_priv() and recurse_node()
-static int recurse_priv(enum priv_type type, void *priv, ast_walk_cb cb,
-        int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
+// combine common parts of recurse_priv() and recurse_node()
+static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
+        *thing, ast_walk_cb cb, int flags, struct ast_walk_ops *ops, void
+        *userdata, struct ast_walk_data *cookie)
 {
     // TODO move parent-handling based on flags
     // TODO do something with results
@@ -96,14 +97,23 @@ static int recurse_priv(enum priv_type type, void *priv, ast_walk_cb cb,
         result   = -1;
 
     if (flags & AST_WALK_BEFORE_CHILDREN)
-        cbresult = cb(AST_WALK_BEFORE_CHILDREN, META_IS_PRIV, type, priv, userdata, ops, cookie);
+        cbresult = cb(AST_WALK_BEFORE_CHILDREN, meta, type, thing, userdata, ops, cookie);
 
-    const struct priv_rec *rec = &priv_recs[type];
+    bool am_priv = meta == META_IS_PRIV;
+
+    const struct node_rec *rec = &(am_priv ? (struct node_rec*)priv_recs : node_recs)[type];
+
+    if (!am_priv) {
+        /// @todo give flags control of BASE recursing
+        enum node_type parent_type = node_parentages[type].base;
+        if (parent_type != NODE_TYPE_INVALID)
+            result = recurse_node(parent_type, thing, cb, flags, ops, userdata, cookie);
+    }
 
     /// @todo what if flags doesn't contain a BEFORE or AFTER ?
     for (int i = 0; rec->items[i].meta != META_IS_INVALID; i++) {
         struct node_item *item = &rec->items[i];
-        void *childaddr = (char*)priv + (*rec->offp)[i];
+        void *childaddr = (char*)thing + (*rec->offp)[i];
         void *child;
         if (item->is_pointer || item->meta == META_IS_BASIC) {
             // if BASIC, unwrap, because we rewrap in recurse_any()
@@ -120,8 +130,8 @@ static int recurse_priv(enum priv_type type, void *priv, ast_walk_cb cb,
         result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
 
         if (flags & AST_WALK_BETWEEN_CHILDREN)
-            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, META_IS_PRIV,
-                    type, priv, userdata, ops, cookie);
+            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, meta,
+                    type, thing, userdata, ops, cookie);
 
         s = cookie->stack;
         cookie->stack = s->next;
@@ -129,60 +139,21 @@ static int recurse_priv(enum priv_type type, void *priv, ast_walk_cb cb,
     }
 
     if (flags & AST_WALK_AFTER_CHILDREN)
-        cbresult = cb(AST_WALK_AFTER_CHILDREN, META_IS_PRIV, type, priv, userdata, ops, cookie);
+        cbresult = cb(AST_WALK_AFTER_CHILDREN, meta, type, thing, userdata, ops, cookie);
 
     return result;
+}
+
+static int recurse_priv(enum priv_type type, void *priv, ast_walk_cb cb,
+        int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
+{
+    return recurse_priv_or_node(META_IS_PRIV, type, priv, cb, flags, ops, userdata, cookie);
 }
 
 static int recurse_node(enum node_type type, struct node *node, ast_walk_cb cb,
         int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
 {
-    // TODO move parent-handling based on flags
-    // TODO do something with results
-    int cbresult = -1,
-        result   = -1;
-
-    if (flags & AST_WALK_BEFORE_CHILDREN)
-        cbresult = cb(AST_WALK_BEFORE_CHILDREN, META_IS_NODE, type, node, userdata, ops, cookie);
-
-    const struct node_rec *rec = &node_recs[type];
-    /// @todo give flags control of BASE recursing
-    enum node_type parent_type = node_parentages[type].base;
-    if (parent_type != NODE_TYPE_INVALID)
-        result = recurse_node(parent_type, node, cb, flags, ops, userdata, cookie);
-
-    /// @todo what if flags doesn't contain a BEFORE or AFTER ?
-    for (int i = 0; rec->items[i].meta != META_IS_INVALID; i++) {
-        struct node_item *item = &rec->items[i];
-        void *childaddr = (char*)node + (*rec->offp)[i];
-        void *child;
-        if (item->is_pointer || item->meta == META_IS_BASIC) {
-            // if BASIC, unwrap, because we rewrap in recurse_any()
-            child = *(void**)childaddr;
-        } else {
-            child = childaddr;
-        }
-
-        struct stack *s = calloc(1, sizeof *s);
-        s->name = item->name;
-        s->next = cookie->stack;
-        cookie->stack = s;
-
-        result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
-
-        if (flags & AST_WALK_BETWEEN_CHILDREN)
-            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, META_IS_NODE,
-                    type, node, userdata, ops, cookie);
-
-        s = cookie->stack;
-        cookie->stack = s->next;
-        free(s);
-    }
-
-    if (flags & AST_WALK_AFTER_CHILDREN)
-        cbresult = cb(AST_WALK_AFTER_CHILDREN, META_IS_NODE, type, node, userdata, ops, cookie);
-
-    return result;
+    return recurse_priv_or_node(META_IS_NODE, type, node, cb, flags, ops, userdata, cookie);
 }
 
 static int get_name(walkdata cookie, const char **name)

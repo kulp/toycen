@@ -47,6 +47,9 @@ enum meta_type {
     META_IS_max
 };
 
+// NOTE: we depend on node_rec and priv_rec having the same layout ! They have
+// separate types so that the enumeration in the first field is properly
+// recognized by debuggers
 struct node_rec {
     enum node_type type;
     const char *name;
