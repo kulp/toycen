@@ -18,6 +18,17 @@ ifeq ($(NDEBUG),1)
 DEFINES += NDEBUG
 endif
 
+vpath %.l	    lexer
+vpath %.l.pre   lexer
+vpath %.l.post  lexer
+vpath %.l.rules lexer
+vpath %.y  		parser
+vpath %.c  		src
+vpath %.h  		include
+vpath %.xi 		xi
+
+INCLUDE += xi include
+
 TARGET = toycen
 
 PEDANTIC = $(if $(INHIBIT_PEDANTRY),,-pedantic)
@@ -25,7 +36,7 @@ WEXTRA = -Wextra -Wno-unused
 
 ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 
-CPPFLAGS += -std=c99 $(patsubst %,-D%,$(DEFINES))
+CPPFLAGS += -std=c99 $(patsubst %,-D%,$(DEFINES)) $(patsubst %,-I%,$(INCLUDE))
 YFLAGS  += -dv
 CFLAGS  += -Wall $(WEXTRA) -std=c99 $(PEDANTIC) $(ARCHFLAGS)
 LFLAGS  +=
