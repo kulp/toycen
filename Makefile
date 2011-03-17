@@ -24,10 +24,10 @@ vpath %.l.post  lexer
 vpath %.l.rules lexer
 vpath %.y  		parser
 vpath %.c  		src
-vpath %.h  		include
+vpath %.h  		include include/housekeeping
 vpath %.xi 		xi
 
-INCLUDE += xi include
+INCLUDE += xi include include/housekeeping
 
 TARGET = toycen
 
