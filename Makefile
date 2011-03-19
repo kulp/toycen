@@ -1,7 +1,7 @@
 CPP = gcc -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
-SAVE_TEMPS = 1
+SAVE_TEMPS ?= 1
 else
 CFLAGS += -O3
 endif
@@ -10,7 +10,7 @@ ifneq ($(NDEBUG),1)
 CFLAGS += -g
 endif
 
-ifneq ($(SAVE_TEMPS),)
+ifeq ($(SAVE_TEMPS),1)
 CFLAGS += -save-temps
 endif
 
@@ -19,7 +19,7 @@ DEFINES += NDEBUG
 endif
 
 INCLUDE += xi include include/housekeeping include/ast include/preprocessor include/util
-SRC += src src/ast src/compiler src/preprocessor src/util
+SRC += src src/ast src/ast/walk src/compiler src/preprocessor src/util
 
 vpath %.l	    lexer
 vpath %.l.pre   lexer
