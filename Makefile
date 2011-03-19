@@ -18,16 +18,17 @@ ifeq ($(NDEBUG),1)
 DEFINES += NDEBUG
 endif
 
+INCLUDE += xi include include/housekeeping include/ast include/preprocessor include/util
+SRC += src src/ast src/compiler src/preprocessor src/util
+
 vpath %.l	    lexer
 vpath %.l.pre   lexer
 vpath %.l.post  lexer
 vpath %.l.rules lexer
 vpath %.y  		parser
-vpath %.c  		src
-vpath %.h  		include include/housekeeping
+vpath %.c  		$(SRC)
+vpath %.h  		$(INCLUDE)
 vpath %.xi 		xi
-
-INCLUDE += xi include include/housekeeping
 
 TARGET = toycen
 

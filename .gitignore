@@ -24,3 +24,5 @@ ast-walk-graphviz
 ast-walk-demo
 *.pdf
 *.dot
+.DS_Store
+test*.c
