@@ -13,6 +13,8 @@ struct ast_walk_data {
     } *stack;
 };
 
+//typedef struct ast_walk_data *walkdata;
+
 static int recurse_priv(enum priv_type type, void *priv, ast_walk_cb cb,
         int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie);
 
@@ -66,8 +68,8 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
                 s->next = cookie->stack;
                 cookie->stack = s;
 
-                result = recurse_any(citem, &generic->c, cb, flags, ops,
-                        userdata, cookie);
+                result = recurse_any(citem, &generic->c, cb, flags &
+                        ~AST_WALK_IS_BASE, ops, userdata, cookie);
 
                 s = cookie->stack;
                 cookie->stack = s->next;
@@ -97,7 +99,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         result   = -1;
 
     if (flags & AST_WALK_BEFORE_CHILDREN)
-        cbresult = cb(AST_WALK_BEFORE_CHILDREN, meta, type, thing, userdata, ops, cookie);
+        cbresult = cb((flags & 0x7) | AST_WALK_BEFORE_CHILDREN, meta, type, thing, userdata, ops, cookie);
 
     bool am_priv = meta == META_IS_PRIV;
 
@@ -107,7 +109,8 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         /// @todo give flags control of BASE recursing
         enum node_type parent_type = node_parentages[type].base;
         if (parent_type != NODE_TYPE_INVALID)
-            result = recurse_node(parent_type, thing, cb, flags, ops, userdata, cookie);
+            result = recurse_node(parent_type, thing, cb, flags |
+                    AST_WALK_IS_BASE, ops, userdata, cookie);
     }
 
     /// @todo what if flags doesn't contain a BEFORE or AFTER ?
@@ -130,7 +133,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
 
         if (flags & AST_WALK_BETWEEN_CHILDREN)
-            cbresult = cb(AST_WALK_BETWEEN_CHILDREN, meta,
+            cbresult = cb((flags & 0x7) | AST_WALK_BETWEEN_CHILDREN, meta,
                     type, thing, userdata, ops, cookie);
 
         s = cookie->stack;
