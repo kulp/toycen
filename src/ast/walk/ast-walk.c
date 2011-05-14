@@ -65,6 +65,7 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
                 struct stack *s = calloc(1, sizeof *s);
                 s->item = citem;
                 s->name = citem->name;
+                //s->name = "XXXunionchild";
                 s->next = cookie->stack;
                 cookie->stack = s;
 
@@ -98,23 +99,34 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
     int cbresult = -1,
         result   = -1;
 
-    if (flags & AST_WALK_BEFORE_CHILDREN)
-        cbresult = cb(AST_WALK_BEFORE_CHILDREN, meta, type, thing, userdata, ops, cookie);
-
     bool am_priv = meta == META_IS_PRIV;
 
     const struct node_rec *rec = &(am_priv ? (struct node_rec*)priv_recs : node_recs)[type];
 
+    if (flags & AST_WALK_BEFORE_CHILDREN)
+        cbresult = cb(AST_WALK_BEFORE_CHILDREN, meta, type, thing, userdata, ops, cookie);
+
     if (!am_priv) {
         /// @todo give flags control of BASE recursing
         enum node_type parent_type = node_parentages[type].base;
-        if (parent_type != NODE_TYPE_INVALID)
+        if (parent_type != NODE_TYPE_INVALID) {
+            struct stack *s = calloc(1, sizeof *s);
+            s->item = NULL; // XXX is this a problem ?
+            s->name = "base";
+            s->next = cookie->stack;
+            cookie->stack = s;
+
             result = recurse_node(parent_type, thing, cb, flags, ops, userdata, cookie);
+
+            s = cookie->stack;
+            cookie->stack = s->next;
+            free(s);
+        }
     }
 
     /// @todo what if flags doesn't contain a BEFORE or AFTER ?
     for (int i = 0; rec->items[i].meta != META_IS_INVALID; i++) {
-        struct node_item *item = &rec->items[i];
+        const struct node_item *item = &rec->items[i];
         void *childaddr = (char*)thing + (*rec->offp)[i];
         void *child;
         if (item->is_pointer || item->meta == META_IS_BASIC) {
@@ -127,6 +139,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         struct stack *s = calloc(1, sizeof *s);
         s->item = item;
         s->name = item->name;
+        //s->name = "YYYstructchild";
         s->next = cookie->stack;
         cookie->stack = s;
 

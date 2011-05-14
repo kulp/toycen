@@ -72,6 +72,7 @@ static int walk_cb(
     ops->get_name(cookie, &name);
 
     const struct flag_rec *f = &flag_recs[flags & botmask];
+    assert(c->indent >= 0);
     assert(c->indent < 256);
     char spaces[c->indent + 1];
     memset(spaces, ' ', sizeof spaces);
@@ -111,18 +112,32 @@ static int walk_cb(
             printf("%s", buf);
             break;
         }
-        case META_IS_CHOICE:
+        case META_IS_CHOICE: {
+            // TODO ?
             break;
+        }
         default:
             // TODO handle
             abort();
     }
 
+    #if 0
     if (!name && before)
         printf("(struct %s)", tname);
+    #endif
+
+    // TODO might be a union rather than a struct
+    if (before) {
+        if (tname) {
+            printf("/* struct %s */ ", tname);
+        } else {
+            printf("/* union */ ");
+        }
+    }
+
 
     if (after && structp)
-        printf("} ", tname);
+        printf("} ");
 
     if (f->prefix)
         printf("%s", f->prefix);
