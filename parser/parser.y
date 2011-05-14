@@ -47,7 +47,7 @@
 
     extern int lineno, column;
 
-    // XXX not reentrant
+    // not reentrant, but the parsing process is inherently serial, so it's ok
     void *_tptr;
 
     static struct translation_unit *top;
@@ -272,18 +272,12 @@ unary_expression
     ;
 
 unary_operator
-    : '&'
-        { $$ = $<chr>1; }
-    | '*'
-        { $$ = $<chr>1; }
-    | '+'
-        { $$ = $<chr>1; }
-    | '-'
-        { $$ = $<chr>1; }
-    | '~'
-        { $$ = $<chr>1; }
-    | '!'
-        { $$ = $<chr>1; }
+    : '&' { $$ = $<chr>1; }
+    | '*' { $$ = $<chr>1; }
+    | '+' { $$ = $<chr>1; }
+    | '-' { $$ = $<chr>1; }
+    | '~' { $$ = $<chr>1; }
+    | '!' { $$ = $<chr>1; }
     ;
 
 cast_expression
@@ -295,7 +289,7 @@ cast_expression
 
 multiplicative_expression
     : cast_expression
-        { $$ = UN(multiplicative_expression, $1, .left = NULL); }
+        { $$ = UN(multiplicative_expression, $1, .left = NULL, .op = BO_INVALID); }
     | multiplicative_expression '*' cast_expression
         { $$ = UN(multiplicative_expression, $3, .left = $1, .op = $2); }
     | multiplicative_expression '/' cast_expression
@@ -306,7 +300,7 @@ multiplicative_expression
 
 additive_expression
     : multiplicative_expression
-        { $$ = UN(additive_expression, $1, .left = NULL); }
+        { $$ = UN(additive_expression, $1, .left = NULL, .op = BO_INVALID); }
     | additive_expression '+' multiplicative_expression
         { $$ = UN(additive_expression, $3, .left = $1, .op = $2); }
     | additive_expression '-' multiplicative_expression
@@ -315,7 +309,7 @@ additive_expression
 
 shift_expression
     : additive_expression
-        { $$ = UN(shift_expression, $1, .left = NULL); }
+        { $$ = UN(shift_expression, $1, .left = NULL, .op = SO_INVALID); }
     | shift_expression SL additive_expression
         { $$ = UN(shift_expression, $3, .left = $1, .op = SO_LSH); }
     | shift_expression SR additive_expression
@@ -324,7 +318,7 @@ shift_expression
 
 relational_expression
     : shift_expression
-        { $$ = UN(relational_expression, $1, .left = NULL); }
+        { $$ = UN(relational_expression, $1, .left = NULL, .op = RO_INVALID); }
     | relational_expression '<' shift_expression
         { $$ = UN(relational_expression, $3, .left = $1, .op = RO_LT); }
     | relational_expression '>' shift_expression
@@ -422,8 +416,9 @@ constant_expression
 declaration
     : declaration_specifiers init_declarator_list ';'
         { $$ = UN(declaration, $1, .decl = $2);
+          struct declaration_specifiers *old = (void*)$$; // realloc may have moved it, can't use $1 any more
           /// @todo this is a very naïve way of handling types : replace it
-          if (($1)->type == DS_HAS_STORAGE_CLASS && CHOICE_REF(&($1)->me,scs) == SCS_TYPEDEF) {
+          if (old->type == DS_HAS_STORAGE_CLASS && CHOICE_REF(&old->me,scs) == SCS_TYPEDEF) {
               struct init_declarator_list *head = $2;
               while (head) {
                   add_typename(NULL, CHOICE_REF(&head->base.base.base.c,id)->name);
@@ -465,37 +460,23 @@ init_declarator
     ;
 
 storage_class_specifier
-    : TYPEDEF
-        { $$ = SCS_TYPEDEF; }
-    | EXTERN
-        { $$ = SCS_EXTERN; }
-    | STATIC
-        { $$ = SCS_STATIC; }
-    | AUTO
-        { $$ = SCS_AUTO; }
-    | REGISTER
-        { $$ = SCS_REGISTER; }
+    : TYPEDEF  { $$ = SCS_TYPEDEF ; }
+    | EXTERN   { $$ = SCS_EXTERN  ; }
+    | STATIC   { $$ = SCS_STATIC  ; }
+    | AUTO     { $$ = SCS_AUTO    ; }
+    | REGISTER { $$ = SCS_REGISTER; }
     ;
 
 type_specifier
-    : VOID
-        { $$ = NN(type_specifier, .type = TS_VOID    ); }
-    | CHAR
-        { $$ = NN(type_specifier, .type = TS_CHAR    ); }
-    | SHORT
-        { $$ = NN(type_specifier, .type = TS_SHORT   ); }
-    | INT
-        { $$ = NN(type_specifier, .type = TS_INT     ); }
-    | LONG
-        { $$ = NN(type_specifier, .type = TS_LONG    ); }
-    | FLOAT
-        { $$ = NN(type_specifier, .type = TS_FLOAT   ); }
-    | DOUBLE
-        { $$ = NN(type_specifier, .type = TS_DOUBLE  ); }
-    | SIGNED
-        { $$ = NN(type_specifier, .type = TS_SIGNED  ); }
-    | UNSIGNED
-        { $$ = NN(type_specifier, .type = TS_UNSIGNED); }
+    : VOID     { $$ = NN(type_specifier, .type = TS_VOID    ) ; }
+    | CHAR     { $$ = NN(type_specifier, .type = TS_CHAR    ) ; }
+    | SHORT    { $$ = NN(type_specifier, .type = TS_SHORT   ) ; }
+    | INT      { $$ = NN(type_specifier, .type = TS_INT     ) ; }
+    | LONG     { $$ = NN(type_specifier, .type = TS_LONG    ) ; }
+    | FLOAT    { $$ = NN(type_specifier, .type = TS_FLOAT   ) ; }
+    | DOUBLE   { $$ = NN(type_specifier, .type = TS_DOUBLE  ) ; }
+    | SIGNED   { $$ = NN(type_specifier, .type = TS_SIGNED  ) ; }
+    | UNSIGNED { $$ = NN(type_specifier, .type = TS_UNSIGNED) ; }
     | struct_or_union_specifier
         { $$ = NN(type_specifier, .type = TS_STRUCT_OR_UNION_SPEC, .c = CHOICE(0,as,$1)); }
     | enum_specifier
@@ -514,10 +495,8 @@ struct_or_union_specifier
     ;
 
 struct_or_union
-    : STRUCT
-        { $$ = AT_STRUCT; }
-    | UNION
-        { $$ = AT_UNION; }
+    : STRUCT { $$ = AT_STRUCT; }
+    | UNION  { $$ = AT_UNION ; }
     ;
 
 struct_declaration_list
@@ -593,10 +572,8 @@ enumerator
     ;
 
 type_qualifier
-    : CONST
-        { $$ = TQ_CONST; }
-    | VOLATILE
-        { $$ = TQ_VOLATILE; }
+    : CONST    { $$ = TQ_CONST   ; }
+    | VOLATILE { $$ = TQ_VOLATILE; }
     ;
 
 declarator

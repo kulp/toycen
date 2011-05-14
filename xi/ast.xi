@@ -330,6 +330,7 @@ MAKE(NODE,additive_expression,
     )
 
 MAKE(ID,shift_operator,
+        REFITEM(ENUM_DFL(SO,INVALID))
         REFITEM(ENUM_DFL(SO,LSH))
         REFITEM(ENUM_DFL(SO,RSH))
     )
@@ -341,6 +342,7 @@ MAKE(NODE,shift_expression,
     )
 
 MAKE(ID,relational_operator,
+        REFITEM(ENUM_DFL(RO,INVALID))
         REFITEM(ENUM_DFL(RO,LT))
         REFITEM(ENUM_DFL(RO,GT))
         REFITEM(ENUM_DFL(RO,LTEQ))
