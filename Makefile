@@ -48,11 +48,12 @@ CFLAGS  += -Wall $(WEXTRA) -std=c99 $(PEDANTIC) $(ARCHFLAGS)
 LFLAGS  +=
 LDFLAGS += $(ARCHFLAGS)
 
-OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
+OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-formatters.o
 
 ifneq ($(INHIBIT_INTROSPECTION),1)
 WALKERS = demo graphviz test c
 WALKBINS = $(addprefix ast-walk-,$(WALKERS))
+OBJECTS += ast-walk.o
 endif
 
 CLEANFILES += $(WALKBINS)
