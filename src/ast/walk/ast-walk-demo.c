@@ -60,14 +60,20 @@ static int walk_cb(
         [AST_WALK_AFTER_CHILDREN  ] = { "} ", -4 },
     };
 
+    bool isbase  = flags & AST_WALK_IS_BASE;
+    flags &= 0x7; // XXX
     bool before  = flags & AST_WALK_BEFORE_CHILDREN;
     bool after   = flags & AST_WALK_AFTER_CHILDREN;
     bool between = flags & AST_WALK_BETWEEN_CHILDREN;
 
     const char *name = NULL;
-    ops->get_name(cookie, &name);
+    if (isbase)
+        name = "base";
+    else
+        ops->get_name(cookie, &name);
 
     const struct flag_rec *f = &flag_recs[flags & 0x7];
+    assert(c->indent >= 0);
     assert(c->indent < 256);
     char spaces[c->indent + 1];
     memset(spaces, ' ', sizeof spaces);

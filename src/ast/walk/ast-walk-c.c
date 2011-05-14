@@ -51,6 +51,11 @@ static int walk_cb(
 {
     struct mydata *c = userdata;
 
+    // we might have an empty union, in which case we shouldn't print anything
+    // TODO ensure that this double dereference will never fail
+    if (meta == META_IS_CHOICE && **(int**)data == 0)
+        return 0;
+
     static const struct flag_rec {
         char *prefix;
         signed indent;
@@ -81,11 +86,6 @@ static int walk_cb(
     spaces[c->indent] = 0;
     fputs(spaces, stdout);
     c->indent += f->indent;
-
-    // we might have an empty union, in which case we shouldn't print anything
-    // TODO ensure that this double dereference will never fail
-    if (meta == META_IS_CHOICE && **(int**)data == 0)
-        return 0;
 
     if (name)
         if (before || meta == META_IS_BASIC || meta == META_IS_ID)
