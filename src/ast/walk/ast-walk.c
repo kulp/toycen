@@ -1,6 +1,7 @@
 #include "ast-walk.h"
 #include "ast-ids-priv.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 
@@ -13,6 +14,7 @@ struct ast_walk_data {
         struct stack *next;
     } *stack;
 };
+struct ast_xattrs;
 
 static int recurse_priv(enum priv_type type, void *priv, ast_walk_cb cb,
         int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie);
@@ -55,9 +57,8 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
                         parent->c.node->type, what, userdata, ops, cookie);
             // CHOICE structs wrappers have as their first member an int
             // describing which member is selected.
-            // TODO ensure this cast is portable; long double should ensure
-            // alignment for any primitive ? requires C99
-            struct { int idx; union { long double dummy; } c; } *generic = deref;
+            // TODO ensure this cast is portable
+            struct { int idx; union { alignment_type dummy; } c; } *generic = deref;
             // Zero means none ...
             if (generic->idx > 0) {
                 // ... so we subtract one from the index.
@@ -65,7 +66,6 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
                 struct stack *s = calloc(1, sizeof *s);
                 s->item = citem;
                 s->name = citem->name;
-                //s->name = "XXXunionchild";
                 s->next = cookie->stack;
                 cookie->stack = s;
 
@@ -139,7 +139,6 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         struct stack *s = calloc(1, sizeof *s);
         s->item = item;
         s->name = item->name;
-        //s->name = "YYYstructchild";
         s->next = cookie->stack;
         cookie->stack = s;
 
@@ -204,12 +203,31 @@ static int get_childcnt(walkdata cookie, int *count)
     return 0;
 }
 
+static int get_xattrs(walkdata cookie, struct ast_xattrs *attrs)
+{
+    struct ast_walk_data *data = cookie;
+
+    if (!data->stack) {
+        errno = EFAULT;
+        return -1;
+    }
+
+    // XXX in which cases will item be NULL ? there is a 
+    //assert(data->stack->item != NULL);
+    if (data->stack->item) {
+        attrs->is_pointer = data->stack->item->is_pointer;
+    }
+
+    return 0;
+}
+
 int ast_walk(struct node *top, ast_walk_cb cb, int flags, void *userdata)
 {
     struct ast_walk_data cookie = { 0 };
     struct ast_walk_ops ops = {
         .get_name     = get_name,
         .get_childcnt = get_childcnt,
+        .get_xattrs   = get_xattrs,
     };
 
     if (top->node_type > NODE_TYPE_max ||

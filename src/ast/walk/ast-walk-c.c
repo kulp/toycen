@@ -59,6 +59,8 @@ static int walk_cb(
         [AST_WALK_AFTER_CHILDREN  ] = { "}", -4 },
     };
 
+    struct ast_xattrs attrs = { 0 };
+
     int botmask = (AST_WALK_BEFORE_CHILDREN |
                    AST_WALK_BETWEEN_CHILDREN |
                    AST_WALK_AFTER_CHILDREN);
@@ -66,7 +68,7 @@ static int walk_cb(
     bool after   = flags & AST_WALK_AFTER_CHILDREN;
     bool between = flags & AST_WALK_BETWEEN_CHILDREN;
     bool once    = !(flags & botmask);
-    bool structp = false; // XXX
+    bool structp = (ops->get_xattrs(cookie, &attrs), attrs.is_pointer);
 
     const char *name = NULL;
     ops->get_name(cookie, &name);
@@ -79,6 +81,11 @@ static int walk_cb(
     spaces[c->indent] = 0;
     fputs(spaces, stdout);
     c->indent += f->indent;
+
+    // we might have an empty union, in which case we shouldn't print anything
+    // TODO ensure that this double dereference will never fail
+    if (meta == META_IS_CHOICE && **(int**)data == 0)
+        return 0;
 
     if (name)
         if (before || meta == META_IS_BASIC || meta == META_IS_ID)
@@ -121,31 +128,34 @@ static int walk_cb(
             abort();
     }
 
-    #if 0
-    if (!name && before)
-        printf("(struct %s)", tname);
-    #endif
-
-    // TODO might be a union rather than a struct
     if (before) {
-        if (tname) {
-            printf("/* struct %s */ ", tname);
+        if (!name) {
+            printf("(struct %s)", tname);
+        } else if (tname) {
+            if (structp) {
+                printf("&(struct %s)", tname);
+            } else {
+                printf("/* struct %s */ ", tname);
+            }
         } else {
-            printf("/* union */ ");
+            printf("/* union */ { .choice = ");
+        }
+    } else if (after) {
+        if (name && !tname) {
+            // close out the union
+            printf("} ");
         }
     }
 
-
+    #if 0
     if (after && structp)
         printf("} ");
+    #endif
 
     if (f->prefix)
         printf("%s", f->prefix);
 
-    if (before && structp)
-        printf(" &(struct %s){", tname);
-
-    if (after || once)
+    if ((after || once) && name)
         putchar(',');
 
     puts("");

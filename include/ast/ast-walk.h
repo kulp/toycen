@@ -3,6 +3,10 @@
 /// 
 typedef void *walkdata;
 
+struct ast_xattrs {
+    bool is_pointer:1;
+};
+
 struct ast_walk_ops {
     /// not integrated into get_children because it is probably generated
     /// programmatically and potentially often unused by the walk callback
@@ -10,6 +14,7 @@ struct ast_walk_ops {
     int (*get_children)(walkdata cookie, struct node_item **children);
     int (*get_parent  )(walkdata cookie, struct node_item **parent);
     int (*get_name    )(walkdata cookie, const char **name);
+    int (*get_xattrs  )(walkdata cookie, struct ast_xattrs *attrs);
 
     int (*prune)(walkdata cookie, int flags);
 };
