@@ -26,3 +26,8 @@ ast-walk-demo
 *.dot
 .DS_Store
 test*.c
+ast-walk-c
+*.vim
+*.xcscheme
+*.xcbkptlist
+*.xcuserstate
