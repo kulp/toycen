@@ -89,6 +89,17 @@ basic-types.xi: ast-basics-pre.h ast.xi
 # GCC bug 47772 : http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47772
 ast-ids.o: CFLAGS += -Wno-missing-field-initializers
 
+# Lua stuff
+ast-one.h: ast.h
+	$(CPP) $(CPPFLAGS) -o $@ $^
+
+%,fPIC.o: CFLAGS += -fPIC
+%,fPIC.o: %.c
+	$(COMPILE.c) -o $@ $^
+CLEANFILES += libast.so
+libast.so: ast-ids,fPIC.o
+	$(LINK.c) -shared -o $@ $^
+
 ifeq ($(BUILD_PP),1)
 CLEANFILES += tpp
 tpp: hash_table.o pp_lexer.o
