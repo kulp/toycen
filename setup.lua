@@ -7,6 +7,8 @@ libast = ffi.load("libast.so")
 
 T_node = ffi.metatype("T_node", {})
 T_function_definition = ffi.metatype("T_function_definition", {})
+T_translation_unit = ffi.metatype("T_translation_unit", {})
+Tp_translation_unit = ffi.typeof("T_translation_unit*")
 
 function node_rec(e)
 	return ffi.string(libast.node_recs[e].name)

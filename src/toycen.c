@@ -63,7 +63,9 @@ int main(int argc, char *argv[])
 
         //lua_getstack(L, 0, &ar);
         //lua_setlocal(L, &ar, "k
+        lua_getglobal(L, "Tp_translation_unit");
         lua_pushlightuserdata(L, top);
+        lua_pcall(L, 1, 1, 0);
         lua_setglobal(L, "ast");
 
         while ((str = readline(prompt))) {
@@ -72,6 +74,8 @@ int main(int argc, char *argv[])
             } else {
                 prompt = "> ";
             }
+
+            free(str);
         }
 
         lua_close(L);
