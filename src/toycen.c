@@ -16,7 +16,15 @@
 #include "parser.h"
 #include "hash_table.h"
 
+#include <luajit.h>
+#include <lauxlib.h>
+#include <lualib.h>
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 
 extern int yyparse();
 
@@ -40,6 +48,34 @@ int main(int argc, char *argv[])
 
     struct translation_unit *top = get_top_of_parse_result();
     (void)top;
+
+    {
+        lua_State *L = luaL_newstate();
+        //lua_Debug ar = { 0 };
+        luaL_openlibs(L);
+
+        char *str = NULL;
+        const char *prompt = "> ";
+
+        result = luaL_dofile(L, "setup.lua");
+        if (result)
+            abort();
+
+        //lua_getstack(L, 0, &ar);
+        //lua_setlocal(L, &ar, "k
+        lua_pushlightuserdata(L, top);
+        lua_setglobal(L, "ast");
+
+        while ((str = readline(prompt))) {
+            if (luaL_dostring(L, str)) {
+                prompt = "!>";
+            } else {
+                prompt = "> ";
+            }
+        }
+
+        lua_close(L);
+    }
 
     parser_teardown(&ps);
     lexer_teardown();

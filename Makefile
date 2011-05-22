@@ -100,6 +100,10 @@ CLEANFILES += libast.so
 libast.so: ast-ids,fPIC.o
 	$(LINK.c) -shared -o $@ $^
 
+toycen luash: LDLIBS += -lluajit-51 -lreadline
+toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
+toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
+
 ifeq ($(BUILD_PP),1)
 CLEANFILES += tpp
 tpp: hash_table.o pp_lexer.o
