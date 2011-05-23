@@ -47,11 +47,10 @@ int main(int argc, char *argv[])
     result = yyparse();
 
     struct translation_unit *top = get_top_of_parse_result();
-    (void)top;
 
+#if TOYCEN_ENABLE_LUA
     {
         lua_State *L = luaL_newstate();
-        //lua_Debug ar = { 0 };
         luaL_openlibs(L);
 
         char *str = NULL;
@@ -59,10 +58,9 @@ int main(int argc, char *argv[])
 
         result = luaL_dofile(L, "setup.lua");
         if (result)
-            abort();
+            if (lua_isstring(L, -1))
+                fprintf(stderr, "%s\n", lua_tostring(L, -1));
 
-        //lua_getstack(L, 0, &ar);
-        //lua_setlocal(L, &ar, "k
         lua_getglobal(L, "Tp_translation_unit");
         lua_pushlightuserdata(L, top);
         lua_pcall(L, 1, 1, 0);
@@ -71,6 +69,8 @@ int main(int argc, char *argv[])
         while ((str = readline(prompt))) {
             if (luaL_dostring(L, str)) {
                 prompt = "!>";
+                if (lua_isstring(L, -1))
+                    fprintf(stderr, "%s\n", lua_tostring(L, -1));
             } else {
                 prompt = "> ";
             }
@@ -80,6 +80,9 @@ int main(int argc, char *argv[])
 
         lua_close(L);
     }
+#else
+    (void)top;
+#endif
 
     parser_teardown(&ps);
     lexer_teardown();

@@ -19,6 +19,8 @@ INHIBIT_INTROSPECTION = 1
 DEFINES += NDEBUG
 endif
 
+ENABLE_LUA = 1
+
 INCLUDE += xi include include/housekeeping include/ast include/preprocessor include/util
 SRC += src src/ast src/ast/walk src/compiler src/preprocessor src/util
 
@@ -90,8 +92,12 @@ basic-types.xi: ast-basics-pre.h ast.xi
 ast-ids.o: CFLAGS += -Wno-missing-field-initializers
 
 # Lua stuff
+ifeq ($(ENABLE_LUA),1)
+DEFINES += TOYCEN_ENABLE_LUA
 ast-one.h: ast.h
 	$(CPP) $(CPPFLAGS) -o $@ $^
+
+all: libast.so
 
 %,fPIC.o: CFLAGS += -fPIC
 %,fPIC.o: %.c
@@ -103,6 +109,7 @@ libast.so: ast-ids,fPIC.o
 toycen luash: LDLIBS += -lluajit-51 -lreadline
 toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
+endif
 
 ifeq ($(BUILD_PP),1)
 CLEANFILES += tpp

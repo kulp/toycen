@@ -1,13 +1,20 @@
-local ffi = require("ffi")
+ffi = require("ffi")
 ffi.cdef(io.input("ast-one.h"):read("*a"))
 ffi.cdef[[
 extern const struct node_rec node_recs[];
 ]]
 libast = ffi.load("libast.so")
 
+feelds = ffi.fields("struct node_rec")
+
+local tu_mt = {
+	__index = {
+		foo = function(x) return ffi.fields((ffi.typeof(x))()) end,
+	},
+}
 T_node = ffi.metatype("T_node", {})
 T_function_definition = ffi.metatype("T_function_definition", {})
-T_translation_unit = ffi.metatype("T_translation_unit", {})
+T_translation_unit = ffi.metatype("T_translation_unit", tu_mt)
 Tp_translation_unit = ffi.typeof("T_translation_unit*")
 
 function node_rec(e)
