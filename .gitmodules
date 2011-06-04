@@ -1,0 +1,3 @@
+[submodule "3rdparty/luajit-2.0"]
+	path = 3rdparty/luajit-2.0
+	url = git@github.com:kulp/luajit-2.0.git
