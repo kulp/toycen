@@ -25,11 +25,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 extern int yyparse();
 
 int DEBUG_LEVEL = 2;
 FILE* DEBUG_FILE;
+
+// XXX
+static bool is_interactive = false;
 
 int main(int argc, char *argv[])
 {
@@ -55,6 +59,7 @@ int main(int argc, char *argv[])
 
         char *str = NULL;
         const char *prompt = "> ";
+        bool shouldread = is_interactive;
 
         result = luaL_dofile(L, "setup.lua");
         if (result)
@@ -66,7 +71,12 @@ int main(int argc, char *argv[])
         lua_pcall(L, 1, 1, 0);
         lua_setglobal(L, "ast");
 
-        while ((str = readline(prompt))) {
+        result = luaL_dofile(L, "ast.lua");
+        if (result)
+            if (lua_isstring(L, -1))
+                fprintf(stderr, "%s\n", lua_tostring(L, -1));
+
+        while (shouldread && (str = readline(prompt))) {
             if (luaL_dostring(L, str)) {
                 prompt = "!>";
                 if (lua_isstring(L, -1))
