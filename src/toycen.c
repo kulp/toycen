@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include <getopt.h>
+
 extern int yyparse();
 
 int DEBUG_LEVEL = 2;
@@ -43,8 +45,17 @@ int main(int argc, char *argv[])
 
     parser_state_t ps;
 
-    if (argc > 1)
-        switch_to_input_file(argv[1]);
+    extern int optind;
+    int ch;
+    while ((ch = getopt(argc, argv, "i")) != -1) {
+        switch (ch) {
+            case 'i': is_interactive = true; break;
+            default: abort();
+        }
+    }
+
+    if (optind < argc)
+        switch_to_input_file(argv[optind]);
 
     lexer_setup();
     parser_setup(&ps);

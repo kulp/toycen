@@ -34,7 +34,7 @@ function ffi.tagof(n)
 	x = tostring(n)
 	-- XXX hacky
 	-- TODO enums
-	str,count = x:gsub("ctype<(%S+) (%S+)[ *&]*>$", "%2")
+	str,count = x:gsub("c%w*<(%S+) (%S+)[ *&]*>.*$", "%2")
 	if count ~= 1 then return nil else return str end
 end
 
