@@ -98,13 +98,23 @@ ast-one.h: ast.h
 	$(CPP) $(CPPFLAGS) -o $@ $^
 
 all: libast.so
+all: libfields.so
 
 %,fPIC.o: CFLAGS += -fPIC
 %,fPIC.o: %.c
 	$(COMPILE.c) -o $@ $^
 CLEANFILES += libast.so
 libast.so: ast-ids,fPIC.o
-	$(LINK.c) -shared -o $@ $^
+
+CLEANFILES += libfields.so
+libfields.so: fields,fPIC.o
+libfields.so: LDLIBS += -lluajit
+libfields.so: INCLUDE += 3rdparty/luajit-2.0/src 
+libfields.so: CFLAGS += -std=gnu99
+libfields.so: CPPFLAGS += -std=gnu99
+
+%.so:
+	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
 toycen luash: LDLIBS += -lluajit-51 -lreadline
 toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
