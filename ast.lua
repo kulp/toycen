@@ -1,5 +1,5 @@
 local ffi = require "ffi"
-require "libfields"
+require "libljffifields"
 AST = { }
 local indenter = " "
 

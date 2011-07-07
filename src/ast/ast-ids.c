@@ -88,6 +88,7 @@ struct node_parentage node_parentages[] = {
 #define NARGS_IMPL(_1,_2,_3,_4,_5,_6,_7,_8,_9,N,...) N
 
 #define BASE(X) /* always at 0 */
+// XXX following is not true when CHOICE() produces idx ?
 #define CHOICE(Name,...) Name /* don't need to recurse, union => same offset */
 #define TYPED(T,X) X
 #define DEFITEM(X) X,

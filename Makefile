@@ -70,10 +70,10 @@ parser.o: CFLAGS += -Wno-missing-field-initializers
 
 CLEANFILES += ast-gen.h ast-gen2.h
 ast-gen2.h: ast.xi
-	$(CPP) $(CPPFLAGS) $^ | indent /dev/stdin $@
+	$(CPP) $(CPPFLAGS) $^ | indent /dev/stdin $@.$$$$ && mv $@.$$$$ $@ || rm $@.$$$$
 
 ast-gen.h: ast-gen2.h
-	$(CPP) $(CPPFLAGS) -include ast-gen-pre.h $^ | indent /dev/stdin $@
+	$(CPP) $(CPPFLAGS) -include ast-gen-pre.h $^ | indent /dev/stdin $@.$$$$ && mv $@.$$$$ $@ || rm $@.$$$$
 
 # Don't complain about unused yyunput()
 lexer.o: CFLAGS += -Wno-unused-function
@@ -98,7 +98,7 @@ ast-one.h: ast.h
 	$(CPP) $(CPPFLAGS) -o $@ $^
 
 all: libast.so
-all: libfields.so
+all: libljffifields.so
 
 %,fPIC.o: CFLAGS += -fPIC
 %,fPIC.o: %.c
@@ -106,12 +106,12 @@ all: libfields.so
 CLEANFILES += libast.so
 libast.so: ast-ids,fPIC.o
 
-CLEANFILES += libfields.so
-libfields.so: fields,fPIC.o
-libfields.so: LDLIBS += -lluajit
-libfields.so: INCLUDE += 3rdparty/luajit-2.0/src 
-libfields.so: CFLAGS += -std=gnu99
-libfields.so: CPPFLAGS += -std=gnu99
+CLEANFILES += libljffifields.so
+libljffifields.so: fields,fPIC.o
+libljffifields.so: LDLIBS += -lluajit-51
+libljffifields.so: INCLUDE += 3rdparty/luajit-2.0/src 
+libljffifields.so: CFLAGS += -std=gnu99
+libljffifields.so: CPPFLAGS += -std=gnu99
 
 %.so:
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)

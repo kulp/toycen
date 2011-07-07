@@ -32,3 +32,4 @@ ast-walk-c
 *.xcscheme
 *.xcbkptlist
 *.xcuserstate
+toycen.xcodeproj/xcuserdata/

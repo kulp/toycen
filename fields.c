@@ -55,7 +55,7 @@ static int ffi_fields(lua_State *L)
   return 0;
 }
 
-int luaopen_libfields(lua_State *L) {
+int luaopen_libljffifields(lua_State *L) {
   lua_register(L,"ffi_fields", ffi_fields);
   return 1;
 }
