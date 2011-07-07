@@ -13,16 +13,7 @@ static CType *my_lj_ctype_rawref(CTState *cts, CTypeID id)
 static int ffi_fields(lua_State *L)
 {
   CTState *cts = ctype_cts(L);
-  //CTypeID id = ffi_checkctype(L, cts); // XXX
-  //lua_pushstring(L, "print");
-  /*
-  lua_getfield(L, LUA_GLOBALSINDEX, "print");
-  lua_pushstring(L, "print");
-  lua_call(L, 1, 0);
-  */
-  //luaL_dostring(L, "print(\"hi\")");
   luaL_dostring(L, "my_ffi = require \"ffi\"");
-  //luaL_dostring(L, "my_ffi.typeof(\"struct foo\")");
   lua_getfield(L, LUA_GLOBALSINDEX, "my_ffi");
   lua_getfield(L, -1, "typeof");
   lua_remove(L, -2);
@@ -31,28 +22,16 @@ static int ffi_fields(lua_State *L)
 
   TValue *o = L->base;
   if (!(o < L->top)) {
-  err_argtype:
-    abort();
+    abort(); // XXX
     //lj_err_argtype(L, 1, "C type");
-    ;
   }
   GCcdata *cd = cdataV(o);
   CTypeID id = cd->typeid == CTID_CTYPEID ? *(CTypeID *)cdataptr(cd) : cd->typeid;
 
-  /*
-  lua_getfield(L, LUA_GLOBALSINDEX, "print");
-  lua_insert(L, -2);
-  lua_call(L, 1, 0);
-  */
-  //return 0;
-  //CTypeID id = 0;
   CType *ct = my_lj_ctype_rawref(cts, id); // XXX
 
   lua_pop(L,1);
   lua_pop(L,1);
-
-  printf("top = %d\n", lua_gettop(L));
-  //CType *ct = 0; // XXX
 
   while (ctype_isptr(ct->info)) ct = ctype_rawchild(cts, ct);
   if (ctype_isstruct(ct->info) && ct->size != CTSIZE_INVALID) {
@@ -61,11 +40,16 @@ static int ffi_fields(lua_State *L)
     while (ct->sib) {
       ct = ctype_get(cts, ct->sib);
       while (ctype_isptr(ct->info)) ct = ctype_rawchild(cts, ct);
-      setstrV(L, L->top++, gcrefp(ct->name, GCstr));
+      // I want to do something like this, but I don't know the LuaJIT GC well
+      // enough to keep it from failing :
+      //    setstrV(L, L->top++, gcrefp(ct->name, GCstr));
+      // so we do this instead:
+      lua_pushstring(L, strdata(strref(ct->name)));
       lua_rawseti(L, -2, ++i);
     }
     return 1;
   } else {
+    abort(); // XXX
     //lj_err_argtype(L, 1, "ctype or cdata"); // XXX
   }
   return 0;

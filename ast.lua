@@ -8,7 +8,7 @@ local ffifields = ffi_fields
 
 -- XXX naughty ?
 local function isnull(what)
-    return ffi.cast('uintptr_t',ffi.cast('void*',what)) == 0
+    return ffi.cast('intptr_t',ffi.cast('void*',what)) == 0
 end
 
 local __walkchoice, __walkinner
