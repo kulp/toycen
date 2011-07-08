@@ -29,6 +29,14 @@
 
 #include <getopt.h>
 
+#define mydo(L,what,result) \
+    do { \
+        result = luaL_dofile(L, what); \
+        if (result) \
+            if (lua_isstring(L, -1)) \
+                fprintf(stderr, "%s\n", lua_tostring(L, -1)); \
+    } while (0)
+
 extern int yyparse();
 
 int DEBUG_LEVEL = 2;
@@ -72,20 +80,15 @@ int main(int argc, char *argv[])
         const char *prompt = "> ";
         bool shouldread = is_interactive;
 
-        result = luaL_dofile(L, "setup.lua");
-        if (result)
-            if (lua_isstring(L, -1))
-                fprintf(stderr, "%s\n", lua_tostring(L, -1));
+        mydo(L,"setup.lua",result);
+        mydo(L,"ast.lua",result);
 
         lua_getglobal(L, "Tp_translation_unit");
         lua_pushlightuserdata(L, top);
         lua_pcall(L, 1, 1, 0);
         lua_setglobal(L, "ast");
 
-        result = luaL_dofile(L, "ast.lua");
-        if (result)
-            if (lua_isstring(L, -1))
-                fprintf(stderr, "%s\n", lua_tostring(L, -1));
+        mydo(L,"flow.lua",result);
 
         while (shouldread && (str = readline(prompt))) {
             if (luaL_dostring(L, str)) {

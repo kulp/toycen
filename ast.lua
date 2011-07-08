@@ -1,6 +1,17 @@
+-- AST-specific functions / methods / setup goes here
+
 local ffi = require "ffi"
 AST = { }
 local indenter = " "
+
+ffi.cdef(io.input("ast-one.h"):read("*a"))
+ffi.cdef[[
+extern const struct node_rec node_recs[];
+]]
+libast = ffi.load("libast.so")
+
+-- TODO move to toycen.c ?
+Tp_translation_unit = ffi.typeof("T_translation_unit*")
 
 -- XXX naughty ?
 local function isnull(what)
@@ -44,6 +55,8 @@ function AST.walk(ast, indent)
     end
 end
 
-AST.walk(ast)
+function AST.node_rec(e)
+	return ffi.string(libast.node_recs[e].name)
+end
 
 -- vi: set ts=4 sw=4 et nocindent noai syntax=lua
