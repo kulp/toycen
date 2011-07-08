@@ -1,10 +1,6 @@
 local ffi = require "ffi"
-require "libljffifields"
 AST = { }
 local indenter = " "
-
---ffifields = ffi.fields
-local ffifields = ffi_fields
 
 -- XXX naughty ?
 local function isnull(what)
@@ -14,7 +10,7 @@ end
 local __walkchoice, __walkinner
 
 function __walkchoice(ast, i, indent)
-    local f = ffifields(ast)
+    local f = ffi.fields(ast)
     local v = f[i]
     if (v) then
         return __walkinner(ast, v, indent)
@@ -43,7 +39,7 @@ function __walkinner(ast, v, indent)
 end
 
 function AST.walk(ast, indent)
-    for k,v in ipairs(ffifields(ast)) do
+    for k,v in ipairs(ffi.fields(ast)) do
         __walkinner(ast, v, indent)
     end
 end
