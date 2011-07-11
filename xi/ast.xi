@@ -218,13 +218,14 @@ MAKE(NODE,string,
         DEFITEM(TYPED(PTR(BASIC(char)),cached))
     )
 
-MAKE(NODE,expression_having_type_,
+// was expression_having_type_ but I reserved trailing _ for PRIV
+MAKE(NODE,expression_having_type,
         BASE(node)
         DEFITEM(TYPED(REF_ID(expression_type),type))
     )
 
 MAKE(NODE,primary_expression,
-        BASE(expression_having_type_)
+        BASE(expression_having_type)
         DEFITEM(TYPED(REF_ID(primary_expression_type),type))
         DEFITEM(CHOICE(me,
                 DEFITEM(TYPED(PTR(REF_NODE(identifier)),id))

@@ -59,7 +59,13 @@ local function doformat(indent,k,v,node,nodetype,child,parent)
     -- XXX hokey check for anonymous aggregate
     if not mytag:find("%d+") then
         -- TODO breaks on inners (like assignment_inner_)
-        local myrec = libast.node_recs[ffi.cast("enum node_type", "NODE_TYPE_" .. mytag)]
+        local myrec
+        -- XXX hokey priv-detection
+        if mytag:sub(-1) == "_" then
+            myrec = libast.node_recs[ffi.cast("enum priv_type", "PRIV_TYPE_" .. mytag)]
+        else
+            myrec = libast.node_recs[ffi.cast("enum node_type", "NODE_TYPE_" .. mytag)]
+        end
         local me = libast.node_recs[myrec.type]
         nodetype = nodetype or type_from_node_enum(myrec.type)
 
