@@ -33,3 +33,7 @@ ast-walk-c
 *.xcbkptlist
 *.xcuserstate
 toycen.xcodeproj/xcuserdata/
+tmp/
+libast.so
+libljffifields.so
+ast-one.h
