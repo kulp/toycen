@@ -573,7 +573,6 @@ MAKE(NODE,direct_declarator,
                 DEFITEM(TYPED(PTR(REF_NODE(declarator)),decl))
                 DEFITEM(TYPED(REF_PRIV(array_direct_inner_),array))
                 DEFITEM(TYPED(REF_PRIV(function_direct_inner_),function))
-            /// @todo unify "me" and "val" synonyms / overlap
             ))
     )
 

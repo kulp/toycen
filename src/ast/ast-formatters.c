@@ -108,8 +108,17 @@ int fmt_call(enum meta_type meta, int type, int *size, char buf[*size], void *da
         return -1;
     }
 
-    const struct type_formatter *formatter = &type_formatters[meta][type];
-    return formatter->format(formatter, size, buf, data);
+    const struct type_formatter *meta_formatters = type_formatters[meta];
+	if (meta_formatters) {
+		const struct type_formatter *formatter = &meta_formatters[type];
+		if (formatter) {
+			return formatter->format(formatter, size, buf, data);
+		}
+	} else
+        return -1;
+
+	memset(buf, 0, *size);
+	return 0;
 }
 
 const struct type_formatter *type_formatters[] = {

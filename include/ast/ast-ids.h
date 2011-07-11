@@ -76,7 +76,8 @@ struct id_rec {
 
 struct basic_rec {
     enum basic_type type;
-    const char *defname;
+    #define defname name
+    const char *name; // XXX for ease of lua (consistent name access)
     /// this is different only for _Bool so far. do we really want it ?
     const char *rawname;
     size_t size;

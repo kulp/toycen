@@ -94,8 +94,9 @@ ast-ids.o: CFLAGS += -Wno-missing-field-initializers
 # Lua stuff
 ifeq ($(ENABLE_LUA),1)
 DEFINES += TOYCEN_ENABLE_LUA
-ast-one.h: ast.h
-	$(CPP) $(CPPFLAGS) -o $@ $^
+# TODO make dependent on included files
+ast-one.h: ast.h ast-ids-priv.h
+	cat $^ | $(CPP) $(CPPFLAGS) -o $@ -
 
 all: libast.so
 all: libljffifields.so
@@ -104,7 +105,7 @@ all: libljffifields.so
 %,fPIC.o: %.c
 	$(COMPILE.c) -o $@ $^
 CLEANFILES += libast.so
-libast.so: ast-ids,fPIC.o
+libast.so: ast-ids,fPIC.o ast-formatters,fPIC.o
 
 CLEANFILES += libljffifields.so
 libljffifields.so: fields,fPIC.o

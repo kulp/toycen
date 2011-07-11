@@ -68,7 +68,7 @@ const struct basic_rec basic_recs[] = {
                           .size = sizeof(T_##Key), \
                           __VA_ARGS__ },
 
-struct node_parentage node_parentages[] = {
+const struct node_parentage node_parentages[] = {
     #include "ast.xi"
 };
 

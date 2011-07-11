@@ -1,4 +1,5 @@
 -- ffi introspection support goes here
+--module "ffi_instrospection"
 local ffi = require("ffi")
 require "libljffifields"
 ffi.fields = ffi_fields
@@ -17,6 +18,13 @@ function ffi.tagof(n)
 	-- XXX hacky
 	-- TODO enums
 	str,count = x:gsub("c%w*<(%S+) (%S+)[ *&]*>.*$", "%2")
+	if count ~= 1 then return nil else return str end
+end
+
+function ffi.subtypeof(n)
+	x = tostring(n)
+	-- XXX hacky
+	str,count = x:gsub("c%w*<(.+)>.*$", "%1")
 	if count ~= 1 then return nil else return str end
 end
 
