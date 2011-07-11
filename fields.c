@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "lauxlib.h"
 #include "lj_ctype.h"
 #include "lj_err.h"
@@ -26,6 +28,7 @@ static int ffi_fields(lua_State *L)
         //lj_err_argtype(L, 1, "C type");
     }
     GCcdata *cd = cdataV(o);
+    assert(cd != NULL);
     CTypeID id = cd->typeid == CTID_CTYPEID ? *(CTypeID *)cdataptr(cd) : cd->typeid;
 
     CType *ct = my_lj_ctype_rawref(cts, id); // XXX

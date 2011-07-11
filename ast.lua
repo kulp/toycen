@@ -11,17 +11,14 @@ ffi.cdef[[
     //extern const struct node_parentage node_parentages[];
     int fmt_call(enum meta_type meta, int type, int *size, char buf[], void *data);
 ]]
-libast = ffi.load("libast.so")
+local libast = ffi.load("libast.so")
 
--- TODO move to toycen.c ?
-Tp_translation_unit = ffi.typeof("T_translation_unit*")
-
--- XXX naughty ?
 local function isnull(what)
-    if not what then return true end
-    if type(what) == "nil" then return true end
-    return ffi.cast('void*',what) == ffi.cast('void*',0)
-    --return ffi.cast('intptr_t',ffi.cast('void*',what)) == 0
+    if not what then
+        return true
+    else
+        return ffi.cast('void*',what) == ffi.cast('void*',0)
+    end
 end
 
 function nodetype(str)
@@ -54,10 +51,12 @@ local function doformat(indent,k,v,node,nodetype,child,parent)
     local i = k - 1
     local j = i - 1
     local itemindex = j
+    -- XXX get rid of special ("base") case
     if ffi.istype("struct node",node) then itemindex = 0 end
 
     local printed
     local mytag = ffi.tagof(node)
+    -- XXX hokey check for anonymous aggregate
     if not mytag:find("%d+") then
         -- TODO breaks on inners (like assignment_inner_)
         local myrec = libast.node_recs[ffi.cast("enum node_type", "NODE_TYPE_" .. mytag)]
@@ -76,7 +75,7 @@ local function doformat(indent,k,v,node,nodetype,child,parent)
                 -- XXX get rid of special cases
                 if type(child) == "number" then data = ffi.new("int[1]", child);
                 elseif ffi.istype("uint64_t", child) then pdata = ffi.new("uint64_t[1]", child)
-                elseif ffi.istype("const char *", child) then data = child
+                elseif ffi.istype("char *", child) then data = child
                 end
 
                 pdata = pdata or ffi.new("void*[1]", data)
@@ -106,7 +105,7 @@ end
 
 
 function AST.walk(node,nodetype,parent,indent)
-    if isnull(node) then return nil end
+    if type(node) ~= "cdata" or not ffi.nsof(node) or isnull(node) then return nil end
     if not indent then indent = 0 end
 
     local fields = ffi.fields(node)
@@ -129,13 +128,11 @@ function AST.walk(node,nodetype,parent,indent)
             -- j is the zero-based index corresponding to k, with 'base' discounted
             local child = node[v]
             doformat(indent,k,v,node,nodetype,child,parent)
-            if type(child) == "cdata" and ffi.nsof(child) then
-                AST.walk(child,childtype,node,indent+1)
-            end
+            AST.walk(child,childtype,node,indent+1)
         end
 
     else
-        print "XXX ERRAZ"
+        print ("Unsupported namespace ", myns)
     end
 
 end

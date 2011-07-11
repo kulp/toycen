@@ -83,6 +83,10 @@ int main(int argc, char *argv[])
         mydo(L,"setup.lua",result);
         mydo(L,"ast.lua",result);
 
+        // TODO make ffi local
+        // TODO use C API instead of dostring
+        luaL_dostring(L, "ffi = require \"ffi\"");
+        luaL_dostring(L, "Tp_translation_unit = ffi.typeof(\"T_translation_unit*\")");
         lua_getglobal(L, "Tp_translation_unit");
         lua_pushlightuserdata(L, top);
         lua_pcall(L, 1, 1, 0);
