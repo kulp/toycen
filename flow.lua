@@ -30,7 +30,12 @@ local function printcb(level,k,v)
     print(k,v)
 end
 
-AST.walk(ast,printcb)
+-- TODO define better API for errors
+local function errorcb(msg)
+    print(msg)
+end
+
+AST.walk(ast,printcb,errorcb)
 
 --[[
 --print(AST.node_rec(1))
