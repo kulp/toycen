@@ -44,7 +44,7 @@ function type_from_node_enum(x)
     return ffi.typeof("T_" .. ffi.string(libast.node_recs[x].name))
 end
 
-local function doformat(walkcb,errorcb,indent,k,v,node,nodetype,child,parent)
+local function doformat(userdata,callbacks,indent,k,v,node,nodetype,child,parent)
     local i = k - 1
     local j = i - 1
     local itemindex = j
@@ -85,7 +85,7 @@ local function doformat(walkcb,errorcb,indent,k,v,node,nodetype,child,parent)
 
                 local result = libast.fmt_call(item.meta, dc.type, psize, buf, pdata)
                 if result >= 0 then
-                    walkcb(indent,v,ffi.string(buf))
+                    callbacks.walk(userdata,indent,v,ffi.string(buf))
                     done = true
                 end
             end
@@ -102,15 +102,15 @@ local function doformat(walkcb,errorcb,indent,k,v,node,nodetype,child,parent)
     end
 
     if not done then
-        walkcb(indent,v,child)
+        callbacks.walk(userdata,indent,v,child)
     end
 end
 
-function AST.walk(node,walkcb,errorcb,nodetype,parent,indent)
+function AST.walk(node,userdata,callbacks,nodetype,parent,indent)
     if type(node) ~= "cdata" or not ffi.nsof(node) or isnull(node) then return nil end
     if not indent then indent = 0 end
-    walkcb  = walkcb  or function() end
-    errorcb = errorcb or function() end
+    callbacks.walk  = callbacks.walk  or function() end
+    callbacks.error = callbacks.error or function() end
 
     local fields = ffi.fields(node)
     local myns   = ffi.nsof(node)
@@ -118,9 +118,13 @@ function AST.walk(node,walkcb,errorcb,nodetype,parent,indent)
     if myns == "union" then
 
         if parent.idx > 0 then
+            if parent.idx >= #fields then
+                callbacks.error(userdata,"bad index " .. parent.idx)
+                return nil
+            end
             local child = node[fields[parent.idx]]
-            walkcb(indent,fields[parent.idx],child)
-            AST.walk(child,walkcb,errorcb,nil,parent,indent+1)
+            callbacks.walk(userdata,indent,fields[parent.idx],child)
+            AST.walk(child,userdata,callbacks,nil,parent,indent+1)
         end
 
     elseif myns == "struct" then
@@ -130,12 +134,12 @@ function AST.walk(node,walkcb,errorcb,nodetype,parent,indent)
             -- i is the zero-based index corresponding to k
             -- j is the zero-based index corresponding to k, with 'base' discounted
             local child = node[v]
-            doformat(walkcb,errorcb,indent,k,v,node,nodetype,child,parent)
-            AST.walk(child,walkcb,errorcb,childtype,node,indent+1)
+            doformat(userdata,callbacks,indent,k,v,node,nodetype,child,parent)
+            AST.walk(child,userdata,callbacks,childtype,node,indent+1)
         end
 
     else
-        errorcb("Unsupported namespace:" .. myns)
+        callbacks.error(userdata,"Unsupported namespace:" .. myns)
     end
 
 end

@@ -24,18 +24,30 @@ end
 
 --print(ffi.typeof(ast.base.node_type))
 
-local function printcb(level,k,v)
+local function printcb(ud,level,k,v)
     local indenter = " "
     for q=1,level do io.write(indenter) end
     print(k,v)
+    ud.level = level
+    ud.path[level+2] = nil
+    ud.path[level+1] = k
 end
+
+ffi.cdef[[void abort()]]
 
 -- TODO define better API for errors
-local function errorcb(msg)
+local function errorcb(ud,msg)
     print(msg)
+    print("level is " .. ud.level .. ", path is top." .. table.concat(ud.path,"."))
+    ffi.C.abort()
 end
 
-AST.walk(ast,printcb,errorcb)
+-- userdata for callbacks
+local ud = {
+    path = {},
+}
+
+AST.walk(ast,ud,{ walk = printcb, error = errorcb })
 
 --[[
 --print(AST.node_rec(1))

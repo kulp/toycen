@@ -95,11 +95,13 @@ ast-ids.o: CFLAGS += -Wno-missing-field-initializers
 ifeq ($(ENABLE_LUA),1)
 DEFINES += TOYCEN_ENABLE_LUA
 # TODO make dependent on included files
+CLEANFILES += ast-one.h
 ast-one.h: ast.h ast-ids-priv.h
 	cat $^ | $(CPP) $(CPPFLAGS) -o $@ -
 
 all: libast.so
 all: libljffifields.so
+all: ast-one.h
 
 %,fPIC.o: CFLAGS += -fPIC
 %,fPIC.o: %.c
@@ -136,7 +138,7 @@ endif
 .SECONDARY: parser.c lexer.c
 CLEANFILES += y.output parser_internal.h y.tab.h parser.c lexer.l
 
-ifeq ($(words $(filter clean,$(MAKECMDGOALS))),0)
+ifeq ($(words $(filter clean clobber,$(MAKECMDGOALS))),0)
 -include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
 endif
 
@@ -151,4 +153,7 @@ CLEANFILES += lexer.c
 	cat $(filter %.l.pre,$^) $(filter %blank.l,$^) $(filter %.l.rules,$^) $(filter %blank.l,$^) $(filter %.l.post,$^) > $@
 
 clean:
-	$(RM) -fr $(CLEANFILES) *.[odsi] *.dSYM $(TARGET)
+	$(RM) -r $(CLEANFILES) *.[odsi] *.dSYM $(TARGET)
+
+clobber: clean
+	$(RM) -r $(CLOBBERFILES)
