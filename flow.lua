@@ -38,6 +38,7 @@ ffi.cdef[[void abort()]]
 -- TODO define better API for errors
 local function errorcb(ud,msg)
     print(msg)
+    -- TODO print "." vs. "->" correctly ("." is good enough for GDB) ?
     print("level is " .. ud.level .. ", path is top." .. table.concat(ud.path,"."))
     ffi.C.abort()
 end

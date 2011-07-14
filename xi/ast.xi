@@ -597,8 +597,7 @@ MAKE(NODE,initializer,
     )
 
 MAKE(NODE,initializer_list,
-        BASE(node)
-        DEFITEM(TYPED(REF_NODE(initializer),me))
+        BASE(initializer)
         DEFITEM(TYPED(PTR(REF_NODE(initializer_list)),left))
     )
 
