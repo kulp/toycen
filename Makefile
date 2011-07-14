@@ -96,7 +96,7 @@ ifeq ($(ENABLE_LUA),1)
 DEFINES += TOYCEN_ENABLE_LUA
 # TODO make dependent on included files
 CLEANFILES += ast-one.h
-ast-one.h: ast.h ast-ids-priv.h
+ast-one.h: ast.h ast-ids-priv.h ast-formatters.h
 	cat $^ | $(CPP) $(CPPFLAGS) -o $@ -
 
 all: libast.so

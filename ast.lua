@@ -3,31 +3,23 @@
 
 local ffi = require "ffi"
 require "ffi_introspection"
+require "utils"
 
 AST = { }
 
-ffi.cdef(io.input("ast-one.h"):read("*a"))
-ffi.cdef[[
-    extern const struct node_rec node_recs[];
-    int fmt_call(enum meta_type meta, int type, int *size, char buf[], void *data);
-]]
+include_h("ast-one.h")
+
 local libast = ffi.load("libast.so")
 
-local function decode_node_item(node_item, parent)
+local function decode_node_item(node_item)
     local table = {
         [tonumber(ffi.cast("enum meta_type", "META_IS_NODE"  ))] = node_item.c.node,
         [tonumber(ffi.cast("enum meta_type", "META_IS_PRIV"  ))] = node_item.c.priv,
         [tonumber(ffi.cast("enum meta_type", "META_IS_ID"    ))] = node_item.c.id,
         -- We don't decode choices because those are handled otherwise
-        --[tonumber(ffi.cast("enum meta_type", "META_IS_CHOICE"))] = node_item.c.choice[parent.idx],
         [tonumber(ffi.cast("enum meta_type", "META_IS_BASIC" ))] = node_item.c.basic,
     }
     return table[node_item.meta]
-end
-
--- TODO remove if not used
-local function type_from_node_enum(x)
-    return ffi.typeof("T_" .. ffi.string(libast.node_recs[x].name))
 end
 
 -- XXX hokey priv-detection (trailing underscore ? is this official ?)
@@ -38,11 +30,6 @@ end
 
 -- XXX hokey check for anonymous aggregate
 local function is_anonymous(tag) return not tag:find("%d+") end
-
--- construct a one-element typed array containing the argument
--- (useful for "pass-by-reference" or "pass a pointer to" semantics)
-local function   box(what, T) return ffi.new((T or ffi.typeof(what)).."[1]", what) end
-local function unbox(what, T) return T and ffi.cast(T.."*", what)[0] or what[0] end
 
 local function doformat(userdata, callbacks, indent, k, v, node, child, parent)
     -- k         is the one -based index of the ordered fields in 'node'

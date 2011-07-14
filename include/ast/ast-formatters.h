@@ -1,7 +1,7 @@
 #ifndef AST_FORMATTERS_H_
 #define AST_FORMATTERS_H_
 
-int fmt_call(enum meta_type meta, int type, int *size, char buf[*size], void *data);
+int fmt_call(enum meta_type meta, int type, int *size, char buf[], void *data);
 
 #endif
 
