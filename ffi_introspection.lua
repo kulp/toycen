@@ -32,3 +32,11 @@ function ffi.nameof(n)
 	return ffi.nsof(n) .. " " .. ffi.tagof(n)
 end
 
+function ffi.sameptr(a,b)
+    return ffi.cast('void*',a) == ffi.cast('void*',b)
+end
+
+function ffi.isnull(what)
+    return not what or ffi.sameptr(what,ffi.cast('void*',0))
+end
+
