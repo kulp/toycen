@@ -37,3 +37,4 @@ tmp/
 libast.so
 libljffifields.so
 ast-one.h
+libluajit.so

@@ -31,6 +31,17 @@ end
 -- XXX hokey check for anonymous aggregate
 local function is_anonymous(tag) return not tag:find("%d+") end
 
+-- XXX get rid of special cases
+local function box_child(child)
+    local data, pdata
+        if type(child) == "number"       then  data = box(child, "int")
+    elseif ffi.istype("char *"  , child) then  data = child
+    elseif ffi.istype("uint64_t", child) then pdata = box(child, "uint64_t")
+    end
+
+    return pdata or box(data, "void*")
+end
+
 local function doformat(userdata, callbacks, indent, k, v, node, child, parent)
     -- k         is the one -based index of the ordered fields in 'node'
     -- itemindex is the zero-based index corresponding to k, with 'base' discounted
@@ -51,20 +62,8 @@ local function doformat(userdata, callbacks, indent, k, v, node, child, parent)
             local size  = 128
             local psize = ffi.new("int[1]", size)
             local buf   = ffi.new("char[?]", size)
-            local data, pdata
 
-            -- XXX get rid of special cases
-            if type(child) == "cdata" then
-                    if ffi.istype("uint64_t", child) then pdata = box(child, "uint64_t")
-                elseif ffi.istype("char *", child)   then  data = child
-                end
-            elseif type(child) == "number" then
-                data = box(child, "int")
-            end
-
-            pdata = pdata or box(data, "void*")
-
-            local result = libast.fmt_call(item.meta, dc.type, psize, buf, pdata)
+            local result = libast.fmt_call(item.meta, dc.type, psize, buf, box_child(child))
             if result >= 0 then
                 callbacks.walk(userdata, indent, v, ffi.string(buf, unbox(psize)))
                 done = true
