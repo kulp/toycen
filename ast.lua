@@ -2,12 +2,20 @@
 --module "AST"
 
 local ffi = require "ffi"
+local bit = require "bit"
 require "ffi_introspection"
 require "utils"
 
 AST = { }
 
 include_h("ast-one.h")
+
+-- TODO pull from ast-walk.h
+AST.WALK_BEFORE_CHILDREN  =  1
+AST.WALK_AFTER_CHILDREN   =  2
+AST.WALK_BETWEEN_CHILDREN =  4
+AST.WALK_PRUNE_SIBLINGS   =  8
+AST.WALK_IS_BASE          = 16
 
 local libast = ffi.load("libast.so")
 
@@ -24,7 +32,7 @@ end
 
 -- XXX hokey priv-detection (trailing underscore ? is this official ?)
 local function rec_from_tag(tag)
-    local stem = (tag:sub(-1) == "_") and "priv_type"  or "node_type"
+    local stem = (tag:sub(-1) == "_") and "priv_type" or "node_type"
     return libast.node_recs[ffi.cast("enum "..stem, stem:upper()..'_'..tag)]
 end
 
@@ -42,7 +50,7 @@ local function box_child(child)
     return pdata or box(data, "void*")
 end
 
-local function doformat(userdata, callbacks, indent, k, v, node, child, parent)
+local function doformat(userdata, flags, callbacks, indent, k, v, node, child, parent)
     -- k         is the one -based index of the ordered fields in 'node'
     -- itemindex is the zero-based index corresponding to k, with 'base' discounted
     -- itemindex indexes into the C structures (node_rec.items[])
@@ -55,7 +63,6 @@ local function doformat(userdata, callbacks, indent, k, v, node, child, parent)
     local done
     local tag = ffi.tagof(node)
     if is_anonymous(tag) and itemindex >= 0 then
-        -- TODO breaks on inners (like assignment_inner_)
         local item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
         local dc = decode_node_item(item)
         if not ffi.isnull(dc) then
@@ -65,23 +72,30 @@ local function doformat(userdata, callbacks, indent, k, v, node, child, parent)
 
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, box_child(child))
             if result >= 0 then
-                callbacks.walk(userdata, indent, v, ffi.string(buf, unbox(psize)))
+                callbacks.walk(userdata, flags, indent, v, ffi.string(buf, unbox(psize)))
                 done = true
             end
         end
     end
 
     if not done then
-        callbacks.walk(userdata, indent, v, child)
+        if k == 1 and type(child) == "cdata" then
+            flags = bit.bor(flags, AST.WALK_IS_BASE)
+        end
+
+        callbacks.walk(userdata, flags, indent, v, child)
     end
 end
 
-function AST.walk(node, userdata, callbacks, parent, indent)
+function AST.walk(node, userdata, callbacks, flags, parent, indent)
     if type(node) ~= "cdata" or not ffi.nsof(node) or ffi.isnull(node) then return nil end
     if not indent then indent = 0 end
+    if not flags then flags = 0 end
     -- TODO don't change incoming callbacks table
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
+
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), indent, node, parent)
 
     local fields = ffi.fields(node)
     local myns   = ffi.nsof(node)
@@ -94,21 +108,23 @@ function AST.walk(node, userdata, callbacks, parent, indent)
                 return nil
             end
             local child = node[fields[parent.idx]]
-            callbacks.walk(userdata, indent, fields[parent.idx], child)
-            AST.walk(child, userdata, callbacks, parent, indent+1)
+            callbacks.walk(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), indent, fields[parent.idx], child)
+            AST.walk(child, userdata, callbacks, flags, parent, indent+1)
         end
 
     elseif myns == "struct" then
 
         for k, v in ipairs(fields) do
             local child = node[v]
-            doformat(userdata, callbacks, indent, k, v, node, child, parent)
-            AST.walk(child, userdata, callbacks, node, indent + 1)
+            doformat(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), callbacks, indent, k, v, node, child, parent)
+            AST.walk(child, userdata, callbacks, flags, node, indent + 1)
         end
 
     else
         callbacks.error(userdata,"Unsupported namespace:" .. myns)
     end
+
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_AFTER_CHILDREN), indent, node, parent)
 
 end
 

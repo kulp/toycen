@@ -1,5 +1,6 @@
 -- "main program" from the lua POV
 local ffi = require "ffi"
+local bit = require "bit"
 
 --[[
 require "dumper"
@@ -24,13 +25,16 @@ end
 
 --print(ffi.typeof(ast.base.node_type))
 
-local function printcb(ud,level,k,v)
+local function printcb(ud,flags,level,k,v)
     local indenter = " "
-    for q=1,level do io.write(indenter) end
-    print(k,v)
-    ud.level = level
-    ud.path[level+2] = nil
-    ud.path[level+1] = k
+    if bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0 then
+        for q=1,level do io.write(indenter) end
+        --print(flags,k,v)
+        print(k,v)
+        ud.level = level
+        ud.path[level+2] = nil
+        ud.path[level+1] = k
+    end
 end
 
 ffi.cdef[[void abort()]]
