@@ -44,7 +44,7 @@ WEXTRA = -Wextra -Wno-unused
 
 ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 
-CPPFLAGS += -std=c99 $(patsubst %,-D%,$(DEFINES)) $(patsubst %,-I%,$(INCLUDE))
+CPPFLAGS += -std=c99 $(patsubst %,-D'%',$(DEFINES)) $(patsubst %,-I%,$(INCLUDE))
 YFLAGS  += -dv
 CFLAGS  += -Wall $(WEXTRA) -std=c99 $(PEDANTIC) $(ARCHFLAGS)
 LFLAGS  +=
@@ -74,6 +74,13 @@ ast-gen2.h: ast.xi
 
 ast-gen.h: ast-gen2.h
 	$(CPP) $(CPPFLAGS) -include ast-gen-pre.h $^ | indent /dev/stdin $@.$$$$ && mv $@.$$$$ $@ || rm $@.$$$$
+
+wrap_ast_%.o: CFLAGS += -Wno-missing-field-initializers
+wrap_ast_%.o: wrap.c %-ast.c
+	$(COMPILE.c) -DWRAPPED='"$*-ast.c"' -o $@ $<
+
+wrap_ast_%: wrap_ast_%.o toycen.c parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
+	$(LINK.c) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
 
 # Don't complain about unused yyunput()
 lexer.o: CFLAGS += -Wno-unused-function
@@ -119,9 +126,9 @@ libljffifields.so: CPPFLAGS += -std=gnu99
 %.so:
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
-toycen luash: LDLIBS += -lluajit-51 -lreadline
-toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
-toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
+wrap_ast_% toycen luash: LDLIBS += -lluajit-51 -lreadline
+wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
+wrap_ast_% toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
 endif
 
 ifeq ($(BUILD_PP),1)

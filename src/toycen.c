@@ -97,11 +97,48 @@ static int nop_top_op() { }
 static int (*top_op)(struct translation_unit *) = nop_top_op;
 #endif
 
+static int get_parsed_ast(void *ud, struct translation_unit **what)
+{
+    int result = 0;
+
+    lexer_setup();
+    parser_setup(ud);
+    result = yyparse();
+
+    *what = get_top_of_parse_result();
+
+    return result;
+}
+
+static int teardown_parsed_ast(void *ud, struct translation_unit **what)
+{
+    int result = 0;
+
+    parser_teardown(ud);
+    lexer_teardown();
+
+    return result;
+}
+
+extern int get_wrapped_ast(void *, struct translation_unit **);
+extern int teardown_wrapped_ast(void *, struct translation_unit **);
+
+static int (*get_ast)(void *, struct translation_unit **);
+static int (*teardown_ast)(void *, struct translation_unit **);
+
 int main(int argc, char *argv[])
 {
     int result;
 
     DEBUG_FILE = stdout;
+
+    #if ARTIFICIAL_AST
+        get_ast = get_wrapped_ast;
+        teardown_ast = teardown_wrapped_ast;
+    #else
+        get_ast = get_parsed_ast;
+        teardown_ast = teardown_parsed_ast;
+    #endif
 
     parser_state_t ps;
 
@@ -117,18 +154,14 @@ int main(int argc, char *argv[])
     if (optind < argc)
         switch_to_input_file(argv[optind]);
 
-    lexer_setup();
-    parser_setup(&ps);
-    result = yyparse();
-
-    struct translation_unit *top = get_top_of_parse_result();
+    struct translation_unit *top;
+    get_ast(&ps, &top);
 
     result = top_op(top);
 
-    parser_teardown(&ps);
-    lexer_teardown();
+    teardown_ast(&ps, &top);
 
     return result;
 }
 
-/* vi:set ts=4 sw=4 et syntax=c.doxygen: */
+/* vi:ts=4 sw=4 et syntax=c.doxygen: */
