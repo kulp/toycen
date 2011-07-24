@@ -27,14 +27,90 @@ end
 
 local function printcb(ud,flags,level,k,v)
     local indenter = " "
-    if bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0 then
+    if 1 or bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0 then
         for q=1,level do io.write(indenter) end
-        --print(flags,k,v)
-        print(k,v)
+        print(flags,k,v)
+        --print(AST.flag_names[flags],k,v)
+        --print(k,v)
         ud.level = level
         ud.path[level+2] = nil
         ud.path[level+1] = k
     end
+end
+
+local function gvcb(ud,flags,level,k,v)
+    local before  = bit.band(flags, AST.WALK_BEFORE_CHILDREN ) ~= 0
+    local after   = bit.band(flags, AST.WALK_AFTER_CHILDREN  ) ~= 0
+    local between = bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0
+    local base    = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
+    local safeaddr = tonumber(ffi.cast("uintptr_t", ffi.cast("void*", v)))
+
+    local _name = ffi.tagof(v)
+    --print("_name=",_name)
+
+    -- once-per-graph stuff
+    if level == 0 and before then
+        print "digraph abstract_syntax_tree {\
+              graph [rankdir=TB];\
+              node [shape=none];\
+              "
+    end
+
+    --print(flags,k,v)
+
+    -- per-node stuff
+    if before then
+        local prefix = ""
+        local suffix = ""
+        if not base then
+            prefix = "struct_" .. safeaddr .. " [label=<"
+            suffix = ">];"
+        end
+
+        local me = { bet = {}, level = 1 }
+        -- TODO formatting
+        me.pre = prefix .. "\
+            <table>\
+                <tr>\
+                    <td colspan='2' port='_name' bgcolor='#dddddd'><font point-size='10'>" .. _name .. "</font></td>\
+                </tr>\
+                <tr>\
+            " .. suffix
+        ud.rec[ud.level] = me
+        ud.level = ud.level + 1
+        --table.insert(ud.rec, me)
+        --print(flags,k,v)
+    elseif after then
+
+        if ud.level > 1 then
+            local me = ud.rec[ud.level - 1]
+            ud.level = ud.level - 1
+            -- TODO ordering of printout is backward
+            if true or not base then
+                --print(flags,k,v)
+                print(me.pre)
+                while me.level > 1 do
+                    print(me.bet[me.level - 1])
+                    me.level = me.level - 1
+                    --print(table.remove(me.bet, 1))
+                end
+                print("</td></tr></table><!-- " .. _name .. " -->")
+            end
+        end
+
+    elseif between then
+        --print "BETWEEN"
+        local me = ud.rec[ud.level - 1]
+        --table.insert(me.bet, "<td>" .. k .. "</td><td>")
+        me.bet[me.level] = "<td>" .. k .. "</td><td>"
+        me.level = me.level + 1
+    end
+
+    if level == 0 and after then
+        -- TOOD print all connections
+        print "}"
+    end
+
 end
 
 ffi.cdef[[void abort()]]
@@ -50,9 +126,12 @@ end
 -- userdata for callbacks
 local ud = {
     path = {},
+    rec = {},
+    level = 1,
 }
 
-AST.walk(ast,ud,{ walk = printcb, error = errorcb })
+AST.walk(ast,ud,{ walk = gvcb, error = errorcb })
+print(dump(ud))
 
 --[[
 --print(AST.node_rec(1))

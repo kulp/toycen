@@ -6,16 +6,16 @@ local bit = require "bit"
 require "ffi_introspection"
 require "utils"
 
-AST = { }
+AST = { flag_names = { } }
 
 include_h("ast-one.h")
 
 -- TODO pull from ast-walk.h
-AST.WALK_BEFORE_CHILDREN  =  1
-AST.WALK_AFTER_CHILDREN   =  2
-AST.WALK_BETWEEN_CHILDREN =  4
-AST.WALK_PRUNE_SIBLINGS   =  8
-AST.WALK_IS_BASE          = 16
+AST.WALK_BEFORE_CHILDREN  =  1; AST.flag_names[AST.WALK_BEFORE_CHILDREN ] = "WALK_BEFORE_CHILDREN"
+AST.WALK_AFTER_CHILDREN   =  2; AST.flag_names[AST.WALK_AFTER_CHILDREN  ] = "WALK_AFTER_CHILDREN"
+AST.WALK_BETWEEN_CHILDREN =  4; AST.flag_names[AST.WALK_BETWEEN_CHILDREN] = "WALK_BETWEEN_CHILDREN"
+AST.WALK_PRUNE_SIBLINGS   =  8; AST.flag_names[AST.WALK_PRUNE_SIBLINGS  ] = "WALK_PRUNE_SIBLINGS"
+AST.WALK_IS_BASE          = 16; AST.flag_names[AST.WALK_IS_BASE         ] = "WALK_IS_BASE"
 
 local libast = ffi.load("libast.so")
 
@@ -72,17 +72,14 @@ local function doformat(userdata, flags, callbacks, indent, k, v, node, child, p
 
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, box_child(child))
             if result >= 0 then
-                callbacks.walk(userdata, flags, indent, v, ffi.string(buf, unbox(psize)))
+                -- subtract one from *size to not print trailing '\0'
+                callbacks.walk(userdata, flags, indent, v, ffi.string(buf, unbox(psize) - 1))
                 done = true
             end
         end
     end
 
     if not done then
-        if k == 1 and type(child) == "cdata" then
-            flags = bit.bor(flags, AST.WALK_IS_BASE)
-        end
-
         callbacks.walk(userdata, flags, indent, v, child)
     end
 end
@@ -95,7 +92,7 @@ function AST.walk(node, userdata, callbacks, flags, parent, indent)
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
 
-    callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), indent, node, parent)
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), indent, nil, node)
 
     local fields = ffi.fields(node)
     local myns   = ffi.nsof(node)
@@ -115,7 +112,11 @@ function AST.walk(node, userdata, callbacks, flags, parent, indent)
     elseif myns == "struct" then
 
         for k, v in ipairs(fields) do
+            local flags = flags
             local child = node[v]
+            if k == 1 and type(child) == "cdata" then
+                flags = bit.bor(flags, AST.WALK_IS_BASE)
+            end
             doformat(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), callbacks, indent, k, v, node, child, parent)
             AST.walk(child, userdata, callbacks, flags, node, indent + 1)
         end
@@ -124,7 +125,7 @@ function AST.walk(node, userdata, callbacks, flags, parent, indent)
         callbacks.error(userdata,"Unsupported namespace:" .. myns)
     end
 
-    callbacks.walk(userdata, bit.bor(flags, AST.WALK_AFTER_CHILDREN), indent, node, parent)
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_AFTER_CHILDREN), indent, nil, node)
 
 end
 
