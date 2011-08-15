@@ -22,13 +22,14 @@ struct ast_walk_ops {
 enum ast_walk_flags {
     //AST_WALK_DEFAULT = 0,
 
-    AST_WALK_BEFORE_CHILDREN  =  1,
-    AST_WALK_AFTER_CHILDREN   =  2,
-    AST_WALK_BETWEEN_CHILDREN =  4,
+    AST_WALK_BEFORE_CHILDREN  =  1, ///< called before children enumeration
+    AST_WALK_AFTER_CHILDREN   =  2, ///< called after children enumeration
+    AST_WALK_BETWEEN_CHILDREN =  4, ///< called before each child
 
     AST_WALK_PRUNE_SIBLINGS   =  8,
 
-    AST_WALK_IS_BASE          = 16,
+    AST_WALK_IS_BASE          = 16, ///< means "node is the base of the parent"
+    AST_WALK_HAS_ALLOCATION   = 32, ///< means "not part of the parent struct"
 };
 
 /**

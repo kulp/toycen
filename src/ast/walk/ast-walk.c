@@ -134,10 +134,16 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
 
     /// @todo what if flags doesn't contain a BEFORE or AFTER ?
     for (int i = 0; rec->items[i].meta != META_IS_INVALID; i++) {
+        int flags = flags; // localise
         const struct node_item *item = &rec->items[i];
         void *childaddr = (char*)thing + (*rec->offp)[i];
         void *child;
-        if (item->is_pointer || item->meta == META_IS_BASIC) {
+        bool has_allocation = !!item->is_pointer;
+
+        if (has_allocation)
+            flags |= AST_WALK_HAS_ALLOCATION;
+
+        if (has_allocation || item->meta == META_IS_BASIC) {
             // if BASIC, unwrap, because we rewrap in recurse_any()
             child = *(void**)childaddr;
         } else {

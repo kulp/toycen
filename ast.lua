@@ -16,6 +16,7 @@ AST.WALK_AFTER_CHILDREN   =  2; AST.flag_names[AST.WALK_AFTER_CHILDREN  ] = "WAL
 AST.WALK_BETWEEN_CHILDREN =  4; AST.flag_names[AST.WALK_BETWEEN_CHILDREN] = "WALK_BETWEEN_CHILDREN"
 AST.WALK_PRUNE_SIBLINGS   =  8; AST.flag_names[AST.WALK_PRUNE_SIBLINGS  ] = "WALK_PRUNE_SIBLINGS"
 AST.WALK_IS_BASE          = 16; AST.flag_names[AST.WALK_IS_BASE         ] = "WALK_IS_BASE"
+AST.WALK_HAS_ALLOCATION   = 32; AST.flag_names[AST.WALK_HAS_ALLOCATION  ] = "WALK_HAS_ALLOCATION"
 
 local libast = ffi.load("libast.so")
 
@@ -69,6 +70,7 @@ local function doformat(userdata, flags, callbacks, indent, k, v, node, child, p
             local size  = 128
             local psize = ffi.new("int[1]", size)
             local buf   = ffi.new("char[?]", size)
+            if item.is_pointer then flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION) end
 
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, box_child(child))
             if result >= 0 then
@@ -116,6 +118,8 @@ function AST.walk(node, userdata, callbacks, flags, parent, indent)
             local child = node[v]
             if k == 1 and type(child) == "cdata" then
                 flags = bit.bor(flags, AST.WALK_IS_BASE)
+            elseif k ~= 1 then
+                flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
             end
             doformat(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), callbacks, indent, k, v, node, child, parent)
             AST.walk(child, userdata, callbacks, flags, node, indent + 1)
