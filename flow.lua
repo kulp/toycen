@@ -69,13 +69,14 @@ local function gvcb(ud,flags,level,k,v)
 
         local me = { bet = {}, level = 1 }
         -- TODO formatting
-        me.pre = prefix .. "\
+        me.pre = _name--[[prefix .. "\
             <table>\
                 <tr>\
                     <td colspan='2' port='_name' bgcolor='#dddddd'><font point-size='10'>" .. _name .. "</font></td>\
                 </tr>\
                 <tr>\
             " .. suffix
+            --]]
         ud.rec[ud.level] = me
         ud.level = ud.level + 1
         --table.insert(ud.rec, me)
@@ -83,27 +84,96 @@ local function gvcb(ud,flags,level,k,v)
     elseif after then
 
         if ud.level > 1 then
-            local me = ud.rec[ud.level - 1]
             ud.level = ud.level - 1
-            -- TODO ordering of printout is backward
-            if true or not base then
-                --print(flags,k,v)
-                print(me.pre)
-                while me.level > 1 do
-                    print(me.bet[me.level - 1])
-                    me.level = me.level - 1
-                    --print(table.remove(me.bet, 1))
+            if level == 0 then
+                for p,me in ipairs(ud.rec) do
+                    --local me = ud.rec[ud.level - 1]
+                    -- TODO ordering of printout is backward
+                    --if not base then
+                        --print(flags,k,v)
+                        print(me.pre)
+                        --while me.level > 1 do
+                        --for i = 1, me.level - 1 do
+                        for i,b in ipairs(me.bet) do
+                            print(b)
+                            --print(me.bet[i])
+                            --me.level = me.level - 1
+                            --print(table.remove(me.bet, 1))
+                        end
+                        --me.level = 1
+                        --print("</td></tr></table><!-- " .. _name .. " -->")
+                        print("> <end " .. me.pre .. ">")
+                    --end
                 end
-                print("</td></tr></table><!-- " .. _name .. " -->")
             end
         end
 
     elseif between then
         --print "BETWEEN"
         local me = ud.rec[ud.level - 1]
+        table.insert(me.bet, { key = k, val = nil })
+        --table.insert(me.bet, "key=" .. k .. ", value=")
         --table.insert(me.bet, "<td>" .. k .. "</td><td>")
-        me.bet[me.level] = "<td>" .. k .. "</td><td>"
-        me.level = me.level + 1
+        --me.bet[me.level] = "<td>" .. k .. "</td><td>"
+        --me.level = me.level + 1
+    end
+
+    if level == 0 and after then
+        -- TOOD print all connections
+        print "}"
+    end
+
+end
+
+-- TODO what we need is an is_pointer in the walk flags or arguments
+local function gv2(ud,flags,level,k,v)
+    local before  = bit.band(flags, AST.WALK_BEFORE_CHILDREN ) ~= 0
+    local after   = bit.band(flags, AST.WALK_AFTER_CHILDREN  ) ~= 0
+    local between = bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0
+    local base    = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
+    local alloc   = bit.band(flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
+    local safeaddr = tonumber(ffi.cast("uintptr_t", ffi.cast("void*", v)))
+
+    local _name = ffi.tagof(v)
+
+    -- once-per-graph stuff
+    if level == 0 and before then
+        print "digraph abstract_syntax_tree {\
+              graph [rankdir=TB];\
+              node [shape=none];\
+              "
+    end
+
+    local indenter = "	"
+
+    if before then
+        if not ud.rec[level] then ud.rec[level] = { } end
+        local parent = ud.stack[level]
+        ud.level = level
+    end
+
+    if between then
+        local rec = { foo = 1, name = _name }
+
+        ---[[
+        for L = 1,level do io.write(indenter) end
+        print("level  = ", level)
+        for L = 1,level do io.write(indenter) end
+        print(" k     = ", k)
+        for L = 1,level do io.write(indenter) end
+        print(" base  = ", base)
+        for L = 1,level do io.write(indenter) end
+        print(" alloc = ", alloc)
+        for L = 1,level do io.write(indenter) end
+        print ""
+        --]]
+
+        ud.rec[level]["node_" .. safeaddr] = rec
+        ud.stack[level] = rec
+    end
+
+    if after then
+        -- TODO
     end
 
     if level == 0 and after then
@@ -124,13 +194,22 @@ local function errorcb(ud,msg)
 end
 
 -- userdata for callbacks
+--[[
 local ud = {
-    path = {},
+    --path = {},
     rec = {},
     level = 1,
 }
+--]]
 
-AST.walk(ast,ud,{ walk = gvcb, error = errorcb })
+local ud = {
+    --path = {},
+    rec = {},
+    stack = {},
+    level = 1,
+}
+
+AST.walk(ast,ud,{ walk = gv2, error = errorcb })
 print(dump(ud))
 
 --[[
