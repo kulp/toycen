@@ -37,147 +37,77 @@ local function printcb(ud,flags,level,k,v)
     end
 end
 
-local function gvcb(ud,flags,level,k,v)
-    local before  = bit.band(flags, AST.WALK_BEFORE_CHILDREN ) ~= 0
-    local after   = bit.band(flags, AST.WALK_AFTER_CHILDREN  ) ~= 0
-    local between = bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0
-    local base    = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
-    -- TODO don't cast scalars to void*
-    local safeaddr = tonumber(ffi.cast("uintptr_t", ffi.cast("void*", v)))
-
-    local _name = ffi.tagof(v)
-    --print("_name=",_name)
-
-    -- once-per-graph stuff
-    if level == 0 and before then
-        print "digraph abstract_syntax_tree {\
-              graph [rankdir=TB];\
-              node [shape=none];\
-              "
-    end
-
-    --print(flags,k,v)
-
-    -- per-node stuff
-    if before then
-        local prefix = ""
-        local suffix = ""
-        if not base then
-            prefix = "struct_" .. safeaddr .. " [label=<"
-            suffix = ">];"
-        end
-
-        local me = { bet = {}, level = 1 }
-        -- TODO formatting
-        me.pre = _name--[[prefix .. "\
-            <table>\
-                <tr>\
-                    <td colspan='2' port='_name' bgcolor='#dddddd'><font point-size='10'>" .. _name .. "</font></td>\
-                </tr>\
-                <tr>\
-            " .. suffix
-            --]]
-        ud.rec[ud.level] = me
-        ud.level = ud.level + 1
-        --table.insert(ud.rec, me)
-        --print(flags,k,v)
-    elseif after then
-
-        if ud.level > 1 then
-            ud.level = ud.level - 1
-            if level == 0 then
-                for p,me in ipairs(ud.rec) do
-                    --local me = ud.rec[ud.level - 1]
-                    -- TODO ordering of printout is backward
-                    --if not base then
-                        --print(flags,k,v)
-                        print(me.pre)
-                        --while me.level > 1 do
-                        --for i = 1, me.level - 1 do
-                        for i,b in ipairs(me.bet) do
-                            print(b)
-                            --print(me.bet[i])
-                            --me.level = me.level - 1
-                            --print(table.remove(me.bet, 1))
-                        end
-                        --me.level = 1
-                        --print("</td></tr></table><!-- " .. _name .. " -->")
-                        print("> <end " .. me.pre .. ">")
-                    --end
-                end
-            end
-        end
-
-    elseif between then
-        --print "BETWEEN"
-        local me = ud.rec[ud.level - 1]
-        table.insert(me.bet, { key = k, val = nil })
-        --table.insert(me.bet, "key=" .. k .. ", value=")
-        --table.insert(me.bet, "<td>" .. k .. "</td><td>")
-        --me.bet[me.level] = "<td>" .. k .. "</td><td>"
-        --me.level = me.level + 1
-    end
-
-    if level == 0 and after then
-        -- TOOD print all connections
-        print "}"
-    end
-
-end
-
+-- TODO stop passing ud/flags/level if not needed
 local function format_field_name(ud,flags,level,name)
     --return "<td port='port_name_" .. name .. "'>" .. name .. "</td>"
-    return "<td port='" .. name .. "'>" .. name .. "</td>"
+    return "<td port='" .. name .. "'><font face='courier' color='#777777'>" .. name .. "</font></td>"
 end
 
-local function format_field_value(ud,flags,level,value)
-    --return "<td port='port_val_" .. "TODO" .. "'>" .. value .. "</td>"
-    return "<td port='" .. "TODO" .. "'>" .. value .. "</td>"
+-- TODO stop passing ud/flags/level if not needed
+local function format_field_value(ud,flags,level,i,value)
+    return "<td cellpadding='0' port='port_" .. i .. "'>" .. value .. "</td>"
 end
 
-local function format_field(ud,flags,level,k,v)
+local function format_field(ud,flags,level,i,k,v)
     return "<tr>"
         .. format_field_name(ud,flags,level,k)
         .. "\t"
-        .. format_field_value(ud,flags,level,v)
+        .. format_field_value(ud,flags,level,i,v)
         .. "</tr>\n"
 end
+
+local table_format = ' border="0" cellborder="1" cellspacing="0" cellpadding="4"'
+
+local print_node -- to allow mutual recursion with _print_node_inner
 
 local function _print_node_inner(ud,flags,level,i,me)
     local result = ""
     --for L = 1,level do result = result .. "\t" end
-    local base    = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
+    -- TODO pull up
+    local base    = bit.band(me.flags, AST.WALK_IS_BASE         ) ~= 0
+    local alloc   = bit.band(me.flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
+
     local simple = not base and not me.type
-    if not simple then result = result .. "\n<table>\n" end
+    if not simple then
+        local type = me.type or "XXX"
+        result = result .. "\n<table" .. table_format .. ">\n"
+        result = result .. "\n<tr><td colspan='2' port='_name' bgcolor='#dddddd'><font point-size='12'>" .. type .. "</font></td></tr>"
+    end
     --print_node(ud,flags,level,i,me)
-    --result = result .. format_field(ud,flags,level,me.name,"foo")
     if me.children then
-        for i,me in ipairs(me.children) do
-            result = result .. format_field(id,flags,level+1,me.name,_print_node_inner(ud,flags,level+1,i,me));
-            --print(format_field(ud,flags,level,me.name,"foo"))
-            --print(format_field(ud,flags,level,me.name,"foo"))
-            --print "QQQQ<"
-            --for name,value in pairs(node) do
-            --    print(format_field(ud,flags,level,me.name,"foo"))
-            --end
-            --print ">QQQQ"
+        for j,ye in ipairs(me.children) do
+            local inner
+            if ye.contained then
+                inner = _print_node_inner(ud,flags,level+1,j,ye)
+            else
+                table.insert(ud.nodes, print_node(ud,flags,level + 1,j,ye))
+                local linkval = "struct_" .. me.addr .. ":" .. "port_" .. j .. " -> " ..
+                                "struct_" .. ye.addr .. ":" .. "_name"
+                table.insert(ud.links, linkval)
+                if alloc then inner = "*" else inner = "" end
+            end
+            result = result .. format_field(ud,flags,level+1,j,ye.name,inner);
         end
     end
     if not simple then result = result .. "</table>\n" end
     return result
 end
 
-local function print_node(ud,flags,level,i,node)
-    print("struct_" .. node.addr .. " [label=<");
-    --if node then
-    --[[
-        for i,me in pairs(node.children) do
-            print(_print_node_inner(ud,flags,level,i,me))
-        end
-    --]]
-    print(_print_node_inner(ud,flags,level + 1,i,node))
-    --end
-    print ">];";
+function print_node(ud,flags,level,i,node)
+    local result = ""
+    if node.addr then -- TODO FIXME don't print NULL shells
+        result = result .. "struct_" .. node.addr .. " [label=<"
+        --if node then
+        --[[
+            for i,me in pairs(node.children) do
+                print(_print_node_inner(ud,flags,level,i,me))
+            end
+        --]]
+        result = result .. _print_node_inner(ud,flags,level + 1,i,node)
+        --end
+        result = result .. ">];"
+    end
+    return result
 end
 
 -- TODO what we need is an is_pointer in the walk flags or arguments
@@ -189,16 +119,19 @@ local function gv2(ud,flags,level,k,v)
     local alloc   = bit.band(flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
     local safeaddr = tonumber(ffi.cast("uintptr_t", ffi.cast("void*", v)))
 
+    local _ns   = ffi.nsof(v)
     local _name = ffi.tagof(v)
 
     -- once-per-graph stuff
     if level == 1 and before then
         ud.top = {
             addr      = safeaddr,
+            ns        = _ns,
             type      = _name,
             children  = { },
             contained = false,
             name      = "top",
+            flags     = flags,
         }
         ud.rec[1] = ud.top.children
         print "digraph abstract_syntax_tree {\
@@ -219,7 +152,14 @@ local function gv2(ud,flags,level,k,v)
     local rec
 
     if between then
-        rec = { addr = safeaddr, type = _name, name = k, contained = base }
+        rec = {
+            addr      = safeaddr,
+            ns        = _ns,
+            type      = _name,
+            name      = k,
+            contained = base or not alloc,
+            flags     = flags,
+        }
 
         --[[
         for L = 1,level do io.write(indenter) end
@@ -268,7 +208,9 @@ local function gv2(ud,flags,level,k,v)
         ud.rec = nil
         -- TODO print all connections
         -- TODO print top, not top.children
-        print_node(ud,flags,1,0,ud.top)
+        print(print_node(ud,flags,1,0,ud.top))
+        for i,n in ipairs(ud.nodes) do print(n) end
+        for i,n in ipairs(ud.links) do print(n) end
         print "}"
     end
 
@@ -298,7 +240,8 @@ local ud = {
     rec = {},
     stack = { { children = {} } },
     level = 1,
-    nodes = {}, -- top-level nodes
+    nodes = {}, -- top-level nodes, formatted already TODO rename
+    links = {},
 }
 
 AST.walk(ast,ud,{ walk = gv2, error = errorcb })
