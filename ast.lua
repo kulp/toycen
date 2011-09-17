@@ -51,7 +51,7 @@ local function box_child(child)
     return pdata or box(data, "void*")
 end
 
-local function doformat(userdata, flags, callbacks, indent, k, v, node, child, parent)
+local function doformat(userdata, flags, callbacks, level, k, v, node, child, parent)
     -- k         is the one -based index of the ordered fields in 'node'
     -- itemindex is the zero-based index corresponding to k, with 'base' discounted
     -- itemindex indexes into the C structures (node_rec.items[])
@@ -75,26 +75,26 @@ local function doformat(userdata, flags, callbacks, indent, k, v, node, child, p
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, box_child(child))
             if result >= 0 then
                 -- subtract one from *size to not print trailing '\0'
-                callbacks.walk(userdata, flags, indent, v, ffi.string(buf, unbox(psize) - 1))
+                callbacks.walk(userdata, flags, level, v, ffi.string(buf, unbox(psize) - 1))
                 done = true
             end
         end
     end
 
     if not done then
-        callbacks.walk(userdata, flags, indent, v, child)
+        callbacks.walk(userdata, flags, level, v, child)
     end
 end
 
-function AST.walk(node, userdata, callbacks, flags, parent, indent)
+function AST.walk(node, userdata, callbacks, flags, parent, level)
     if type(node) ~= "cdata" or not ffi.nsof(node) or ffi.isnull(node) then return nil end
-    if not indent then indent = 0 end
+    if not level then level = 1 end -- 1-based for array indexing
     if not flags then flags = 0 end
     -- TODO don't change incoming callbacks table
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
 
-    callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), indent, nil, node)
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), level, nil, node)
 
     local fields = ffi.fields(node)
     local myns   = ffi.nsof(node)
@@ -107,8 +107,8 @@ function AST.walk(node, userdata, callbacks, flags, parent, indent)
                 return nil
             end
             local child = node[fields[parent.idx]]
-            callbacks.walk(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), indent, fields[parent.idx], child)
-            AST.walk(child, userdata, callbacks, flags, parent, indent+1)
+            callbacks.walk(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), level, fields[parent.idx], child)
+            AST.walk(child, userdata, callbacks, flags, parent, level + 1)
         end
 
     elseif myns == "struct" then
@@ -121,15 +121,15 @@ function AST.walk(node, userdata, callbacks, flags, parent, indent)
             elseif k ~= 1 then
                 flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
             end
-            doformat(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), callbacks, indent, k, v, node, child, parent)
-            AST.walk(child, userdata, callbacks, flags, node, indent + 1)
+            doformat(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), callbacks, level, k, v, node, child, parent)
+            AST.walk(child, userdata, callbacks, flags, node, level + 1)
         end
 
     else
         callbacks.error(userdata,"Unsupported namespace:" .. myns)
     end
 
-    callbacks.walk(userdata, bit.bor(flags, AST.WALK_AFTER_CHILDREN), indent, nil, node)
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_AFTER_CHILDREN), level, nil, node)
 
 end
 

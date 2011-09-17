@@ -2,14 +2,8 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
+require "tmp/dumper"
 --[[
-require "dumper"
--- Define a shortcut function for testing
-function dump(...)
-  print(DataDumper(...), "\n---")
-end
---]]
-
 function dump(o)
     if type(o) == 'table' then
         local s = '{ '
@@ -22,6 +16,11 @@ function dump(o)
         return tostring(o)
     end
 end
+--]]
+function dump(...) return DataDumper(...) end
+
+--local function debug(...) print(...) end
+local function debug(...) end
 
 --print(ffi.typeof(ast.base.node_type))
 
@@ -43,6 +42,7 @@ local function gvcb(ud,flags,level,k,v)
     local after   = bit.band(flags, AST.WALK_AFTER_CHILDREN  ) ~= 0
     local between = bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0
     local base    = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
+    -- TODO don't cast scalars to void*
     local safeaddr = tonumber(ffi.cast("uintptr_t", ffi.cast("void*", v)))
 
     local _name = ffi.tagof(v)
@@ -125,6 +125,61 @@ local function gvcb(ud,flags,level,k,v)
 
 end
 
+local function format_field_name(ud,flags,level,name)
+    --return "<td port='port_name_" .. name .. "'>" .. name .. "</td>"
+    return "<td port='" .. name .. "'>" .. name .. "</td>"
+end
+
+local function format_field_value(ud,flags,level,value)
+    --return "<td port='port_val_" .. "TODO" .. "'>" .. value .. "</td>"
+    return "<td port='" .. "TODO" .. "'>" .. value .. "</td>"
+end
+
+local function format_field(ud,flags,level,k,v)
+    return "<tr>"
+        .. format_field_name(ud,flags,level,k)
+        .. "\t"
+        .. format_field_value(ud,flags,level,v)
+        .. "</tr>\n"
+end
+
+local function _print_node_inner(ud,flags,level,i,me)
+    local result = ""
+    --for L = 1,level do result = result .. "\t" end
+    local base    = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
+    local simple = not base and not me.type
+    if not simple then result = result .. "\n<table>\n" end
+    --print_node(ud,flags,level,i,me)
+    --result = result .. format_field(ud,flags,level,me.name,"foo")
+    if me.children then
+        for i,me in ipairs(me.children) do
+            result = result .. format_field(id,flags,level+1,me.name,_print_node_inner(ud,flags,level+1,i,me));
+            --print(format_field(ud,flags,level,me.name,"foo"))
+            --print(format_field(ud,flags,level,me.name,"foo"))
+            --print "QQQQ<"
+            --for name,value in pairs(node) do
+            --    print(format_field(ud,flags,level,me.name,"foo"))
+            --end
+            --print ">QQQQ"
+        end
+    end
+    if not simple then result = result .. "</table>\n" end
+    return result
+end
+
+local function print_node(ud,flags,level,i,node)
+    print("struct_" .. node.addr .. " [label=<");
+    --if node then
+    --[[
+        for i,me in pairs(node.children) do
+            print(_print_node_inner(ud,flags,level,i,me))
+        end
+    --]]
+    print(_print_node_inner(ud,flags,level + 1,i,node))
+    --end
+    print ">];";
+end
+
 -- TODO what we need is an is_pointer in the walk flags or arguments
 local function gv2(ud,flags,level,k,v)
     local before  = bit.band(flags, AST.WALK_BEFORE_CHILDREN ) ~= 0
@@ -137,47 +192,83 @@ local function gv2(ud,flags,level,k,v)
     local _name = ffi.tagof(v)
 
     -- once-per-graph stuff
-    if level == 0 and before then
+    if level == 1 and before then
+        ud.top = {
+            addr      = safeaddr,
+            type      = _name,
+            children  = { },
+            contained = false,
+            name      = "top",
+        }
+        ud.rec[1] = ud.top.children
         print "digraph abstract_syntax_tree {\
               graph [rankdir=TB];\
               node [shape=none];\
               "
     end
 
-    local indenter = "	"
+    local indenter = "  "
 
     if before then
         if not ud.rec[level] then ud.rec[level] = { } end
-        local parent = ud.stack[level]
+        --parent = ud.stack[level]
         ud.level = level
     end
 
-    if between then
-        local rec = { foo = 1, name = _name }
+    local parent = ud.stack[level]
+    local rec
 
-        ---[[
+    if between then
+        rec = { addr = safeaddr, type = _name, name = k, contained = base }
+
+        --[[
         for L = 1,level do io.write(indenter) end
-        print("level  = ", level)
+        debug("rec       = ", rec)
         for L = 1,level do io.write(indenter) end
-        print(" k     = ", k)
+        debug(" level    = ", level)
         for L = 1,level do io.write(indenter) end
-        print(" base  = ", base)
+        debug(" k        = ", k)
         for L = 1,level do io.write(indenter) end
-        print(" alloc = ", alloc)
+        debug(" base     = ", base)
         for L = 1,level do io.write(indenter) end
-        print ""
+        debug(" alloc    = ", alloc)
+        for L = 1,level do io.write(indenter) end
+        debug(" parent   = ", parent)
+        --for L = 1,level do io.write(indenter) end
+        --debug(" children = ", #parent.children)
+        for L = 1,level do io.write(indenter) end
+        debug ""
         --]]
 
-        ud.rec[level]["node_" .. safeaddr] = rec
-        ud.stack[level] = rec
+        --ud.rec[level]["node_" .. safeaddr] = rec
+        table.insert(ud.rec[level], rec)
+        --[[
+        if not parent.base then
+            table.insert(ud.nodes, rec)
+        end
+        --]]
+        ud.stack[level + 1] = rec
+        if parent.children then
+            table.insert(parent.children,rec)
+        else
+            parent.children = { rec }
+        end
     end
 
     if after then
-        -- TODO
+        -- clear out junk we don't need any to keep around
+        ud.stack[level + 1] = nil
+        ud.rec[level + 1] = nil
     end
 
-    if level == 0 and after then
-        -- TOOD print all connections
+    if level == 1 and after then
+        -- clear out junk we don't need any to keep around
+        ud.level = nil
+        ud.stack = nil
+        ud.rec = nil
+        -- TODO print all connections
+        -- TODO print top, not top.children
+        print_node(ud,flags,1,0,ud.top)
         print "}"
     end
 
@@ -205,12 +296,13 @@ local ud = {
 local ud = {
     --path = {},
     rec = {},
-    stack = {},
+    stack = { { children = {} } },
     level = 1,
+    nodes = {}, -- top-level nodes
 }
 
 AST.walk(ast,ud,{ walk = gv2, error = errorcb })
-print(dump(ud))
+debug(dump(ud))
 
 --[[
 --print(AST.node_rec(1))
