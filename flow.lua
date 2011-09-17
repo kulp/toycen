@@ -43,15 +43,15 @@ local function format_field_name(ud,flags,level,name)
 end
 
 -- TODO stop passing ud/flags/level if not needed
-local function format_field_value(ud,flags,level,i,value)
-    return "<td cellpadding='1' port='port_" .. i .. "'>" .. value .. "</td>"
+local function format_field_value(ud,flags,level,i,namespace,value)
+    return "<td cellpadding='1' port='port_" .. namespace .. "_" .. i .. "'>" .. value .. "</td>"
 end
 
-local function format_field(ud,flags,level,i,k,v)
+local function format_field(ud,flags,level,obj,i,k,v)
     return "<tr>"
         .. format_field_name(ud,flags,level,k)
         .. "\t"
-        .. format_field_value(ud,flags,level,i,v)
+        .. format_field_value(ud,flags,level,i,obj,v)
         .. "</tr>\n"
 end
 
@@ -74,7 +74,7 @@ local function _print_node_inner(ud,flags,level,i,me)
     if simple then
         result = result .. me.printable
     else
-        local content = me.type or "XXX"
+        local content = me.type or "XXX" -- TODO trap
         if me.children or alloc and me.null then
             result = result .. "\n<table" .. table_format .. ">\n"
             close_table = true
@@ -85,46 +85,41 @@ local function _print_node_inner(ud,flags,level,i,me)
                 result = result .. "<tr><td colspan='2'>NULL</td></tr>"
             end
         end
-    end
-    --print_node(ud,flags,level,i,me)
-    if me.children then
-        for j,ye in ipairs(me.children) do
-            local inner
-            if ye.contained then
-                inner = _print_node_inner(ud,flags,level+1,j,ye)
-            else
-                table.insert(ud.nodes, print_node(ud,flags,level + 1,j,ye))
-                local linkval = "struct_" .. me.addr .. ":" .. "port_" .. j .. " -> " ..
-                                "struct_" .. ye.addr .. ":" .. "_name"
-                table.insert(ud.links, linkval)
-                if alloc then
-                    inner = "*"
+        if me.children then
+            for j,ye in ipairs(me.children) do
+                local inner
+                if ye.contained then
+                    inner = _print_node_inner(ud,flags,level+1,j,ye)
                 else
-                    inner = ye.printable
+                    table.insert(ud.nodes, print_node(ud,flags,level + 1,j,ye))
+                    local linkval = "struct_" .. me.addr .. ":" .. "port_" .. me.type .. "_" .. j .. " -> " ..
+                                    "struct_" .. ye.addr .. ":" .. "_name"
+                    if not me.null and not ye.null then
+                        table.insert(ud.links, linkval)
+                    end
+                    -- TODO pull up
+                    local alloc   = bit.band(ye.flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
+                    if alloc then
+                        if ye.null then inner = "NULL" else inner = "*" end
+                    else
+                        inner = ye.printable
+                    end
                 end
+                result = result .. format_field(ud,flags,level+1,me.type,j,ye.name,inner)
             end
-            result = result .. format_field(ud,flags,level+1,j,ye.name,inner)
         end
+        if close_table then result = result .. "</table>\n" end
     end
-    if close_table then result = result .. "</table>\n" end
+
     return result
 end
 
 function print_node(ud,flags,level,i,node)
-    local result = ""
-    --if tonumber(node.addr) ~= 0 then -- TODO FIXME don't print NULL shells
-        result = result .. "struct_" .. node.addr .. " [label=<"
-        --if node then
-        --[[
-            for i,me in pairs(node.children) do
-                print(_print_node_inner(ud,flags,level,i,me))
-            end
-        --]]
-        result = result .. _print_node_inner(ud,flags,level + 1,i,node)
-        --end
-        result = result .. ">];"
-    --end
-    return result
+    if node.null then return "" else return
+            "struct_" .. node.addr .. " [label=<"
+        .. _print_node_inner(ud,flags,level + 1,i,node)
+        .. ">];"
+    end
 end
 
 -- TODO what we need is an is_pointer in the walk flags or arguments
@@ -173,8 +168,7 @@ local function gv2(ud,flags,level,k,v)
 
     if between then
         --debug(v)
-        local printable = type(v) == "string" and v or
-                          alloc and "*" or nil
+        local printable = type(v) == "string" and v or nil
         rec = {
             addr      = safeaddr,
             null      = null,
