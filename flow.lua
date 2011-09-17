@@ -39,13 +39,12 @@ end
 
 -- TODO stop passing ud/flags/level if not needed
 local function format_field_name(ud,flags,level,name)
-    --return "<td port='port_name_" .. name .. "'>" .. name .. "</td>"
     return "<td port='" .. name .. "'><font face='courier' color='#777777'>" .. name .. "</font></td>"
 end
 
 -- TODO stop passing ud/flags/level if not needed
 local function format_field_value(ud,flags,level,i,value)
-    return "<td cellpadding='0' port='port_" .. i .. "'>" .. value .. "</td>"
+    return "<td cellpadding='1' port='port_" .. i .. "'>" .. value .. "</td>"
 end
 
 local function format_field(ud,flags,level,i,k,v)
@@ -67,11 +66,25 @@ local function _print_node_inner(ud,flags,level,i,me)
     local base    = bit.band(me.flags, AST.WALK_IS_BASE         ) ~= 0
     local alloc   = bit.band(me.flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
 
-    local simple = not base and not me.type
-    if not simple then
-        local type = me.type or "XXX"
-        result = result .. "\n<table" .. table_format .. ">\n"
-        result = result .. "\n<tr><td colspan='2' port='_name' bgcolor='#dddddd'><font point-size='12'>" .. type .. "</font></td></tr>"
+    -- XXX encapsulation
+    local anonymous = (me.type or ""):find("%d+")
+    local close_table = false
+
+    local simple = not me.type and me.printable
+    if simple then
+        result = result .. me.printable
+    else
+        local content = me.type or "XXX"
+        if me.children or alloc and me.null then
+            result = result .. "\n<table" .. table_format .. ">\n"
+            close_table = true
+            if me.children and not anonymous then
+                result = result .. "\n<tr><td colspan='2' port='_name' bgcolor='#dddddd'><font point-size='12'>" .. content .. "</font></td></tr>"
+            end
+            if alloc and me.null then
+                result = result .. "<tr><td colspan='2'>NULL</td></tr>"
+            end
+        end
     end
     --print_node(ud,flags,level,i,me)
     if me.children then
@@ -84,18 +97,22 @@ local function _print_node_inner(ud,flags,level,i,me)
                 local linkval = "struct_" .. me.addr .. ":" .. "port_" .. j .. " -> " ..
                                 "struct_" .. ye.addr .. ":" .. "_name"
                 table.insert(ud.links, linkval)
-                if alloc then inner = "*" else inner = "" end
+                if alloc then
+                    inner = "*"
+                else
+                    inner = ye.printable
+                end
             end
-            result = result .. format_field(ud,flags,level+1,j,ye.name,inner);
+            result = result .. format_field(ud,flags,level+1,j,ye.name,inner)
         end
     end
-    if not simple then result = result .. "</table>\n" end
+    if close_table then result = result .. "</table>\n" end
     return result
 end
 
 function print_node(ud,flags,level,i,node)
     local result = ""
-    if node.addr then -- TODO FIXME don't print NULL shells
+    --if tonumber(node.addr) ~= 0 then -- TODO FIXME don't print NULL shells
         result = result .. "struct_" .. node.addr .. " [label=<"
         --if node then
         --[[
@@ -106,18 +123,20 @@ function print_node(ud,flags,level,i,node)
         result = result .. _print_node_inner(ud,flags,level + 1,i,node)
         --end
         result = result .. ">];"
-    end
+    --end
     return result
 end
 
 -- TODO what we need is an is_pointer in the walk flags or arguments
 local function gv2(ud,flags,level,k,v)
-    local before  = bit.band(flags, AST.WALK_BEFORE_CHILDREN ) ~= 0
-    local after   = bit.band(flags, AST.WALK_AFTER_CHILDREN  ) ~= 0
-    local between = bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0
-    local base    = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
-    local alloc   = bit.band(flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
-    local safeaddr = tonumber(ffi.cast("uintptr_t", ffi.cast("void*", v)))
+    local before   = bit.band(flags, AST.WALK_BEFORE_CHILDREN ) ~= 0
+    local after    = bit.band(flags, AST.WALK_AFTER_CHILDREN  ) ~= 0
+    local between  = bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0
+    local base     = bit.band(flags, AST.WALK_IS_BASE         ) ~= 0
+    local alloc    = bit.band(flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
+    local ptr      = ffi.cast("uintptr_t", ffi.cast("void*", v))
+    local null     = tonumber(ptr) == 0
+    local safeaddr = tostring(ptr)
 
     local _ns   = ffi.nsof(v)
     local _name = ffi.tagof(v)
@@ -126,6 +145,7 @@ local function gv2(ud,flags,level,k,v)
     if level == 1 and before then
         ud.top = {
             addr      = safeaddr,
+            null      = null,
             ns        = _ns,
             type      = _name,
             children  = { },
@@ -152,11 +172,17 @@ local function gv2(ud,flags,level,k,v)
     local rec
 
     if between then
+        --debug(v)
+        local printable = type(v) == "string" and v or
+                          alloc and "*" or nil
         rec = {
             addr      = safeaddr,
+            null      = null,
             ns        = _ns,
             type      = _name,
             name      = k,
+            printable = printable,
+            --value     = v, -- TODO remove ?
             contained = base or not alloc,
             flags     = flags,
         }
