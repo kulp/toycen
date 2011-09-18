@@ -24,6 +24,10 @@ local function debug(...) end
 
 --print(ffi.typeof(ast.base.node_type))
 
+-- XXX should not be necessary to do anonymous checks at this level of
+-- abstraction
+local function is_anonymous(tag) return tag:find("%d+") end
+
 local function printcb(ud,flags,level,k,v)
     local indenter = " "
     if 1 or bit.band(flags, AST.WALK_BETWEEN_CHILDREN) ~= 0 then
@@ -51,7 +55,7 @@ local function format_field(ud,flags,level,obj,i,k,v)
     return "<tr>"
         .. format_field_name(ud,flags,level,k)
         .. "\t"
-        .. format_field_value(ud,flags,level,i,obj,v)
+        .. format_field_value(ud,flags,level,k,obj,v)
         .. "</tr>\n"
 end
 
@@ -66,8 +70,7 @@ local function _print_node_inner(ud,flags,level,i,me)
     local base    = bit.band(me.flags, AST.WALK_IS_BASE         ) ~= 0
     local alloc   = bit.band(me.flags, AST.WALK_HAS_ALLOCATION  ) ~= 0
 
-    -- XXX encapsulation
-    local anonymous = (me.type or ""):find("%d+")
+    local anonymous = is_anonymous(me.type or "")
     local close_table = false
 
     local simple = not me.type and me.printable
@@ -87,14 +90,27 @@ local function _print_node_inner(ud,flags,level,i,me)
         end
         if me.children then
             for j,ye in ipairs(me.children) do
+                ---[[
+                -- used to use me.type tout court as the namespace for the port
+                -- name, but me.type can be a generated value for anonymous
+                -- aggregates. we really want to have the namespace be the last
+                -- "real" node so we search up the parent chain.
+                local t = me
+                while t.type and is_anonymous(t.type) do
+                    t = t.parent
+                end
+                --]]
+
                 local inner
                 if ye.contained then
                     inner = _print_node_inner(ud,flags,level+1,j,ye)
                 else
                     table.insert(ud.nodes, print_node(ud,flags,level + 1,j,ye))
-                    local linkval = "struct_" .. me.addr .. ":" .. "port_" .. me.type .. "_" .. j .. " -> " ..
-                                    "struct_" .. ye.addr .. ":" .. "_name"
                     if not me.null and not ye.null then
+                        local linkval =
+                               "struct_" .. t.addr .. ":" .. "port_" .. t.type .. "_" .. ye.name
+                            .. " -> "
+                            .. "struct_" .. ye.addr .. ":" .. "_name"
                         table.insert(ud.links, linkval)
                     end
                     -- TODO pull up
@@ -105,7 +121,8 @@ local function _print_node_inner(ud,flags,level,i,me)
                         inner = ye.printable
                     end
                 end
-                result = result .. format_field(ud,flags,level+1,me.type,j,ye.name,inner)
+
+                result = result .. format_field(ud,flags,level+1,t.type,j,ye.name,inner)
             end
         end
         if close_table then result = result .. "</table>\n" end
@@ -179,7 +196,9 @@ local function gv2(ud,flags,level,k,v)
             --value     = v, -- TODO remove ?
             contained = base or not alloc,
             flags     = flags,
+            parent    = parent,
         }
+--print(k, base, alloc, rec.contained)
 
         --[[
         for L = 1,level do io.write(indenter) end
@@ -291,3 +310,4 @@ print(ffi.string(buf))
 
 --print(libast.node_recs[1])
 
+-- vi:set ts=4 sw=4 et nocindent ai linebreak syntax=lua

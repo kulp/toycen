@@ -38,7 +38,7 @@ local function rec_from_tag(tag)
 end
 
 -- XXX hokey check for anonymous aggregate
-local function is_anonymous(tag) return not tag:find("%d+") end
+local function is_anonymous(tag) return tag:find("%d+") end
 
 -- XXX get rid of special cases
 local function box_child(child)
@@ -63,7 +63,9 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
 
     local done
     local tag = ffi.tagof(node)
-    if is_anonymous(tag) and itemindex >= 0 then
+    if is_anonymous(tag) then
+        -- TODO
+    elseif itemindex >= 0 then
         local item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
         local dc = decode_node_item(item)
         if not ffi.isnull(dc) then
@@ -86,7 +88,12 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
     end
 end
 
-function AST.walk(node, userdata, callbacks, flags, parent, level)
+-- the "pitem" is necessary to support / work around the anonymous unions
+-- and structs that make up CHOICE elements ; the pitem will be a struct
+-- with a tag, so it can be looked up in libast.node_recs
+-- the "pitem" element is not of the same type as "parent" : parent is a
+-- cdata node, pitem is a node_rec element
+function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
     if type(node) ~= "cdata" or not ffi.nsof(node) or ffi.isnull(node) then return nil end
     if not level then level = 1 end -- 1-based for array indexing
     if not flags then flags = 0 end
@@ -107,8 +114,11 @@ function AST.walk(node, userdata, callbacks, flags, parent, level)
                 return nil
             end
             local child = node[fields[parent.idx]]
-            callbacks.walk(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), level, fields[parent.idx], child)
-            AST.walk(child, userdata, callbacks, flags, parent, level + 1)
+            local item = pitem[parent.idx - 1] -- switch to C (zero-based) indexing
+            local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
+            if item.is_pointer then cflags = bit.bor(cflags, AST.WALK_HAS_ALLOCATION) end
+            callbacks.walk(userdata, cflags, level, fields[parent.idx], child)
+            AST.walk(child, userdata, callbacks, flags, parent, level + 1, pitem)
         end
 
     elseif myns == "struct" then
@@ -121,8 +131,18 @@ function AST.walk(node, userdata, callbacks, flags, parent, level)
             elseif k ~= 1 then
                 flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
             end
-            doformat(userdata, bit.bor(flags, AST.WALK_BETWEEN_CHILDREN), callbacks, level, k, v, node, child, parent)
-            AST.walk(child, userdata, callbacks, flags, node, level + 1)
+            local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
+            doformat(userdata, cflags, callbacks, level, k, v, node, child, parent)
+
+            local pitem = pitem -- shadow argument for local changes per child
+            -- only upgrade parent to pitem when we are dealing with a named
+            -- struct
+            if not is_anonymous(ffi.tagof(node)) then
+                local itemindex = ffi.istype("struct node", node) and k - 1 or k - 2
+                pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
+            end
+
+            AST.walk(child, userdata, callbacks, flags, node, level + 1, pitem)
         end
 
     else
@@ -133,3 +153,4 @@ function AST.walk(node, userdata, callbacks, flags, parent, level)
 
 end
 
+-- vi:set ts=4 sw=4 et nocindent ai linebreak syntax=lua
