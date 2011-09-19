@@ -63,9 +63,7 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
 
     local done
     local tag = ffi.tagof(node)
-    if is_anonymous(tag) then
-        -- TODO
-    elseif itemindex >= 0 then
+    if not is_anonymous(tag) and itemindex >= 0 then
         local item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
         local dc = decode_node_item(item)
         if not ffi.isnull(dc) then

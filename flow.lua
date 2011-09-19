@@ -2,27 +2,11 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
-require "tmp/dumper"
---[[
-function dump(o)
-    if type(o) == 'table' then
-        local s = '{ '
-        for k,v in pairs(o) do
-                if type(k) ~= 'number' then k = '"'..k..'"' end
-                s = s .. '['..k..'] = ' .. dump(v) .. ','
-        end
-        return s .. '} '
-    else
-        return tostring(o)
-    end
-end
---]]
+require "3rdparty/dumper"
 function dump(...) return DataDumper(...) end
 
 --local function debug(...) print(...) end
 local function debug(...) end
-
---print(ffi.typeof(ast.base.node_type))
 
 -- XXX should not be necessary to do anonymous checks at this level of
 -- abstraction
@@ -90,7 +74,6 @@ local function _print_node_inner(ud,flags,level,i,me)
         end
         if me.children then
             for j,ye in ipairs(me.children) do
-                ---[[
                 -- used to use me.type tout court as the namespace for the port
                 -- name, but me.type can be a generated value for anonymous
                 -- aggregates. we really want to have the namespace be the last
@@ -99,7 +82,6 @@ local function _print_node_inner(ud,flags,level,i,me)
                 while t.type and is_anonymous(t.type) do
                     t = t.parent
                 end
-                --]]
 
                 local inner
                 if ye.contained then
@@ -176,7 +158,6 @@ local function gv2(ud,flags,level,k,v)
 
     if before then
         if not ud.rec[level] then ud.rec[level] = { } end
-        --parent = ud.stack[level]
         ud.level = level
     end
 
@@ -184,7 +165,6 @@ local function gv2(ud,flags,level,k,v)
     local rec
 
     if between then
-        --debug(v)
         local printable = type(v) == "string" and v or nil
         rec = {
             addr      = safeaddr,
@@ -198,34 +178,8 @@ local function gv2(ud,flags,level,k,v)
             flags     = flags,
             parent    = parent,
         }
---print(k, base, alloc, rec.contained)
 
-        --[[
-        for L = 1,level do io.write(indenter) end
-        debug("rec       = ", rec)
-        for L = 1,level do io.write(indenter) end
-        debug(" level    = ", level)
-        for L = 1,level do io.write(indenter) end
-        debug(" k        = ", k)
-        for L = 1,level do io.write(indenter) end
-        debug(" base     = ", base)
-        for L = 1,level do io.write(indenter) end
-        debug(" alloc    = ", alloc)
-        for L = 1,level do io.write(indenter) end
-        debug(" parent   = ", parent)
-        --for L = 1,level do io.write(indenter) end
-        --debug(" children = ", #parent.children)
-        for L = 1,level do io.write(indenter) end
-        debug ""
-        --]]
-
-        --ud.rec[level]["node_" .. safeaddr] = rec
         table.insert(ud.rec[level], rec)
-        --[[
-        if not parent.base then
-            table.insert(ud.nodes, rec)
-        end
-        --]]
         ud.stack[level + 1] = rec
         if parent.children then
             table.insert(parent.children,rec)
@@ -265,17 +219,7 @@ local function errorcb(ud,msg)
     ffi.C.abort()
 end
 
--- userdata for callbacks
---[[
 local ud = {
-    --path = {},
-    rec = {},
-    level = 1,
-}
---]]
-
-local ud = {
-    --path = {},
     rec = {},
     stack = { { children = {} } },
     level = 1,
@@ -285,29 +229,5 @@ local ud = {
 
 AST.walk(ast,ud,{ walk = gv2, error = errorcb })
 debug(dump(ud))
-
---[[
---print(AST.node_rec(1))
---rec = libast.node_recs[ffi.cast("enum node_type","NODE_TYPE_node")]
-rec = libast.node_recs[nodetype("NODE_TYPE_integer")]
-for k,v in pairs(ffi.fields(rec)) do
-    print(k,v)
-    print(rec[v])
-end
-print(rec.items[0])
-print(ffi.string(rec.items[0].c.node.name))
-
-local size = 100;
-local psize = ffi.new("int[1]", size)
---local buf = ffi.gc(ffi.C.malloc(size),ffi.C.free)
-local buf = ffi.new("char[?]", size)
-local data = ffi.new("int[1]", 999);
---print(libast.fmt_call(0,0,nil,nil,nil))
-print(libast.fmt_call("META_IS_BASIC",ffi.cast("enum basic_type","BASIC_TYPE_int"),psize,buf,data))
-print(libast.fmt_call(5,6,psize,buf,data))
-print(ffi.string(buf))
---]]
-
---print(libast.node_recs[1])
 
 -- vi:set ts=4 sw=4 et nocindent ai linebreak syntax=lua
