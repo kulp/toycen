@@ -26,14 +26,6 @@ local function format_field(obj,k,v)
         .. "</tr>"
 end
 
-local fl = {
-    is_before  = function (x) return bit.band(x, AST.WALK_BEFORE_CHILDREN ) ~= 0 end,
-    is_after   = function (x) return bit.band(x, AST.WALK_AFTER_CHILDREN  ) ~= 0 end,
-    is_between = function (x) return bit.band(x, AST.WALK_BETWEEN_CHILDREN) ~= 0 end,
-    is_base    = function (x) return bit.band(x, AST.WALK_IS_BASE         ) ~= 0 end,
-    is_alloc   = function (x) return bit.band(x, AST.WALK_HAS_ALLOCATION  ) ~= 0 end,
-}
-
 local format_node -- to allow mutual recursion with _format_node_inner
 
 local function _format_node_inner(ud,flags,me)
@@ -48,14 +40,14 @@ local function _format_node_inner(ud,flags,me)
 
     -- complex case
     local content = me.type or "XXX" -- TODO trap
-    if #me.children > 0 or fl.is_alloc(me.flags) and me.null then
+    if #me.children > 0 or AST.fl.is_alloc(me.flags) and me.null then
         local table_format = ' border="0" cellborder="1" cellspacing="0" cellpadding="4"'
         result = result .. "<table" .. table_format .. ">"
         close_table = true
         if #me.children > 0 and not is_anonymous(me.type or "") then
             result = result .. "<tr><td colspan='2' port='_name' bgcolor='#dddddd'><font point-size='12'>" .. content .. "</font></td></tr>"
         end
-        if fl.is_alloc(me.flags) and me.null then
+        if AST.fl.is_alloc(me.flags) and me.null then
             result = result .. "<tr><td colspan='2'>NULL</td></tr>"
         end
     end
@@ -82,7 +74,7 @@ local function _format_node_inner(ud,flags,me)
                     .. "struct_" .. ye.addr .. ":" .. "_name"
                 table.insert(ud.links, linkval)
             end
-            if fl.is_alloc(ye.flags) then
+            if AST.fl.is_alloc(ye.flags) then
                 inner = ye.null and "NULL" or "*"
             else
                 inner = ye.printable
@@ -113,7 +105,7 @@ local function graphvizcb(ud,flags,level,k,v)
     local _name = ffi.tagof(v)
 
     -- once-per-graph stuff
-    if level == 1 and fl.is_before(flags) then
+    if level == 1 and AST.fl.is_before(flags) then
         ud.top = {
             addr      = safeaddr,
             children  = { },
@@ -134,7 +126,7 @@ local function graphvizcb(ud,flags,level,k,v)
 
     local indenter = "  "
 
-    if fl.is_before(flags) then
+    if AST.fl.is_before(flags) then
         if not ud.rec[level] then ud.rec[level] = { } end
         ud.level = level
     end
@@ -142,12 +134,12 @@ local function graphvizcb(ud,flags,level,k,v)
     local parent = ud.stack[level]
     local rec
 
-    if fl.is_between(flags) then
+    if AST.fl.is_between(flags) then
         local printable = type(v) == "string" and v or nil
         rec = {
             addr      = safeaddr,
             children  = { },
-            contained = fl.is_base(flags) or not fl.is_alloc(flags),
+            contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags),
             flags     = flags,
             name      = k,
             ns        = _ns,
@@ -162,13 +154,13 @@ local function graphvizcb(ud,flags,level,k,v)
         table.insert(parent.children,rec)
     end
 
-    if fl.is_after(flags) then
+    if AST.fl.is_after(flags) then
         -- clear out junk we don't need any to keep around
         ud.stack[level + 1] = nil
         ud.rec[level + 1] = nil
     end
 
-    if level == 1 and fl.is_after(flags) then
+    if level == 1 and AST.fl.is_after(flags) then
         -- clear out junk we don't need any to keep around
         ud.level = nil
         ud.stack = nil

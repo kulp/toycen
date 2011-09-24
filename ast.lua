@@ -18,6 +18,15 @@ AST.WALK_PRUNE_SIBLINGS   =  8; AST.flag_names[AST.WALK_PRUNE_SIBLINGS  ] = "WAL
 AST.WALK_IS_BASE          = 16; AST.flag_names[AST.WALK_IS_BASE         ] = "WALK_IS_BASE"
 AST.WALK_HAS_ALLOCATION   = 32; AST.flag_names[AST.WALK_HAS_ALLOCATION  ] = "WALK_HAS_ALLOCATION"
 
+AST.fl = {
+    is_before  = function (x) return bit.band(x, AST.WALK_BEFORE_CHILDREN ) ~= 0 end,
+    is_after   = function (x) return bit.band(x, AST.WALK_AFTER_CHILDREN  ) ~= 0 end,
+    is_between = function (x) return bit.band(x, AST.WALK_BETWEEN_CHILDREN) ~= 0 end,
+    is_prune   = function (x) return bit.band(x, AST.WALK_PRUNE_SIBLINGS  ) ~= 0 end,
+    is_base    = function (x) return bit.band(x, AST.WALK_IS_BASE         ) ~= 0 end,
+    is_alloc   = function (x) return bit.band(x, AST.WALK_HAS_ALLOCATION  ) ~= 0 end,
+}
+
 local libast = ffi.load("libast.so")
 
 local function decode_node_item(node_item)
