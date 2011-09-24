@@ -2,10 +2,18 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
---require "3rdparty/dumper"
---function dump(...) return DataDumper(...) end
+local function prettify(what)
+    require "htmltidy"
 
-local function debug(...) if DEBUG then print(...) end end
+    local tidy = htmltidy.new()
+    tidy:setOpt(htmltidy.opt.IndentContent, "auto")
+    tidy:setOpt(htmltidy.opt.XmlTags, true)
+    tidy:setOpt(htmltidy.opt.WrapLen, 0)
+
+    local out, etext, evalue = tidy:easyClean(what)
+
+    return out
+end
 
 -- XXX should not be necessary to do anonymous checks at this level of
 -- abstraction
@@ -92,7 +100,7 @@ end
 function format_node(ud,flags,node)
     return node.null and "" or
             "struct_" .. node.addr .. " [label=<"
-        .. _format_node_inner(ud,flags,node)
+        .. prettify(_format_node_inner(ud,flags,node))
         .. ">];"
 end
 
@@ -120,7 +128,7 @@ local function graphvizcb(ud,flags,level,k,v)
         -- we seem not to read from ud.rec, but removing it breaks things
         ud.rec[1] = ud.top.children
         print("digraph abstract_syntax_tree {\n"
-           .. "graph [rankdir=TB];\n"
+           .. "graph [rankdir=LR];\n"
            .. "node [shape=none];\n")
     end
 
