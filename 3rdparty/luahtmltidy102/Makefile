@@ -1,4 +1,4 @@
-OBJ     = compat-5.1.o htmltidy.o tdoc.o tnode.o support.o tconst.o
+OBJ     = htmltidy.o tdoc.o tnode.o support.o tconst.o
 CFLAGS += -I/usr/include/tidy -Wall -g -O0
 CFLAGS += $(shell pkg-config --cflags luajit)
 LDLIBS += $(shell pkg-config --libs luajit)
