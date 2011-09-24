@@ -7,10 +7,14 @@ local function prettify(what)
         require "htmltidy"
 
         local tidy = htmltidy.new()
+        -- indentation is really the only reason we use Tidy at all
         tidy:setOpt(htmltidy.opt.IndentContent, "auto")
+        -- if we parse as HTML Tidy will "fix" things and break them
         tidy:setOpt(htmltidy.opt.XmlTags, true)
+        -- wide formatting is ok ; disable wrapping
         tidy:setOpt(htmltidy.opt.WrapLen, 0)
 
+        -- throw away error stuff
         local out, etext, evalue = tidy:easyClean(what)
 
         return out

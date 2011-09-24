@@ -103,22 +103,23 @@ static int _format_ID(const struct type_formatter *fmt, int *size, char buf[*siz
 
 int fmt_call(enum meta_type meta, int type, int *size, char buf[*size], void *data)
 {
+    memset(buf, 0, *size);
+
     if (meta >= BASIC_TYPE_max || meta == META_IS_INVALID) {
         errno = EINVAL;
         return -1;
     }
 
     const struct type_formatter *meta_formatters = type_formatters[meta];
-	if (meta_formatters) {
-		const struct type_formatter *formatter = &meta_formatters[type];
-		if (formatter) {
-			return formatter->format(formatter, size, buf, data);
-		}
-	} else
+    if (meta_formatters) {
+        const struct type_formatter *formatter = &meta_formatters[type];
+        if (formatter) {
+            return formatter->format(formatter, size, buf, data);
+        }
+    } else
         return -1;
 
-	memset(buf, 0, *size);
-	return 0;
+    return 0;
 }
 
 const struct type_formatter *type_formatters[] = {

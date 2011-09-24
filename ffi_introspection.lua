@@ -40,3 +40,5 @@ function ffi.isnull(what)
     return not what or ffi.sameptr(what,ffi.cast('void*',0))
 end
 
+return ffi
+

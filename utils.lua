@@ -1,5 +1,5 @@
 -- utilities
-local ffi = require "ffi"
+local ffi = require "ffi_introspection"
 function include_h(file)
     ffi.cdef(io.input(file):read("*a"))
 end

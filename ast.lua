@@ -60,7 +60,7 @@ local function box_child(child)
     return pdata or box(data, "void*")
 end
 
-local function doformat(userdata, flags, callbacks, level, k, v, node, child, parent)
+local function doformat(userdata, flags, callbacks, level, k, v, node, child, parent, item, unwrap)
     -- k         is the one -based index of the ordered fields in 'node'
     -- itemindex is the zero-based index corresponding to k, with 'base' discounted
     -- itemindex indexes into the C structures (node_rec.items[])
@@ -72,8 +72,11 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
 
     local done
     local tag = ffi.tagof(node)
-    if not is_anonymous(tag) and itemindex >= 0 then
-        local item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
+    -- is itemindex ever < 0 ? when ?
+    if item or (not is_anonymous(tag) and itemindex >= 0) then
+        if not item then
+            item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
+        end
         local dc = decode_node_item(item)
         if not ffi.isnull(dc) then
             local size  = 128
@@ -81,7 +84,11 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
             local buf   = ffi.new("char[?]", size)
             if item.is_pointer then flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION) end
 
-            local result = libast.fmt_call(item.meta, dc.type, psize, buf, box_child(child))
+            --if unwrap then child = unbox(child) end
+            local temp
+            if unwrap then temp = box(child, "int") else temp = box_child(child) end
+            --print("item.name=", ffi.string(item.name),child, temp)
+            local result = libast.fmt_call(item.meta, dc.type, psize, buf, temp)
             if result >= 0 then
                 -- subtract one from *size to not print trailing '\0'
                 callbacks.walk(userdata, flags, level, v, ffi.string(buf, unbox(psize) - 1))
@@ -124,7 +131,11 @@ function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
             local item = pitem[parent.idx - 1] -- switch to C (zero-based) indexing
             local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
             if item.is_pointer then cflags = bit.bor(cflags, AST.WALK_HAS_ALLOCATION) end
-            callbacks.walk(userdata, cflags, level, fields[parent.idx], child)
+            -- XXX hack
+            -- basic elements inside a choice act funny
+            -- TODO make this work for .idx in choices too
+            local basic = item.meta == tonumber(ffi.cast("enum meta_type", "META_IS_BASIC"))
+            doformat(userdata, cflags, callbacks, level, 0, fields[parent.idx], node, child, parent, item, basic)
             AST.walk(child, userdata, callbacks, flags, parent, level + 1, pitem)
         end
 
@@ -139,16 +150,19 @@ function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
                 flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
             end
             local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
-            doformat(userdata, cflags, callbacks, level, k, v, node, child, parent)
 
             local pitem = pitem -- shadow argument for local changes per child
             -- only upgrade parent to pitem when we are dealing with a named
             -- struct
             if not is_anonymous(ffi.tagof(node)) then
                 local itemindex = ffi.istype("struct node", node) and k - 1 or k - 2
+                -- note that pitem is not always meaningful ; it might be
+                -- garbage, but it's only accessed (in the union branch above)
+                -- if it is meaningful
                 pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
             end
 
+            doformat(userdata, cflags, callbacks, level, k, v, node, child, parent)
             AST.walk(child, userdata, callbacks, flags, node, level + 1, pitem)
         end
 
