@@ -7,10 +7,8 @@
 static CType *my_lj_ctype_rawref(CTState *cts, CTypeID id)
 {
     CType *ct = ctype_get(cts, id);
-
     while (ctype_isattrib(ct->info) || ctype_isref(ct->info))
         ct = ctype_child(cts, ct);
-
     return ct;
 }
 
@@ -26,9 +24,9 @@ static int ffi_fields(lua_State *L)
 
     TValue *o = L->base;
     if (!(o < L->top)) {
-        lj_err_argtype(L, 1, "C type");
+        abort(); // XXX
+        //lj_err_argtype(L, 1, "C type");
     }
-
     GCcdata *cd = cdataV(o);
     assert(cd != NULL);
     CTypeID id = cd->typeid == CTID_CTYPEID ? *(CTypeID *)cdataptr(cd) : cd->typeid;
@@ -39,7 +37,6 @@ static int ffi_fields(lua_State *L)
     lua_pop(L,1);
 
     while (ctype_isptr(ct->info)) ct = ctype_rawchild(cts, ct);
-
     if (ctype_isstruct(ct->info) && ct->size != CTSIZE_INVALID) {
         int i=0;
         lua_createtable(L,0,0);
@@ -53,18 +50,16 @@ static int ffi_fields(lua_State *L)
             lua_pushstring(L, strdata(strref(ct->name)));
             lua_rawseti(L, -2, ++i);
         }
-
         return 1;
     } else {
-        lj_err_argtype(L, 1, "ctype or cdata");
+        abort(); // XXX
+        //lj_err_argtype(L, 1, "ctype or cdata"); // XXX
     }
-
     return 0;
 }
 
 int luaopen_libljffifields(lua_State *L) {
     lua_register(L,"ffi_fields", ffi_fields);
-
     return 1;
 }
 
