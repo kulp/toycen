@@ -21,7 +21,11 @@ endif
 
 ENABLE_LUA = 1
 
+INDENT ?= indent
+
 INCLUDE += xi include include/housekeeping include/ast include/preprocessor include/util
+INCLUDE += 3rdparty/luajit-2.0/src/
+LDFLAGS += -L3rdparty/luajit-2.0/src/
 SRC += src src/ast src/ast/walk src/compiler src/preprocessor src/util
 
 vpath %.l	    lexer
@@ -70,10 +74,10 @@ parser.o: CFLAGS += -Wno-missing-field-initializers
 
 CLEANFILES += ast-gen.h ast-gen2.h
 ast-gen2.h: ast.xi
-	$(CPP) $(CPPFLAGS) $^ | indent /dev/stdin $@.$$$$ && mv $@.$$$$ $@ || rm $@.$$$$
+	$(CPP) $(CPPFLAGS) $^ | $(INDENT) > $@.$$$$ && mv $@.$$$$ $@ || rm $@.$$$$
 
 ast-gen.h: ast-gen2.h
-	$(CPP) $(CPPFLAGS) -include ast-gen-pre.h $^ | indent /dev/stdin $@.$$$$ && mv $@.$$$$ $@ || rm $@.$$$$
+	$(CPP) $(CPPFLAGS) -include ast-gen-pre.h $^ | $(INDENT) > $@.$$$$ && mv $@.$$$$ $@ || rm $@.$$$$
 
 wrap_ast_%.o: CFLAGS += -Wno-missing-field-initializers
 wrap_ast_%.o: wrap.c %-ast.c
@@ -118,7 +122,7 @@ libast.so: ast-ids,fPIC.o ast-formatters,fPIC.o
 
 CLEANFILES += libljffifields.so
 libljffifields.so: fields,fPIC.o
-libljffifields.so: LDLIBS += -lluajit-51
+libljffifields.so: LDLIBS += -lluajit
 libljffifields.so: INCLUDE += 3rdparty/luajit-2.0/src 
 libljffifields.so: CFLAGS += -std=gnu99
 libljffifields.so: CPPFLAGS += -std=gnu99
@@ -126,8 +130,10 @@ libljffifields.so: CPPFLAGS += -std=gnu99
 %.so:
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
-wrap_ast_% toycen luash: LDLIBS += -lluajit-51 -lreadline
+wrap_ast_% toycen luash: LDLIBS += -lluajit -lreadline
+ifeq ($(shell uname -s),Darwin)
 wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
+endif
 wrap_ast_% toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
 endif
 
