@@ -3,16 +3,20 @@ local ffi = require "ffi"
 local bit = require "bit"
 
 local function prettify(what)
-    require "htmltidy"
+    if (should_prettify) then
+        require "htmltidy"
 
-    local tidy = htmltidy.new()
-    tidy:setOpt(htmltidy.opt.IndentContent, "auto")
-    tidy:setOpt(htmltidy.opt.XmlTags, true)
-    tidy:setOpt(htmltidy.opt.WrapLen, 0)
+        local tidy = htmltidy.new()
+        tidy:setOpt(htmltidy.opt.IndentContent, "auto")
+        tidy:setOpt(htmltidy.opt.XmlTags, true)
+        tidy:setOpt(htmltidy.opt.WrapLen, 0)
 
-    local out, etext, evalue = tidy:easyClean(what)
+        local out, etext, evalue = tidy:easyClean(what)
 
-    return out
+        return out
+    else
+        return what
+    end
 end
 
 -- XXX should not be necessary to do anonymous checks at this level of
