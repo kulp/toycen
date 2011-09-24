@@ -115,7 +115,7 @@ end
 local function graphvizcb(ud,flags,level,k,v)
     local ptr      = ffi.cast("uintptr_t", ffi.cast("void*", v))
     local null     = tonumber(ptr) == 0
-    local safeaddr = tostring(ptr)
+    local safeaddr = null and "NULL" or tostring(tonumber(ptr))
 
     local _ns   = ffi.nsof(v)
     local _name = ffi.tagof(v)

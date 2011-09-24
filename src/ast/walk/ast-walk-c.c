@@ -181,8 +181,8 @@ int main(int argc, char *argv[])
     struct translation_unit *top = get_top_of_parse_result();
 
     struct mydata data = { 0 };
-    ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN |
-                                         AST_WALK_AFTER_CHILDREN, &data);
+    int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN;
+    ast_walk((struct node*)top, walk_cb, flags, &data);
 
     parser_teardown(&ps);
     lexer_teardown();
