@@ -72,8 +72,12 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
 
     local done
     local tag = ffi.tagof(node)
-    -- is itemindex ever < 0 ? when ?
-    if item or (not is_anonymous(tag) and itemindex >= 0) then
+
+    -- print .idx of choice
+    if is_anonymous(ffi.tagof(node)) and k == 1 then
+        callbacks.walk(userdata, flags, level, v, tostring(child))
+        done = true
+    elseif item or (not is_anonymous(tag) and itemindex >= 0) then -- when is itemindex < 0 ?
         if not item then
             item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
         end
@@ -84,10 +88,9 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
             local buf   = ffi.new("char[?]", size)
             if item.is_pointer then flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION) end
 
-            --if unwrap then child = unbox(child) end
             local temp
+            -- XXX explicit box type is not general enough FIXME
             if unwrap then temp = box(child, "int") else temp = box_child(child) end
-            --print("item.name=", ffi.string(item.name),child, temp)
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, temp)
             if result >= 0 then
                 -- subtract one from *size to not print trailing '\0'
@@ -135,7 +138,7 @@ function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
             -- basic elements inside a choice act funny
             -- TODO make this work for .idx in choices too
             local basic = item.meta == tonumber(ffi.cast("enum meta_type", "META_IS_BASIC"))
-            doformat(userdata, cflags, callbacks, level, 0, fields[parent.idx], node, child, parent, item, basic)
+            doformat(userdata, cflags, callbacks, level, 0, fields[parent.idx], node, child, node, item, basic)
             AST.walk(child, userdata, callbacks, flags, parent, level + 1, pitem)
         end
 
@@ -154,7 +157,10 @@ function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
             local pitem = pitem -- shadow argument for local changes per child
             -- only upgrade parent to pitem when we are dealing with a named
             -- struct
-            if not is_anonymous(ffi.tagof(node)) then
+            local is_idx = false
+            if is_anonymous(ffi.tagof(node)) then
+                is_idx = k == 1
+            else
                 local itemindex = ffi.istype("struct node", node) and k - 1 or k - 2
                 -- note that pitem is not always meaningful ; it might be
                 -- garbage, but it's only accessed (in the union branch above)
@@ -162,7 +168,7 @@ function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
                 pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
             end
 
-            doformat(userdata, cflags, callbacks, level, k, v, node, child, parent)
+            doformat(userdata, cflags, callbacks, level, k, v, node, child, parent, nil, is_idx)
             AST.walk(child, userdata, callbacks, flags, node, level + 1, pitem)
         end
 
