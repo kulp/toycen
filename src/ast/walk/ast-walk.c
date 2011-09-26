@@ -98,8 +98,7 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
 
 // combine common parts of recurse_priv() and recurse_node()
 static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
-        *thing, ast_walk_cb cb, int flags, struct ast_walk_ops *ops, void
-        *userdata, struct ast_walk_data *cookie)
+        *thing, ast_walk_cb cb, int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
 {
     // TODO move parent-handling based on flags
     // TODO do something with results
@@ -134,14 +133,14 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
 
     /// @todo what if flags doesn't contain a BEFORE or AFTER ?
     for (int i = 0; rec->items[i].meta != META_IS_INVALID; i++) {
-        int flags = flags; // localise
+        int flags_ = flags; // localise
         const struct node_item *item = &rec->items[i];
         void *childaddr = (char*)thing + (*rec->offp)[i];
         void *child;
         bool has_allocation = !!item->is_pointer;
 
         if (has_allocation)
-            flags |= AST_WALK_HAS_ALLOCATION;
+            flags_ |= AST_WALK_HAS_ALLOCATION;
 
         if (has_allocation || item->meta == META_IS_BASIC) {
             // if BASIC, unwrap, because we rewrap in recurse_any()
@@ -156,10 +155,10 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         s->next = cookie->stack;
         cookie->stack = s;
 
-        result = recurse_any(item, &child, cb, flags, ops, userdata, cookie);
+        result = recurse_any(item, &child, cb, flags_, ops, userdata, cookie);
 
-        if (flags & AST_WALK_BETWEEN_CHILDREN)
-            cbresult = cb((flags & ~0x7) | AST_WALK_BETWEEN_CHILDREN, meta,
+        if (flags_ & AST_WALK_BETWEEN_CHILDREN)
+            cbresult = cb((flags_ & ~0x7) | AST_WALK_BETWEEN_CHILDREN, meta,
                     type, thing, userdata, ops, cookie);
 
         s = cookie->stack;
