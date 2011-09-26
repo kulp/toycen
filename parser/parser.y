@@ -291,20 +291,20 @@ multiplicative_expression
     : cast_expression
         { $$ = UN(multiplicative_expression, $1, .left = NULL, .op = BO_INVALID); }
     | multiplicative_expression '*' cast_expression
-        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = '*'); }
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = BO_MULTIPLY); }
     | multiplicative_expression '/' cast_expression
-        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = '/'); }
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = BO_DIVIDE); }
     | multiplicative_expression '%' cast_expression
-        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = '%'); }
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = BO_MODULUS); }
     ;
 
 additive_expression
     : multiplicative_expression
         { $$ = UN(additive_expression, $1, .left = NULL, .op = BO_INVALID); }
     | additive_expression '+' multiplicative_expression
-        { $$ = UN(additive_expression, $3, .left = $1, .op = '+'); }
+        { $$ = UN(additive_expression, $3, .left = $1, .op = BO_ADD); }
     | additive_expression '-' multiplicative_expression
-        { $$ = UN(additive_expression, $3, .left = $1, .op = '-'); }
+        { $$ = UN(additive_expression, $3, .left = $1, .op = BO_SUBTRACT); }
     ;
 
 shift_expression
