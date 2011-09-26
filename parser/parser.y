@@ -405,7 +405,7 @@ expression
     : assignment_expression
         { $$ = UN(expression, $1, .left = NULL); }
     | expression ',' assignment_expression
-        { $$ = UN(expression, $1, .left = $1); }
+        { $$ = UN(expression, $3, .left = $1); }
     ;
 
 constant_expression

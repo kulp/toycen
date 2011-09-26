@@ -89,8 +89,7 @@ MAKE(NODE,assignment_expression,
     )
 
 MAKE(NODE,expression,
-        BASE(node)
-        DEFITEM(TYPED(PTR(REF_NODE(assignment_expression)),right))
+        BASE(assignment_expression)
         DEFITEM(TYPED(PTR(REF_NODE(expression)),left))
     )
 
