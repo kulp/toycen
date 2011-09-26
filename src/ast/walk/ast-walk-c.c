@@ -37,6 +37,7 @@ static const char *meta_names[] = {
 
 struct mydata {
     int indent;
+    int last_idx;
 };
 
 static int walk_cb(
@@ -120,7 +121,7 @@ static int walk_cb(
             break;
         }
         case META_IS_CHOICE: {
-            // TODO ?
+            c->last_idx = **(int**)data;
             break;
         }
         default:
@@ -138,7 +139,7 @@ static int walk_cb(
                 printf("/* struct %s */ ", tname);
             }
         } else {
-            printf("/* union */ { .choice = ");
+            printf("/* union */ { .idx = %d, .choice = ", c->last_idx);
         }
     } else if (after) {
         if (name && !tname) {
