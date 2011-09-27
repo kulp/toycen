@@ -15,7 +15,10 @@ CFLAGS += -save-temps
 endif
 
 ifeq ($(NDEBUG),1)
+ifneq ($(ENABLE_LUA),1)
+# Lua walk needs introspection
 INHIBIT_INTROSPECTION = 1
+endif
 DEFINES += NDEBUG
 endif
 
@@ -83,7 +86,11 @@ wrap_ast_%.o: CFLAGS += -Wno-missing-field-initializers
 wrap_ast_%.o: wrap.c %-ast.c
 	$(COMPILE.c) -DWRAPPED='"$*-ast.c"' -o $@ $<
 
-wrap_ast_%: wrap_ast_%.o toycen.c parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
+# use a separate object so that -save-temps doesn't wreck users of normal toycen.o
+toycen,wrap.o: toycen.c
+	$(COMPILE.c) -o $@ $^
+
+wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
 	$(LINK.c) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
 
 # Don't complain about unused yyunput()
@@ -124,6 +131,7 @@ CLEANFILES += libljffifields.so
 libljffifields.so: fields,fPIC.o
 libljffifields.so: LDLIBS += -lluajit
 libljffifields.so: INCLUDE += 3rdparty/luajit-2.0/src 
+# some luajit headers need [?] gcc
 libljffifields.so: CFLAGS += -std=gnu99
 libljffifields.so: CPPFLAGS += -std=gnu99
 

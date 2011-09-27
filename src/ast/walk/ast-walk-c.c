@@ -148,11 +148,6 @@ static int walk_cb(
         }
     }
 
-    #if 0
-    if (after && structp)
-        printf("} ");
-    #endif
-
     if (f->prefix)
         printf("%s", f->prefix);
 
@@ -181,7 +176,7 @@ int main(int argc, char *argv[])
 
     struct translation_unit *top = get_top_of_parse_result();
 
-    struct mydata data = { 0 };
+    struct mydata data = { .indent = 0, .last_idx = 0 };
     int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN;
     ast_walk((struct node*)top, walk_cb, flags, &data);
 

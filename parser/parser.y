@@ -45,8 +45,6 @@
     #include <string.h>
     #include <stdint.h>
 
-    extern int lineno, column;
-
     // not reentrant, but the parsing process is inherently serial, so it's ok
     void *_tptr;
 
@@ -835,9 +833,12 @@ function_definition
 
 void yyerror(const char *s)
 {
-    fflush(stdout);
-    printf("Error on line %d\n", lineno);
-    printf("%*s\n%*s\n", column, "^", column, s);
+    extern int lineno, column;
+    extern char *yytext;
+
+    fflush(stderr);
+    fprintf(stderr, "Error on line %d at `%s' : \n", lineno + 1, yytext); // zero-based
+    fprintf(stderr, "%*s\n%*s\n", column, "^", column, s);
 }
 
 struct translation_unit* get_top_of_parse_result(void)
