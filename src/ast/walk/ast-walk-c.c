@@ -1,7 +1,3 @@
-#include "lexer.h"
-#include "pp_lexer.h"
-#include "parser.h"
-#include "hash_table.h"
 #include "ast-walk.h"
 #include "ast-ids-priv.h"
 #include "ast-formatters.h"
@@ -10,11 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-extern int yyparse();
-
-int DEBUG_LEVEL = 2;
-FILE* DEBUG_FILE;
 
 static const char *flags_names[] = {
     #define R_(X) [AST_WALK_##X] = #X,
@@ -159,31 +150,17 @@ static int walk_cb(
     return 0;
 }
 
-int main(int argc, char *argv[])
+static int c_top_op(const struct translation_unit *top)
 {
     int result;
-
-    DEBUG_FILE = stdout;
-
-    parser_state_t ps;
-
-    if (argc > 1)
-        switch_to_input_file(argv[1]);
-
-    lexer_setup();
-    parser_setup(&ps);
-    result = yyparse();
-
-    struct translation_unit *top = get_top_of_parse_result();
 
     struct mydata data = { .indent = 0, .last_idx = 0 };
     int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN;
     ast_walk((struct node*)top, walk_cb, flags, &data);
 
-    parser_teardown(&ps);
-    lexer_teardown();
-
     return result;
 }
+
+int (*main_walk_op)(const struct translation_unit *) = c_top_op;
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

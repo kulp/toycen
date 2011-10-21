@@ -53,6 +53,7 @@ typedef int (*ast_walk_cb)(
         void *data,
         void *userdata,
         struct ast_walk_ops *ops,
+        //struct ast_walk_meta *meta,
         walkdata cookie
     );
 

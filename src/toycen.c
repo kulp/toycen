@@ -16,24 +16,6 @@
 #include "parser.h"
 #include "hash_table.h"
 
-#if TOYCEN_ENABLE_LUA
-#include <luajit.h>
-#include <lauxlib.h>
-#include <lualib.h>
-
-#include <readline/readline.h>
-#include <readline/history.h>
-
-#define mydo(L,what,result) \
-    do { \
-        result = luaL_dofile(L, what); \
-        if (result) \
-            if (lua_isstring(L, -1)) \
-                fprintf(stderr, "%s\n", lua_tostring(L, -1)); \
-    } while (0)
-
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -46,56 +28,10 @@ int DEBUG_LEVEL = 2;
 FILE* DEBUG_FILE;
 
 // XXX
-static bool is_interactive = false;
+bool is_interactive = false;
 
-#if TOYCEN_ENABLE_LUA
-static int lua_top_op(struct translation_unit *top)
-{
-    int result = 0;
-
-    lua_State *L = luaL_newstate();
-    luaL_openlibs(L);
-
-    char *str = NULL;
-    const char *prompt = "> ";
-    bool shouldread = is_interactive;
-
-    mydo(L,"setup.lua",result);
-    mydo(L,"ast.lua",result);
-
-    // TODO make ffi local
-    // TODO use C API instead of dostring
-    luaL_dostring(L, "ffi = require \"ffi\"");
-    luaL_dostring(L, "Tp_translation_unit = ffi.typeof(\"T_translation_unit*\")");
-    lua_getglobal(L, "Tp_translation_unit");
-    lua_pushlightuserdata(L, top);
-    lua_pcall(L, 1, 1, 0);
-    lua_setglobal(L, "ast");
-
-    mydo(L,"flow.lua",result);
-
-    while (shouldread && (str = readline(prompt))) {
-        if (luaL_dostring(L, str)) {
-            prompt = "!>";
-            if (lua_isstring(L, -1))
-                fprintf(stderr, "%s\n", lua_tostring(L, -1));
-        } else {
-            prompt = "> ";
-        }
-
-        free(str);
-    }
-
-    lua_close(L);
-
-    return result;
-}
-
-static int (*top_op)(struct translation_unit *) = lua_top_op;
-#else
-static int nop_top_op() { }
-static int (*top_op)(struct translation_unit *) = nop_top_op;
-#endif
+// common variable, another object sets it
+int (*main_walk_op)(const struct translation_unit *);
 
 static int get_parsed_ast(void *ud, struct translation_unit **what)
 {
@@ -157,7 +93,8 @@ int main(int argc, char *argv[])
     struct translation_unit *top;
     get_ast(&ps, &top);
 
-    result = top_op(top);
+    if (main_walk_op)
+        result = main_walk_op(top);
 
     teardown_ast(&ps, &top);
 

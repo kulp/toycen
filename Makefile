@@ -60,7 +60,7 @@ LDFLAGS += $(ARCHFLAGS)
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-formatters.o
 
 ifneq ($(INHIBIT_INTROSPECTION),1)
-WALKERS = demo graphviz test c
+WALKERS = demo graphviz test c lua_graphviz
 WALKBINS = $(addprefix ast-walk-,$(WALKERS))
 OBJECTS += ast-walk.o
 endif
@@ -69,7 +69,11 @@ CLEANFILES += $(WALKBINS)
 OBJECTS += $(addsuffix .o,$(WALKBINS))
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 
-$(WALKBINS) : ast-walk-% : parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
+ast-walk-lua_graphviz luash: LDLIBS += -lluajit -lreadline
+$(WALKBINS) : ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
+                           lexer.o hash_table.o ast-ids.o ast-walk.o \
+                           ast-formatters.o libljffifields.so
+	$(LINK.c) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 toycen.o: CFLAGS += -Wno-unused-parameter
 toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
@@ -90,6 +94,7 @@ wrap_ast_%.o: wrap.c %-ast.c
 toycen,wrap.o: toycen.c
 	$(COMPILE.c) -o $@ $^
 
+# XXX this -DARTIFICIAL_AST can't really do anything with .o's !
 wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
 	$(LINK.c) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
 
@@ -138,7 +143,6 @@ libljffifields.so: CPPFLAGS += -std=gnu99
 %.so:
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
-wrap_ast_% toycen luash: LDLIBS += -lluajit -lreadline
 ifeq ($(shell uname -s),Darwin)
 wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 endif
