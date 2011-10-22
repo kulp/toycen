@@ -114,10 +114,9 @@ end
 
 local function graphvizcb(ud,flags,level,k,v)
     local ptr      = ffi.cast("uintptr_t", ffi.cast("void*", v))
-    local null     = tonumber(ptr) == 0
-    local safeaddr = null and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
+    local isnull   = tonumber(ptr) == 0
+    local safeaddr = isnull and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
 
-    local _ns   = ffi.nsof(v)
     local _name = ffi.tagof(v)
 
     -- once-per-graph stuff
@@ -128,8 +127,7 @@ local function graphvizcb(ud,flags,level,k,v)
             contained = false,
             flags     = flags,
             name      = "top",
-            ns        = _ns,
-            null      = null,
+            null      = isnull,
             type      = _name,
         }
         -- TODO get rid of ud.rec -- we don't use it ?
@@ -147,19 +145,16 @@ local function graphvizcb(ud,flags,level,k,v)
         ud.level = level
     end
 
-    local parent = ud.stack[level]
-    local rec
-
     if AST.fl.is_between(flags) then
+        local parent = ud.stack[level]
         local printable = type(v) == "string" and v or nil
-        rec = {
+        local rec = {
             addr      = safeaddr,
             children  = { },
             contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags),
             flags     = flags,
             name      = k,
-            ns        = _ns,
-            null      = null,
+            null      = isnull,
             parent    = parent,
             printable = printable,
             type      = _name,
