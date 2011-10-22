@@ -56,13 +56,19 @@ static int walk_cb(
 
     struct graphvizdata *ud = userdata;
 
-    int level = ud->level;
-    // TODO not sure this works
-    if (flags & AST_WALK_BEFORE_CHILDREN) {
-        level = ++ud->level;
-    } else if (flags & AST_WALK_AFTER_CHILDREN) {
-        level = --ud->level;
+    if (ud->level == 0) {
+        ud->rec = calloc(1, sizeof *ud->rec);
     }
+
+    if (flags & AST_WALK_BEFORE_CHILDREN) {
+        ud->level++;
+        if (!ud->rec->next) {
+            ud->rec->next = calloc(1, sizeof *ud->rec->next);
+            ud->rec->next->prev = ud->rec;
+        }
+    }
+
+    int level = ud->level;
 
     if (level == 1 && AST_WALK_BEFORE_CHILDREN) {
         ud->top = malloc(sizeof *ud->top);
@@ -78,12 +84,6 @@ static int walk_cb(
         puts("digraph abstract_syntax_tree {\n"
              "    graph [rankdir=LR];\n"
              "    node [shape=none];\n");
-    }
-
-    if (flags & AST_WALK_BEFORE_CHILDREN) {
-        if (!ud->rec->next)
-            ud->rec->next = malloc(sizeof *ud->rec->next);
-        // ud.level = level;
     }
 
     struct nodedata *rec;
@@ -105,19 +105,39 @@ static int walk_cb(
             .type      = NULL, // TODO
         };
 
-        struct nodedata *temp = ud->rec->list;
+        struct nodedata *temp;
+
+        temp = ud->rec->list;
         ud->rec->list = malloc(sizeof *ud->rec->list);
         *ud->rec->list = (struct nodedata){ .list = temp };
+
+        // push onto stack
+        ud->stack->next = malloc(sizeof *ud->stack->next);
+        *ud->stack->next = (struct nodedata){ .prev = ud->stack };
+        ud->stack = ud->stack->next;
+
+        // insert rec into parent's children
+        temp = parent->list;
+        parent->list = malloc(sizeof *parent->list);
+        *parent->list = (struct nodedata){ .list = temp };
     }
 
     if (flags & AST_WALK_AFTER_CHILDREN) {
-        ud->stack = ud->stack->prev;
-        free(ud->stack->next);
+        struct nodedata *temp;
+
+        temp = ud->stack->next;
+        ud->stack->next = ud->stack;
+        free(temp);
         ud->stack->next = NULL;
 
-        ud->rec = ud->rec->prev;
-        free(ud->rec->next);
+        temp = ud->rec->next;
+        ud->rec->next = ud->rec;
+        free(temp);
         ud->rec->next = NULL;
+    }
+
+    if (flags & AST_WALK_AFTER_CHILDREN) {
+        ud->level--;
     }
 
     if (level == 0 && flags && AST_WALK_AFTER_CHILDREN) {
@@ -140,6 +160,7 @@ static int walk_top_graphviz(const struct translation_unit *top)
     int rc = 0;
 
     struct graphvizdata ud = { .level = 0 };
+    //ud.rec = calloc(1, sizeof *ud.rec);
 
     int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN;
     rc = ast_walk((struct node*)top, walk_cb, flags, &ud);
