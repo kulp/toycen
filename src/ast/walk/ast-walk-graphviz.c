@@ -162,7 +162,7 @@ static int walk_top_graphviz(const struct translation_unit *top)
     struct graphvizdata ud = { .level = 0 };
     //ud.rec = calloc(1, sizeof *ud.rec);
 
-    int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN;
+    int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN | AST_WALK_BETWEEN_CHILDREN;
     rc = ast_walk((struct node*)top, walk_cb, flags, &ud);
 
     return rc;

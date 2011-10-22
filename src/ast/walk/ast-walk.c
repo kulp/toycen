@@ -155,11 +155,11 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         s->next = cookie->stack;
         cookie->stack = s;
 
-        result = recurse_any(item, &child, cb, flags_, ops, userdata, cookie);
-
         if (flags_ & AST_WALK_BETWEEN_CHILDREN)
             cbresult = cb((flags_ & ~0x7) | AST_WALK_BETWEEN_CHILDREN, meta,
                     type, thing, userdata, ops, cookie);
+
+        result = recurse_any(item, &child, cb, flags_, ops, userdata, cookie);
 
         s = cookie->stack;
         cookie->stack = s->next;
@@ -167,7 +167,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
     }
 
     if (flags & AST_WALK_AFTER_CHILDREN)
-        cbresult = cb(AST_WALK_AFTER_CHILDREN, meta, type, thing, userdata, ops, cookie);
+        cbresult = cb((flags & ~0x7) | AST_WALK_AFTER_CHILDREN, meta, type, thing, userdata, ops, cookie);
 
     return result;
 }
