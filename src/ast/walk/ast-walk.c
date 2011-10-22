@@ -107,7 +107,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
 
     bool am_priv = meta == META_IS_PRIV;
 
-    const struct node_rec *rec = &(am_priv ? (struct node_rec*)priv_recs : node_recs)[type];
+    const struct node_rec *rec = &(am_priv ? priv_recs : node_recs)[type];
 
     if (flags & AST_WALK_BEFORE_CHILDREN)
         cbresult = cb((flags & ~0x7) | AST_WALK_BEFORE_CHILDREN, meta, type, thing, userdata, ops, cookie);

@@ -88,7 +88,7 @@ static int walk_cb(
 
     switch (meta) {
         case META_IS_PRIV: {
-            const struct priv_rec *rec = &priv_recs[type];
+            const struct node_rec *rec = &priv_recs[type];
             tname = rec->name;
             break;
         }
