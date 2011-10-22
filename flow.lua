@@ -112,12 +112,19 @@ function format_node(ud,flags,node)
         .. ">];"
 end
 
-local function graphvizcb(ud,flags,level,k,v)
+local function graphvizcb(ud,flags,k,v)
     local ptr      = ffi.cast("uintptr_t", ffi.cast("void*", v))
     local isnull   = tonumber(ptr) == 0
     local safeaddr = isnull and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
 
     local _name = ffi.tagof(v)
+
+    if AST.fl.is_before(flags) then
+        ud.level = ud.level + 1
+        if not ud.rec[ud.level] then ud.rec[ud.level] = { } end
+    end
+
+    local level = ud.level
 
     -- once-per-graph stuff
     if level == 1 and AST.fl.is_before(flags) then
@@ -139,11 +146,6 @@ local function graphvizcb(ud,flags,level,k,v)
     end
 
     local indenter = "  "
-
-    if AST.fl.is_before(flags) then
-        if not ud.rec[level] then ud.rec[level] = { } end
-        ud.level = level
-    end
 
     if AST.fl.is_between(flags) then
         local parent = ud.stack[level]
@@ -169,6 +171,7 @@ local function graphvizcb(ud,flags,level,k,v)
         -- clear out junk we don't need any to keep around
         ud.stack[level + 1] = nil
         ud.rec[level + 1] = nil
+        ud.level = level - 1
     end
 
     if level == 1 and AST.fl.is_after(flags) then
@@ -195,7 +198,7 @@ local function errorcb(ud,msg)
 end
 
 local ud = {
-    level = 1,
+    level = 0,
     links = {}, -- connections between nodes, formatted
     nodes = {}, -- top-level nodes, formatted
     rec   = {},

@@ -60,7 +60,7 @@ local function box_child(child)
     return pdata or box(data, "void*")
 end
 
-local function doformat(userdata, flags, callbacks, level, k, v, node, child, parent, item, unwrap)
+local function doformat(userdata, flags, callbacks, k, v, node, child, parent, item, unwrap)
     -- k         is the one -based index of the ordered fields in 'node'
     -- itemindex is the zero-based index corresponding to k, with 'base' discounted
     -- itemindex indexes into the C structures (node_rec.items[])
@@ -75,7 +75,7 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
 
     -- print .idx of choice
     if is_anonymous(ffi.tagof(node)) and k == 1 then
-        callbacks.walk(userdata, flags, level, v, tostring(child))
+        callbacks.walk(userdata, flags, v, tostring(child))
         done = true
     elseif item or (not is_anonymous(tag) and itemindex >= 0) then -- when is itemindex < 0 ?
         if not item then
@@ -94,14 +94,14 @@ local function doformat(userdata, flags, callbacks, level, k, v, node, child, pa
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, temp)
             if result >= 0 then
                 -- subtract one from *size to not print trailing '\0'
-                callbacks.walk(userdata, flags, level, v, ffi.string(buf, unbox(psize) - 1))
+                callbacks.walk(userdata, flags, v, ffi.string(buf, unbox(psize) - 1))
                 done = true
             end
         end
     end
 
     if not done then
-        callbacks.walk(userdata, flags, level, v, child)
+        callbacks.walk(userdata, flags, v, child)
     end
 end
 
@@ -110,15 +110,14 @@ end
 -- with a tag, so it can be looked up in libast.node_recs
 -- the "pitem" element is not of the same type as "parent" : parent is a
 -- cdata node, pitem is a node_rec element
-function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
+function AST.walk(node, userdata, callbacks, flags, parent, pitem)
     if type(node) ~= "cdata" or not ffi.nsof(node) or ffi.isnull(node) then return nil end
-    if not level then level = 1 end -- 1-based for array indexing
     if not flags then flags = 0 end
     -- TODO don't change incoming callbacks table
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
 
-    callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), level, nil, node)
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), nil, node)
 
     local fields = ffi.fields(node)
     local myns   = ffi.nsof(node)
@@ -138,8 +137,8 @@ function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
             -- basic elements inside a choice act funny
             -- TODO make this work for .idx in choices too
             local basic = item.meta == tonumber(ffi.cast("enum meta_type", "META_IS_BASIC"))
-            doformat(userdata, cflags, callbacks, level, 0, fields[parent.idx], node, child, node, item, basic)
-            AST.walk(child, userdata, callbacks, flags, parent, level + 1, pitem)
+            doformat(userdata, cflags, callbacks, 0, fields[parent.idx], node, child, node, item, basic)
+            AST.walk(child, userdata, callbacks, flags, parent, pitem)
         end
 
     elseif myns == "struct" then
@@ -168,15 +167,15 @@ function AST.walk(node, userdata, callbacks, flags, parent, level, pitem)
                 pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
             end
 
-            doformat(userdata, cflags, callbacks, level, k, v, node, child, parent, nil, is_idx)
-            AST.walk(child, userdata, callbacks, flags, node, level + 1, pitem)
+            doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
+            AST.walk(child, userdata, callbacks, flags, node, pitem)
         end
 
     else
         callbacks.error(userdata,"Unsupported namespace:" .. myns)
     end
 
-    callbacks.walk(userdata, bit.bor(flags, AST.WALK_AFTER_CHILDREN), level, nil, node)
+    callbacks.walk(userdata, bit.bor(flags, AST.WALK_AFTER_CHILDREN), nil, node)
 
 end
 
