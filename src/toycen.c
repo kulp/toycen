@@ -68,13 +68,13 @@ int main(int argc, char *argv[])
 
     DEBUG_FILE = stdout;
 
-    #if ARTIFICIAL_AST
-        get_ast = get_wrapped_ast;
-        teardown_ast = teardown_wrapped_ast;
-    #else
-        get_ast = get_parsed_ast;
-        teardown_ast = teardown_parsed_ast;
-    #endif
+#if ARTIFICIAL_AST
+    get_ast = get_wrapped_ast;
+    teardown_ast = teardown_wrapped_ast;
+#else
+    get_ast = get_parsed_ast;
+    teardown_ast = teardown_parsed_ast;
+#endif
 
     parser_state_t ps;
 

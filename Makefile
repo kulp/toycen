@@ -72,7 +72,7 @@ all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 ast-walk-lua_graphviz luash: LDLIBS += -lluajit -lreadline
 $(WALKBINS) : ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
                            lexer.o hash_table.o ast-ids.o ast-walk.o \
-                           ast-formatters.o libljffifields.so
+                           ast-formatters.o | libljffifields.so
 	$(LINK.c) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 toycen.o: CFLAGS += -Wno-unused-parameter
@@ -144,9 +144,10 @@ libljffifields.so: CPPFLAGS += -std=gnu99
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
 ifeq ($(shell uname -s),Darwin)
-wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
+ast-walk-lua% wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 endif
-wrap_ast_% toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
+
+ast-walk-lua% wrap_ast_% toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
 endif
 
 ifeq ($(BUILD_PP),1)
