@@ -121,21 +121,20 @@ local function graphvizcb(ud,flags,k,v)
 
     local _name = ffi.tagof(v)
 
-    print("level=",ud.level,"flags=",flags)
-
-    local rec = { }
+    --print("level=",ud.level,"flags=",flags)
 
     if AST.fl.is_before(flags) then
+        ud.parent = { parent = ud.parent, children = { } }
         ud.level = ud.level + 1
         --if not ud.rec[ud.level] then ud.rec[ud.level] = { { children = { } } } end
-        if not ud.rec[ud.level] then
+        --if not ud.rec[ud.level] then
             --rec = { children = { } }
-            ud.rec[ud.level] = { rec };
-        end
-        local up = ud.rec[ud.level - 1];
-        if up and #up > 0 then
-            up[#up].children = { rec }
-        end
+            --ud.rec[ud.level] = { rec };
+        --end
+        --local up = ud.rec[ud.level - 1];
+        --if up and #up > 0 then
+        --    up[#up].children = { rec }
+        --end
         --if not ud.stack[ud.level] then ud.stack[ud.level] = { children = { } } end
     end
 
@@ -153,7 +152,8 @@ local function graphvizcb(ud,flags,k,v)
             type      = _name,
         }
 
-        ud.rec[0] = { ud.top } -- XXX why
+        --ud.rec[0] = { ud.top } -- XXX why
+        ud.parent = ud.top
         --ud.rec[1] = ud.top.children
         --ud.rec[1] = { ud.top }
         --ud.rec[2] = ud.top.children
@@ -166,28 +166,33 @@ local function graphvizcb(ud,flags,k,v)
     local indenter = "  "
 
     if AST.fl.is_between(flags) then
+        if ud.parent and ud.parent.parent then
+            ud.parent = ud.parent.parent
+        end
         --local parent = ud.stack[level]
-        local up = ud.rec[level - 1];
         --local up = ud.rec[level - 1] or ud.rec[level - 2];
-        local parent = up[#up]
-        print("level=",level,"parent=",parent)
+        --print("level=",level,"parent=",ud.parent)
         local printable = type(v) == "string" and v or nil
 
-        rec.addr      = safeaddr
-        rec.children  = { }
-        rec.contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags)
-        rec.flags     = flags
-        rec.name      = k
-        rec.null      = isnull
-        rec.parent    = parent
-        rec.printable = printable
-        rec.type      = _name
+        local rec = {
+            addr      = safeaddr,
+            children  = { },
+            contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags),
+            flags     = flags,
+            name      = k,
+            null      = isnull,
+            parent    = ud.parent,
+            printable = printable,
+            type      = _name,
+        }
 
         --table.insert(ud.rec[level], rec)
         -- ud.stack[level + 1] = ud.rec[level][-1]
         --ud.stack[level + 1] = rec
         --print("thelevel=",level)
-        table.insert(parent.children,rec)
+        table.insert(ud.parent.children,rec)
+
+        ud.parent = rec
     end
 
     if AST.fl.is_after(flags) then
@@ -195,6 +200,10 @@ local function graphvizcb(ud,flags,k,v)
         --ud.stack[level + 1] = nil
         --ud.rec[level + 1] = nil
         ud.level = level - 1
+        --if ud.parent then
+        if ud.parent and ud.parent.parent then
+            ud.parent = ud.parent.parent
+        end
     end
 
     if level == 1 and AST.fl.is_after(flags) then
@@ -202,8 +211,8 @@ local function graphvizcb(ud,flags,k,v)
         ud.level = nil
         --ud.stack = nil
         --ud.rec = nil
-        print(DataDumper(ud))
-        --print(format_node(ud,flags,ud.top))
+        --print(DataDumper(ud))
+        print(format_node(ud,flags,ud.top))
         for i,n in ipairs(ud.nodes) do print(n) end
         for i,n in ipairs(ud.links) do print(n) end
         print "}"
@@ -223,11 +232,14 @@ end
 
 local ud = {
     level = 0,
+    --top   = {},
     links = {}, -- connections between nodes, formatted
     nodes = {}, -- top-level nodes, formatted
-    rec   = {},
+    --rec   = {},
     --stack = { { children = {} } },
 }
+
+--ud.parent = ud.top
 
 AST.walk(ast,ud,{ walk = graphvizcb, error = errorcb })
 
