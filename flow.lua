@@ -2,6 +2,8 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
+require "3rdparty/dumper"
+
 local function prettify(what)
     if (should_prettify) then
         require "htmltidy"
@@ -119,9 +121,22 @@ local function graphvizcb(ud,flags,k,v)
 
     local _name = ffi.tagof(v)
 
+    print("level=",ud.level,"flags=",flags)
+
+    local rec = { }
+
     if AST.fl.is_before(flags) then
         ud.level = ud.level + 1
-        if not ud.rec[ud.level] then ud.rec[ud.level] = { } end
+        --if not ud.rec[ud.level] then ud.rec[ud.level] = { { children = { } } } end
+        if not ud.rec[ud.level] then
+            --rec = { children = { } }
+            ud.rec[ud.level] = { rec };
+        end
+        local up = ud.rec[ud.level - 1];
+        if up and #up > 0 then
+            up[#up].children = { rec }
+        end
+        --if not ud.stack[ud.level] then ud.stack[ud.level] = { children = { } } end
     end
 
     local level = ud.level
@@ -137,49 +152,58 @@ local function graphvizcb(ud,flags,k,v)
             null      = isnull,
             type      = _name,
         }
-        -- TODO get rid of ud.rec -- we don't use it ?
-        -- we seem not to read from ud.rec, but removing it breaks things
-        ud.rec[1] = ud.top.children
+
+        ud.rec[0] = { ud.top } -- XXX why
+        --ud.rec[1] = ud.top.children
+        --ud.rec[1] = { ud.top }
+        --ud.rec[2] = ud.top.children
+        --table.insert(ud.rec[level], ud.top)
         print("digraph abstract_syntax_tree {\n"
-           .. "graph [rankdir=LR];\n"
-           .. "node [shape=none];\n")
+           .. "    graph [rankdir=LR];\n"
+           .. "    node [shape=none];\n")
     end
 
     local indenter = "  "
 
     if AST.fl.is_between(flags) then
-        local parent = ud.stack[level]
+        --local parent = ud.stack[level]
+        local up = ud.rec[level - 1];
+        --local up = ud.rec[level - 1] or ud.rec[level - 2];
+        local parent = up[#up]
+        print("level=",level,"parent=",parent)
         local printable = type(v) == "string" and v or nil
-        local rec = {
-            addr      = safeaddr,
-            children  = { },
-            contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags),
-            flags     = flags,
-            name      = k,
-            null      = isnull,
-            parent    = parent,
-            printable = printable,
-            type      = _name,
-        }
 
-        table.insert(ud.rec[level], rec)
-        ud.stack[level + 1] = rec
+        rec.addr      = safeaddr
+        rec.children  = { }
+        rec.contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags)
+        rec.flags     = flags
+        rec.name      = k
+        rec.null      = isnull
+        rec.parent    = parent
+        rec.printable = printable
+        rec.type      = _name
+
+        --table.insert(ud.rec[level], rec)
+        -- ud.stack[level + 1] = ud.rec[level][-1]
+        --ud.stack[level + 1] = rec
+        --print("thelevel=",level)
         table.insert(parent.children,rec)
     end
 
     if AST.fl.is_after(flags) then
         -- clear out junk we don't need any to keep around
-        ud.stack[level + 1] = nil
-        ud.rec[level + 1] = nil
+        --ud.stack[level + 1] = nil
+        --ud.rec[level + 1] = nil
         ud.level = level - 1
     end
 
     if level == 1 and AST.fl.is_after(flags) then
         -- clear out junk we don't need any to keep around
         ud.level = nil
-        ud.stack = nil
-        ud.rec = nil
-        print(format_node(ud,flags,ud.top))
+        --ud.stack = nil
+        --ud.rec = nil
+        print(DataDumper(ud))
+        --print(format_node(ud,flags,ud.top))
         for i,n in ipairs(ud.nodes) do print(n) end
         for i,n in ipairs(ud.links) do print(n) end
         print "}"
@@ -202,7 +226,7 @@ local ud = {
     links = {}, -- connections between nodes, formatted
     nodes = {}, -- top-level nodes, formatted
     rec   = {},
-    stack = { { children = {} } },
+    --stack = { { children = {} } },
 }
 
 AST.walk(ast,ud,{ walk = graphvizcb, error = errorcb })

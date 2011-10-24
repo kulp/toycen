@@ -56,6 +56,8 @@ static int walk_cb(
 
     struct graphvizdata *ud = userdata;
 
+    printf("level=\t%d\tflags=\t%d\n",ud->level,flags & ~32);
+
     if (ud->level == 0) {
         ud->rec = calloc(1, sizeof *ud->rec);
     }

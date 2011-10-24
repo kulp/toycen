@@ -117,6 +117,7 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
 
+    -- TODO & ~7 (and elsewhere)
     callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), nil, node)
 
     local fields = ffi.fields(node)
@@ -146,12 +147,13 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
         for k, v in ipairs(fields) do
             local flags = flags
             local child = node[v]
+            local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
+
             if k == 1 and type(child) == "cdata" then
                 flags = bit.bor(flags, AST.WALK_IS_BASE)
             elseif k ~= 1 then
                 flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
             end
-            local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
 
             local pitem = pitem -- shadow argument for local changes per child
             -- only upgrade parent to pitem when we are dealing with a named
@@ -167,8 +169,8 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
                 pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
             end
 
-            doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
             AST.walk(child, userdata, callbacks, flags, node, pitem)
+            doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
         end
 
     else
