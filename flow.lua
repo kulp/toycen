@@ -121,28 +121,16 @@ local function graphvizcb(ud,flags,k,v)
 
     local _name = ffi.tagof(v)
 
-    --print("level=",ud.level,"flags=",flags)
+    if debug then print("level=",ud.level,"flags=",flags) end
 
     if AST.fl.is_before(flags) then
         ud.parent = { parent = ud.parent, children = { } }
         ud.level = ud.level + 1
-        --if not ud.rec[ud.level] then ud.rec[ud.level] = { { children = { } } } end
-        --if not ud.rec[ud.level] then
-            --rec = { children = { } }
-            --ud.rec[ud.level] = { rec };
-        --end
-        --local up = ud.rec[ud.level - 1];
-        --if up and #up > 0 then
-        --    up[#up].children = { rec }
-        --end
-        --if not ud.stack[ud.level] then ud.stack[ud.level] = { children = { } } end
     end
 
-    local level = ud.level
-
     -- once-per-graph stuff
-    if level == 1 and AST.fl.is_before(flags) then
-        ud.top = {
+    if not ud.parent and AST.fl.is_before(flags) then
+        ud.parent = {
             addr      = safeaddr,
             children  = { },
             contained = false,
@@ -152,26 +140,13 @@ local function graphvizcb(ud,flags,k,v)
             type      = _name,
         }
 
-        --ud.rec[0] = { ud.top } -- XXX why
-        ud.parent = ud.top
-        --ud.rec[1] = ud.top.children
-        --ud.rec[1] = { ud.top }
-        --ud.rec[2] = ud.top.children
-        --table.insert(ud.rec[level], ud.top)
         print("digraph abstract_syntax_tree {\n"
            .. "    graph [rankdir=LR];\n"
            .. "    node [shape=none];\n")
     end
 
-    local indenter = "  "
-
     if AST.fl.is_between(flags) then
-        if ud.parent and ud.parent.parent then
-            ud.parent = ud.parent.parent
-        end
-        --local parent = ud.stack[level]
-        --local up = ud.rec[level - 1] or ud.rec[level - 2];
-        --print("level=",level,"parent=",ud.parent)
+        if debug then print("level=",ud.level,"parent=",ud.parent) end
         local printable = type(v) == "string" and v or nil
 
         local rec = {
@@ -186,33 +161,22 @@ local function graphvizcb(ud,flags,k,v)
             type      = _name,
         }
 
-        --table.insert(ud.rec[level], rec)
-        -- ud.stack[level + 1] = ud.rec[level][-1]
-        --ud.stack[level + 1] = rec
-        --print("thelevel=",level)
         table.insert(ud.parent.children,rec)
 
+        -- XXX this is wrong unless we are actually descending
         ud.parent = rec
     end
 
     if AST.fl.is_after(flags) then
-        -- clear out junk we don't need any to keep around
-        --ud.stack[level + 1] = nil
-        --ud.rec[level + 1] = nil
-        ud.level = level - 1
-        --if ud.parent then
-        if ud.parent and ud.parent.parent then
-            ud.parent = ud.parent.parent
-        end
+        ud.level = ud.level - 1
+        ud.parent = ud.parent.parent
     end
 
-    if level == 1 and AST.fl.is_after(flags) then
-        -- clear out junk we don't need any to keep around
-        ud.level = nil
-        --ud.stack = nil
-        --ud.rec = nil
-        --print(DataDumper(ud))
-        print(format_node(ud,flags,ud.top))
+    -- TODO "if not ud.parent.parent" ?
+    if ud.level == 0 and AST.fl.is_after(flags) then
+        --print("ud.parent.parent=",ud.parent.parent)
+        if debug then print(DataDumper(ud)) end
+        print(format_node(ud,flags,ud.parent))
         for i,n in ipairs(ud.nodes) do print(n) end
         for i,n in ipairs(ud.links) do print(n) end
         print "}"
