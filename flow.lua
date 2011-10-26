@@ -124,25 +124,33 @@ local function graphvizcb(ud,flags,k,v)
     if debug then print("level=",ud.level,"flags=",flags) end
 
     if AST.fl.is_before(flags) then
-        ud.parent = { parent = ud.parent, children = { } }
         ud.level = ud.level + 1
-    end
 
-    -- once-per-graph stuff
-    if not ud.parent and AST.fl.is_before(flags) then
-        ud.parent = {
-            addr      = safeaddr,
-            children  = { },
-            contained = false,
-            flags     = flags,
-            name      = "top",
-            null      = isnull,
-            type      = _name,
-        }
+        if not ud.parent then
+            -- once-per-graph stuff
+            ud.parent = {
+                addr      = safeaddr,
+                children  = { },
+                contained = false,
+                flags     = flags,
+                name      = "top",
+                null      = isnull,
+                type      = _name,
+            }
 
-        print("digraph abstract_syntax_tree {\n"
-           .. "    graph [rankdir=LR];\n"
-           .. "    node [shape=none];\n")
+            print("digraph abstract_syntax_tree {\n"
+               .. "    graph [rankdir=LR];\n"
+               .. "    node [shape=none];\n")
+        else
+            local up = ud.parent.children
+            if up and #up > 0 then
+                if debug then print("FOO") end
+                ud.parent = up[#up]
+            else
+                -- XXX this node never shows up in the dump, but it changes behaviour
+                --ud.parent = { parent = ud.parent, children = { } }
+            end
+        end
     end
 
     if AST.fl.is_between(flags) then
@@ -164,22 +172,23 @@ local function graphvizcb(ud,flags,k,v)
         table.insert(ud.parent.children,rec)
 
         -- XXX this is wrong unless we are actually descending
-        ud.parent = rec
+        --ud.parent = rec
     end
 
     if AST.fl.is_after(flags) then
         ud.level = ud.level - 1
-        ud.parent = ud.parent.parent
-    end
-
-    -- TODO "if not ud.parent.parent" ?
-    if ud.level == 0 and AST.fl.is_after(flags) then
-        --print("ud.parent.parent=",ud.parent.parent)
-        if debug then print(DataDumper(ud)) end
-        print(format_node(ud,flags,ud.parent))
-        for i,n in ipairs(ud.nodes) do print(n) end
-        for i,n in ipairs(ud.links) do print(n) end
-        print "}"
+        if ud.parent.parent then
+            ud.parent = ud.parent.parent
+        end
+        -- TODO "if not ud.parent.parent" ?
+        if ud.level == 0 then
+            --print("ud.parent.parent=",ud.parent.parent)
+            if debug then print(DataDumper(ud)) end
+            print(format_node(ud,flags,ud.parent))
+            for i,n in ipairs(ud.nodes) do print(n) end
+            for i,n in ipairs(ud.links) do print(n) end
+            print "}"
+        end
     end
 
 end
