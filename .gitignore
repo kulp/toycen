@@ -39,3 +39,4 @@ libljffifields.so
 ast-one.h
 libluajit.so
 *.ps
+tmp/
