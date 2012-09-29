@@ -152,7 +152,7 @@ static int walk_cb(
 
 static int c_top_op(const struct translation_unit *top)
 {
-    int result;
+    int result = 0;
 
     struct mydata data = { .indent = 0, .last_idx = 0 };
     int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN;

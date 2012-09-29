@@ -15,6 +15,8 @@ static int walk_cb(
         walkdata cookie
     )
 {
+    (void)(userdata,ops,cookie);
+
     switch (meta) {
         case META_IS_NODE: {
             const struct node_rec *rec = &node_recs[type];

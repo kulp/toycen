@@ -50,6 +50,8 @@ static int walk_cb(
 {
     int result = 0;
 
+    (void)(meta,type,data,ops,cookie);
+
     // XXX
     const char *k = NULL;
     void *v = NULL;
@@ -100,12 +102,12 @@ static int walk_cb(
             .children  = NULL,
             .contained = ((flags & AST_WALK_IS_BASE) || !(flags & AST_WALK_HAS_ALLOCATION)),
             .flags     = flags,
-            .name      = k,
             .isnull    = !v,
             .parent    = parent,
             .printable = printable,
             .type      = NULL, // TODO
         };
+        strncpy(rec->name, k, sizeof rec->name);
 
         struct nodedata *temp;
 
@@ -142,7 +144,7 @@ static int walk_cb(
         ud->level--;
     }
 
-    if (level == 0 && flags && AST_WALK_AFTER_CHILDREN) {
+    if (level == 0 && (flags & AST_WALK_AFTER_CHILDREN)) {
         free(ud->stack);
         ud->stack = NULL;
 

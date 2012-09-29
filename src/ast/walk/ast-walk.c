@@ -97,9 +97,9 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
 }
 
 // combine common parts of recurse_priv() and recurse_node()
-static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
-        *thing, ast_walk_cb cb, int flags, struct ast_walk_ops *ops,
-        void *userdata, struct ast_walk_data *cookie)
+static int recurse_priv_or_node(enum meta_type meta, int type, void *thing,
+        ast_walk_cb cb, int flags, struct ast_walk_ops *ops, void *userdata,
+        struct ast_walk_data *cookie)
 {
     // TODO move parent-handling based on flags
     // TODO do something with results
