@@ -8,7 +8,7 @@ local bit = require "bit"
 require "ffi_introspection"
 require "utils"
 
-AST = { flag_names = { } }
+AST = { walkers = { }, flag_names = { } }
 
 include_h("ast-one.h")
 
@@ -112,6 +112,65 @@ local function should_walk(node)
     return n == "struct" or n == "union"
 end
 
+function AST.walkers.struct(node, userdata, callbacks, flags, parent, pitem)
+
+    local fields = ffi.fields(node)
+    for k, v in ipairs(fields) do
+        local flags = flags
+        local child = node[v]
+        local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
+
+        if k == 1 and type(child) == "cdata" then
+            flags = bit.bor(flags, AST.WALK_IS_BASE)
+        elseif k ~= 1 then
+            flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
+        end
+
+        local pitem = pitem -- shadow argument for local changes per child
+        -- only upgrade parent to pitem when we are dealing with a named
+        -- struct
+        local is_idx = false
+        if is_anonymous(ffi.tagof(node)) then
+            is_idx = k == 1
+        else
+            local itemindex = ffi.istype("struct node", node) and k - 1 or k - 2
+            -- note that pitem is not always meaningful ; it might be
+            -- garbage, but it's only accessed (in the union branch above)
+            -- if it is meaningful
+            pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
+        end
+
+        if should_walk(child) then
+            if should_debug then print(serpent.dump(child)) end
+            AST.walk(child, userdata, callbacks, flags, node, pitem)
+        end
+        doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
+    end
+
+end
+
+function AST.walkers.union(node, userdata, callbacks, flags, parent, pitem)
+
+    local fields = ffi.fields(node)
+    if parent.idx > 0 then
+        if parent.idx >= #fields then
+            callbacks.error(userdata,"bad index " .. parent.idx)
+            return nil
+        end
+        local child = node[fields[parent.idx]]
+        local item = pitem[parent.idx - 1] -- switch to C (zero-based) indexing
+        local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
+        if item.is_pointer then cflags = bit.bor(cflags, AST.WALK_HAS_ALLOCATION) end
+        -- XXX hack
+        -- basic elements inside a choice act funny
+        -- TODO make this work for .idx in choices too
+        local basic = item.meta == tonumber(ffi.cast("enum meta_type", "META_IS_BASIC"))
+        doformat(userdata, cflags, callbacks, 0, fields[parent.idx], node, child, node, item, basic)
+        AST.walk(child, userdata, callbacks, flags, parent, pitem)
+    end
+
+end
+
 -- the "pitem" is necessary to support / work around the anonymous unions
 -- and structs that make up CHOICE elements ; the pitem will be a struct
 -- with a tag, so it can be looked up in libast.node_recs
@@ -129,61 +188,8 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
     -- TODO & ~7 (and elsewhere)
     callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), nil, node)
 
-    if myns == "union" then
-
-        local fields = ffi.fields(node)
-        if parent.idx > 0 then
-            if parent.idx >= #fields then
-                callbacks.error(userdata,"bad index " .. parent.idx)
-                return nil
-            end
-            local child = node[fields[parent.idx]]
-            local item = pitem[parent.idx - 1] -- switch to C (zero-based) indexing
-            local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
-            if item.is_pointer then cflags = bit.bor(cflags, AST.WALK_HAS_ALLOCATION) end
-            -- XXX hack
-            -- basic elements inside a choice act funny
-            -- TODO make this work for .idx in choices too
-            local basic = item.meta == tonumber(ffi.cast("enum meta_type", "META_IS_BASIC"))
-            doformat(userdata, cflags, callbacks, 0, fields[parent.idx], node, child, node, item, basic)
-            AST.walk(child, userdata, callbacks, flags, parent, pitem)
-        end
-
-    elseif myns == "struct" then
-
-        local fields = ffi.fields(node)
-        for k, v in ipairs(fields) do
-            local flags = flags
-            local child = node[v]
-            local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
-
-            if k == 1 and type(child) == "cdata" then
-                flags = bit.bor(flags, AST.WALK_IS_BASE)
-            elseif k ~= 1 then
-                flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
-            end
-
-            local pitem = pitem -- shadow argument for local changes per child
-            -- only upgrade parent to pitem when we are dealing with a named
-            -- struct
-            local is_idx = false
-            if is_anonymous(ffi.tagof(node)) then
-                is_idx = k == 1
-            else
-                local itemindex = ffi.istype("struct node", node) and k - 1 or k - 2
-                -- note that pitem is not always meaningful ; it might be
-                -- garbage, but it's only accessed (in the union branch above)
-                -- if it is meaningful
-                pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
-            end
-
-            if should_walk(child) then
-                if should_debug then print(serpent.dump(child)) end
-                AST.walk(child, userdata, callbacks, flags, node, pitem)
-            end
-            doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
-        end
-
+    if AST.walkers[myns] then
+        AST.walkers[myns](node, userdata, callbacks, flags, parent, pitem)
     else
         --XXX
         callbacks.error(userdata,"Unsupported namespace:" .. myns)
