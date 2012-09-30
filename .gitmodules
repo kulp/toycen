@@ -7,3 +7,6 @@
 [submodule "3rdparty/luajit2"]
 	path = 3rdparty/luajit2
 	url = https://github.com/LuaDist/luajit.git
+[submodule "3rdparty/serpent"]
+	path = 3rdparty/serpent
+	url = https://github.com/pkulchenko/serpent.git
