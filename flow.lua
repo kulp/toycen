@@ -2,7 +2,8 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
-should_debug = nil
+should_debug = os.getenv("TOYCEN_LUA_DEBUG")
+local should_prettify = nil
 
 function dsay(what)
     if should_debug then print(what) end
@@ -77,6 +78,7 @@ local function _format_node_inner(ud,flags,me)
     end
 
     for j,ye in ipairs(me.children) do
+        --dsay("j = " .. j .. " ; ye = " .. serpent.dump(ye))
         -- used to use me.type tout court as the namespace for the port
         -- name, but me.type can be a generated value for anonymous
         -- aggregates. we really want to have the namespace be the last
@@ -126,6 +128,9 @@ local function graphvizcb(ud,flags,k,v)
     local safeaddr = isnull and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
 
     local _name = ffi.tagof(v)
+    --dsay("type(v) = " .. type(v))
+    --if _name then dsay("tag = " .. _name) end
+    dsay("k = " .. tostring(k) .. " ; v = " .. tostring(v))
 
     if should_debug then print("level=",ud.level,"flags=",flags) end
 
@@ -150,7 +155,6 @@ local function graphvizcb(ud,flags,k,v)
         else
             local up = ud.parent.children
             if up and #up > 0 then
-                if should_debug then print("FOO") end
                 ud.parent = up[#up]
             else
                 -- XXX this node never shows up in the dump, but it changes behaviour
@@ -160,8 +164,9 @@ local function graphvizcb(ud,flags,k,v)
     end
 
     if AST.fl.is_between(flags) then
-        if should_debug then print("level=",ud.level,"parent=",ud.parent) end
+        dsay("level=",ud.level,"parent=",ud.parent)
         local printable = type(v) == "string" and v or nil
+        dsay("printable = " .. (printable and "true" or "false"))
 
         local rec = {
             addr      = safeaddr,
@@ -189,7 +194,6 @@ local function graphvizcb(ud,flags,k,v)
         -- TODO "if not ud.parent.parent" ?
         if ud.level == 0 then
             --print("ud.parent.parent=",ud.parent.parent)
-            if should_debug then print(serpent.dump(ud.links)) end
             print(format_node(ud,flags,ud.parent))
             for i,n in ipairs(ud.nodes) do print(n) end
             for i,n in ipairs(ud.links) do print(n) end

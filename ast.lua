@@ -39,7 +39,7 @@ local function decode_node_item(node_item)
         -- We don't decode choices because those are handled otherwise
         [tonumber(ffi.cast("enum meta_type", "META_IS_BASIC" ))] = node_item.c.basic,
     }
-    return table[node_item.meta]
+    return table[tonumber(node_item.meta)]
 end
 
 -- XXX hokey priv-detection (trailing underscore ? is this official ?)
@@ -74,6 +74,13 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
 
     local done
     local tag = ffi.tagof(node)
+    dsay("node = " .. tostring(node))
+    dsay("k = " .. tostring(k))
+    dsay("v = " .. tostring(v))
+    dsay("child = " .. tostring(child))
+    dsay("item = " .. tostring(item))
+    dsay("itemindex = " .. tostring(itemindex))
+    dsay("tag = " .. tostring(tag))
 
     -- print .idx of choice
     if is_anonymous(ffi.tagof(node)) and k == 1 then
@@ -81,9 +88,13 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
         done = true
     elseif item or (not is_anonymous(tag) and itemindex >= 0) then -- when is itemindex < 0 ?
         if not item then
+            dsay("rec = " .. tostring(rec_from_tag(tag).type))
             item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
+            dsay("ITEM.meta = " .. tostring(item.meta))
         end
         local dc = decode_node_item(item)
+        dsay("item = " .. tostring(item))
+        dsay("dc = " .. tostring(dc))
         if item.is_pointer then flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION) end
         if not ffi.isnull(dc) then
             local size  = 128
@@ -92,8 +103,12 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
 
             local temp
             -- XXX explicit box type is not general enough FIXME
+            dsay("dc.type = " .. tonumber(dc.type))
+            dsay("item.meta = " .. tonumber(item.meta))
+            dsay("child = " .. tostring(child))
             if unwrap then temp = box(child, "int") else temp = box_child(child) end
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, temp)
+            dsay("fmt_call = " .. result)
             if result >= 0 then
                 -- subtract one from *size to not print trailing '\0'
                 callbacks.walk(userdata, flags, v, ffi.string(buf, unbox(psize) - 1))
