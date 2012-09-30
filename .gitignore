@@ -40,3 +40,4 @@ ast-one.h
 libluajit.so
 *.ps
 tmp/
+ast-walk-lua_graphviz
