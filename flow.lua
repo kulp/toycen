@@ -2,7 +2,7 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
-require "3rdparty/dumper"
+local serpent = require "3rdparty/serpent/src/serpent"
 
 local function prettify(what)
     if (should_prettify) then
@@ -115,13 +115,13 @@ function format_node(ud,flags,node)
 end
 
 local function graphvizcb(ud,flags,k,v)
-    local ptr      = ffi.cast("uintptr_t", ffi.cast("void*", v))
+    local ptr      = type(v) == "cdata" and ffi.cast("uintptr_t", ffi.cast("void*", v))
     local isnull   = tonumber(ptr) == 0
     local safeaddr = isnull and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
 
     local _name = ffi.tagof(v)
 
-    if debug then print("level=",ud.level,"flags=",flags) end
+    if should_debug then print("level=",ud.level,"flags=",flags) end
 
     if AST.fl.is_before(flags) then
         ud.level = ud.level + 1
@@ -144,7 +144,7 @@ local function graphvizcb(ud,flags,k,v)
         else
             local up = ud.parent.children
             if up and #up > 0 then
-                if debug then print("FOO") end
+                if should_debug then print("FOO") end
                 ud.parent = up[#up]
             else
                 -- XXX this node never shows up in the dump, but it changes behaviour
@@ -154,7 +154,7 @@ local function graphvizcb(ud,flags,k,v)
     end
 
     if AST.fl.is_between(flags) then
-        if debug then print("level=",ud.level,"parent=",ud.parent) end
+        if should_debug then print("level=",ud.level,"parent=",ud.parent) end
         local printable = type(v) == "string" and v or nil
 
         local rec = {
@@ -183,7 +183,7 @@ local function graphvizcb(ud,flags,k,v)
         -- TODO "if not ud.parent.parent" ?
         if ud.level == 0 then
             --print("ud.parent.parent=",ud.parent.parent)
-            if debug then print(DataDumper(ud)) end
+            if should_debug then print(serpent.dump(ud)) end
             print(format_node(ud,flags,ud.parent))
             for i,n in ipairs(ud.nodes) do print(n) end
             for i,n in ipairs(ud.links) do print(n) end
@@ -199,7 +199,7 @@ local function errorcb(ud,msg)
 
     print(msg)
     -- TODO print "." vs. "->" correctly ("." is good enough for GDB) ?
-    print("level is " .. ud.level .. ", path is top." .. table.concat(ud.path,"."))
+    --print("level is " .. ud.level .. ", path is top." .. table.concat(ud.path,"."))
     ffi.C.abort()
 end
 

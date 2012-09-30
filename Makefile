@@ -8,6 +8,7 @@ endif
 
 ifneq ($(NDEBUG),1)
 CFLAGS += -g
+LDFLAGS += -g
 endif
 
 ifeq ($(SAVE_TEMPS),1)

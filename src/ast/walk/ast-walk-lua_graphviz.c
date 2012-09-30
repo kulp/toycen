@@ -47,6 +47,7 @@ static int lua_top_op(const struct translation_unit *top)
     lua_pcall(L, 1, 1, 0);
     lua_setglobal(L, "ast");
 
+    luaL_dostring(L, "jit.off()"); // XXX failing with JIT on
     mydo(L,"flow.lua",result);
 
     while (shouldread && (str = readline(prompt))) {

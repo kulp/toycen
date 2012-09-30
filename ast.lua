@@ -1,6 +1,8 @@
 -- AST-specific functions / methods / setup goes here
 --module "AST"
 
+local serpent = require "3rdparty/serpent/src/serpent"
+
 local ffi = require "ffi"
 local bit = require "bit"
 require "ffi_introspection"
@@ -105,6 +107,11 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
     end
 end
 
+local function should_walk(node)
+    local n = ffi.nsof(node)
+    return n == "struct" or n == "union"
+end
+
 -- the "pitem" is necessary to support / work around the anonymous unions
 -- and structs that make up CHOICE elements ; the pitem will be a struct
 -- with a tag, so it can be looked up in libast.node_recs
@@ -117,14 +124,14 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
 
+    local myns = ffi.nsof(node)
+
     -- TODO & ~7 (and elsewhere)
     callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), nil, node)
 
-    local fields = ffi.fields(node)
-    local myns   = ffi.nsof(node)
-
     if myns == "union" then
 
+        local fields = ffi.fields(node)
         if parent.idx > 0 then
             if parent.idx >= #fields then
                 callbacks.error(userdata,"bad index " .. parent.idx)
@@ -144,6 +151,7 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
 
     elseif myns == "struct" then
 
+        local fields = ffi.fields(node)
         for k, v in ipairs(fields) do
             local flags = flags
             local child = node[v]
@@ -169,11 +177,15 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
                 pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
             end
 
-            AST.walk(child, userdata, callbacks, flags, node, pitem)
+            if should_walk(child) then
+                if should_debug then print(serpent.dump(child)) end
+                AST.walk(child, userdata, callbacks, flags, node, pitem)
+            end
             doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
         end
 
     else
+        --XXX
         callbacks.error(userdata,"Unsupported namespace:" .. myns)
     end
 
