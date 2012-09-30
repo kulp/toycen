@@ -2,6 +2,12 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
+should_debug = nil
+
+function dsay(what)
+    if should_debug then print(what) end
+end
+
 local serpent = require "3rdparty/serpent/src/serpent"
 
 local function prettify(what)
@@ -183,7 +189,7 @@ local function graphvizcb(ud,flags,k,v)
         -- TODO "if not ud.parent.parent" ?
         if ud.level == 0 then
             --print("ud.parent.parent=",ud.parent.parent)
-            if should_debug then print(serpent.dump(ud)) end
+            if should_debug then print(serpent.dump(ud.links)) end
             print(format_node(ud,flags,ud.parent))
             for i,n in ipairs(ud.nodes) do print(n) end
             for i,n in ipairs(ud.links) do print(n) end

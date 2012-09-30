@@ -84,11 +84,11 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
             item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
         end
         local dc = decode_node_item(item)
+        if item.is_pointer then flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION) end
         if not ffi.isnull(dc) then
             local size  = 128
             local psize = ffi.new("int[1]", size)
             local buf   = ffi.new("char[?]", size)
-            if item.is_pointer then flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION) end
 
             local temp
             -- XXX explicit box type is not general enough FIXME
@@ -108,8 +108,9 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
 end
 
 local function should_walk(node)
-    local n = ffi.nsof(node)
-    return n == "struct" or n == "union"
+    return type(node) == "cdata"
+        and not ffi.isnull(node)
+        and (ffi.nsof(node) == "struct" or ffi.nsof(node) == "union")
 end
 
 function AST.walkers.struct(node, userdata, callbacks, flags, parent, pitem)
@@ -130,21 +131,24 @@ function AST.walkers.struct(node, userdata, callbacks, flags, parent, pitem)
         -- only upgrade parent to pitem when we are dealing with a named
         -- struct
         local is_idx = false
+        local should_recurse = false
         if is_anonymous(ffi.tagof(node)) then
             is_idx = k == 1
-        else
+            should_recurse = true
+        elseif (ffi.tagof(child)) ~= "node" then -- don't bother to print `struct node`
             local itemindex = ffi.istype("struct node", node) and k - 1 or k - 2
             -- note that pitem is not always meaningful ; it might be
             -- garbage, but it's only accessed (in the union branch above)
             -- if it is meaningful
             pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
+            should_recurse = true
         end
 
-        if should_walk(child) then
-            if should_debug then print(serpent.dump(child)) end
+        if should_recurse then
+            doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
             AST.walk(child, userdata, callbacks, flags, node, pitem)
         end
-        doformat(userdata, cflags, callbacks, k, v, node, child, parent, nil, is_idx)
+
     end
 
 end
@@ -177,17 +181,16 @@ end
 -- the "pitem" element is not of the same type as "parent" : parent is a
 -- cdata node, pitem is a node_rec element
 function AST.walk(node, userdata, callbacks, flags, parent, pitem)
-    if type(node) ~= "cdata" or not ffi.nsof(node) or ffi.isnull(node) then return nil end
+    if not should_walk(node) then return nil end
     if not flags then flags = 0 end
     -- TODO don't change incoming callbacks table
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
 
-    local myns = ffi.nsof(node)
-
     -- TODO & ~7 (and elsewhere)
     callbacks.walk(userdata, bit.bor(flags, AST.WALK_BEFORE_CHILDREN), nil, node)
 
+    local myns = ffi.nsof(node)
     if AST.walkers[myns] then
         AST.walkers[myns](node, userdata, callbacks, flags, parent, pitem)
     else
