@@ -51,10 +51,15 @@ end
 -- XXX hokey check for anonymous aggregate
 local function is_anonymous(tag) return tag:find("%d+") end
 
+local function is_enum(cd)
+    return ffi.nsof(cd) == "enum"
+end
+
 -- XXX get rid of special cases
 local function box_child(child)
     local data, pdata
         if type(child) == "number"       then  data = box(child, "int")
+    elseif is_enum(child)                then  data = box(tonumber(child), "int")
     elseif ffi.istype("char *"  , child) then  data = child
     elseif ffi.istype("uint64_t", child) then pdata = box(child, "uint64_t")
     end
@@ -107,6 +112,7 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
             dsay("item.meta = " .. tonumber(item.meta))
             dsay("child = " .. tostring(child))
             if unwrap then temp = box(child, "int") else temp = box_child(child) end
+            dsay("temp = " .. tostring(temp))
             local result = libast.fmt_call(item.meta, dc.type, psize, buf, temp)
             dsay("fmt_call = " .. result)
             if result >= 0 then
