@@ -78,7 +78,6 @@ local function _format_node_inner(ud,flags,me)
     end
 
     for j,ye in ipairs(me.children) do
-        --dsay("j = " .. j .. " ; ye = " .. serpent.dump(ye))
         -- used to use me.type tout court as the namespace for the port
         -- name, but me.type can be a generated value for anonymous
         -- aggregates. we really want to have the namespace be the last
@@ -109,7 +108,6 @@ local function _format_node_inner(ud,flags,me)
             end
         end
 
-        dsay("inner = " .. tostring(inner))
         result = result .. format_field(t.type,ye.name,inner)
     end
 
@@ -131,11 +129,7 @@ local function graphvizcb(ud,flags,k,v)
     local safeaddr = isnull and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
 
     local _name = ffi.tagof(v)
-    --dsay("type(v) = " .. type(v))
-    --if _name then dsay("tag = " .. _name) end
-    dsay("k = " .. tostring(k) .. " ; v = " .. tostring(v))
 
-    dsay("level=",ud.level,"flags=",flags)
 
     if AST.fl.is_before(flags) then
         ud.level = ud.level + 1
@@ -167,10 +161,7 @@ local function graphvizcb(ud,flags,k,v)
     end
 
     if AST.fl.is_between(flags) then
-        dsay("level=",ud.level,"parent=",ud.parent)
         local printable = type(v) == "string" and v or nil
-        dsay("printable = " .. (printable and "true" or "false"))
-        dsay("flags=" .. flags)
 
         local rec = {
             addr      = safeaddr,
@@ -183,7 +174,6 @@ local function graphvizcb(ud,flags,k,v)
             printable = printable,
             type      = _name,
         }
-        dsay("rec.contained = " .. (rec.contained and "true" or "false"))
 
         table.insert(ud.parent.children,rec)
 
