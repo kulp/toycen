@@ -28,8 +28,6 @@ ENABLE_LUA ?= 1
 INDENT ?= indent
 
 INCLUDE += xi include include/housekeeping include/ast include/preprocessor include/util
-INCLUDE += 3rdparty/luajit-2.0/src/
-LDFLAGS += -L3rdparty/luajit-2.0/src/
 SRC += src src/ast src/ast/walk src/compiler src/preprocessor src/util
 
 vpath %.l	    lexer
@@ -70,7 +68,7 @@ CLEANFILES += $(WALKBINS)
 OBJECTS += $(addsuffix .o,$(WALKBINS))
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 
-ast-walk-lua_graphviz luash: LDLIBS += -lluajit -lreadline
+ast-walk-lua_graphviz luash: LDLIBS += $(shell pkg-config --libs luajit) -lreadline
 $(WALKBINS) : ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
                            lexer.o hash_table.o ast-ids.o ast-walk.o \
                            ast-formatters.o | libljffifields.so
@@ -135,8 +133,10 @@ libast.so: ast-ids,fPIC.o ast-formatters,fPIC.o
 
 CLEANFILES += libljffifields.so
 libljffifields.so: fields,fPIC.o
-libljffifields.so: LDLIBS += -lluajit
-libljffifields.so: INCLUDE += 3rdparty/luajit-2.0/src 
+libljffifields.so: LDLIBS   += $(shell pkg-config --libs luajit)
+libljffifields.so: CPPFLAGS += $(shell pkg-config --cflags-only-I luajit)
+libljffifields.so: INCLUDE  += 3rdparty/luajit-2.0/src
+libljffifields.so: CFLAGS   += $(shell pkg-config --cflags-only-other luajit)
 # some luajit headers need [?] gcc
 libljffifields.so: CFLAGS += -std=gnu99
 libljffifields.so: CPPFLAGS += -std=gnu99
@@ -148,7 +148,6 @@ ifeq ($(shell uname -s),Darwin)
 ast-walk-lua% wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 endif
 
-ast-walk-lua% wrap_ast_% toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
 endif
 
 ifeq ($(BUILD_PP),1)

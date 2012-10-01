@@ -1,3 +1,6 @@
 [submodule "3rdparty/serpent"]
 	path = 3rdparty/serpent
 	url = https://github.com/pkulchenko/serpent.git
+[submodule "3rdparty/luajit-2.0"]
+	path = 3rdparty/luajit-2.0
+	url = https://github.com/thoughtpolice/luajit-2.0.git
