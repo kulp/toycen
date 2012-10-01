@@ -5,8 +5,8 @@ local serpent = require "3rdparty/serpent/src/serpent"
 
 local ffi = require "ffi"
 local bit = require "bit"
-require "ffi_introspection"
-require "utils"
+require "lua/ffi_introspection"
+require "lua/utils"
 
 AST = { walkers = { }, flag_names = { } }
 

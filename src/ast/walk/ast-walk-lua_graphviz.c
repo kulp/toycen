@@ -35,8 +35,8 @@ static int lua_top_op(const struct translation_unit *top)
 	extern bool is_interactive;
     bool shouldread = is_interactive;
 
-    mydo(L,"setup.lua",result);
-    mydo(L,"ast.lua",result);
+    mydo(L,"lua/setup.lua",result);
+    mydo(L,"lua/ast.lua",result);
 
     // TODO make ffi local
     // TODO use C API instead of dostring
@@ -48,7 +48,7 @@ static int lua_top_op(const struct translation_unit *top)
     lua_setglobal(L, "ast");
 
     luaL_dostring(L, "jit.off()"); // XXX failing with JIT on
-    mydo(L,"flow.lua",result);
+    mydo(L,"lua/flow.lua",result);
 
     while (shouldread && (str = readline(prompt))) {
         if (luaL_dostring(L, str)) {
