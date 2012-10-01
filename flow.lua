@@ -83,8 +83,8 @@ local function _format_node_inner(ud,flags,me)
         -- aggregates. we really want to have the namespace be the last
         -- "real" node so we search up the parent chain.
         local t = me
-        -- TODO what significance does the is_anonymous() have here
-        while t.type and is_anonymous(t.type) do
+
+        while t.type and t.contained do
             t = t.parent
         end
 

@@ -42,8 +42,7 @@ local function decode_node_item(node_item)
     return table[tonumber(node_item.meta)]
 end
 
--- XXX this should not be exposed thus
-function is_private(tag)
+local function is_private(tag)
     return tag:sub(-1) == "_"
 end
 
