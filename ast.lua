@@ -42,10 +42,19 @@ local function decode_node_item(node_item)
     return table[tonumber(node_item.meta)]
 end
 
+local function is_private(tag)
+    return tag:sub(-1) == "_"
+end
+
+local function node_table(tag)
+    local table = is_private(tag) and "priv_recs" or "node_recs"
+    return libast[table]
+end
+
 -- XXX hokey priv-detection (trailing underscore ? is this official ?)
 local function rec_from_tag(tag)
-    local stem = (tag:sub(-1) == "_") and "priv_type" or "node_type"
-    return libast.node_recs[ffi.cast("enum "..stem, stem:upper()..'_'..tag)]
+    local stem  = is_private(tag) and "priv_type" or "node_type"
+    return node_table(tag)[ffi.cast("enum "..stem, stem:upper()..'_'..tag)]
 end
 
 -- XXX hokey check for anonymous aggregate
@@ -86,7 +95,7 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
         done = true
     elseif item or (not is_anonymous(tag) and itemindex >= 0) then -- when is itemindex < 0 ?
         if not item then
-            item = libast.node_recs[ rec_from_tag(tag).type ].items[ itemindex ]
+            item = node_table(tag)[ rec_from_tag(tag).type ].items[ itemindex ]
         end
         local dc = decode_node_item(item)
         if item.is_pointer then
@@ -148,7 +157,8 @@ function AST.walkers.struct(node, userdata, callbacks, flags, parent, pitem)
             -- note that pitem is not always meaningful ; it might be
             -- garbage, but it's only accessed (in the union branch above)
             -- if it is meaningful
-            pitem = libast.node_recs[ rec_from_tag(ffi.tagof(node)).type ].items[ itemindex ].c.choice
+            local tag = ffi.tagof(node)
+            pitem = node_table(tag)[ rec_from_tag(tag).type ].items[ itemindex ].c.choice
             should_recurse = true
         end
 
