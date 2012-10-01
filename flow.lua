@@ -104,7 +104,6 @@ local function _format_node_inner(ud,flags,me)
                 inner = ye.null and "NULL" or "*"
             else
                 inner = ye.printable
-                inner = "XXX"
             end
         end
 
@@ -153,9 +152,6 @@ local function graphvizcb(ud,flags,k,v)
             local up = ud.parent.children
             if up and #up > 0 then
                 ud.parent = up[#up]
-            else
-                -- XXX this node never shows up in the dump, but it changes behaviour
-                --ud.parent = { parent = ud.parent, children = { } }
             end
         end
     end
@@ -176,9 +172,6 @@ local function graphvizcb(ud,flags,k,v)
         }
 
         table.insert(ud.parent.children,rec)
-
-        -- XXX this is wrong unless we are actually descending
-        --ud.parent = rec
     end
 
     if AST.fl.is_after(flags) then
