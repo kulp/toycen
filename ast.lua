@@ -42,7 +42,8 @@ local function decode_node_item(node_item)
     return table[tonumber(node_item.meta)]
 end
 
-local function is_private(tag)
+-- XXX this should not be exposed thus
+function is_private(tag)
     return tag:sub(-1) == "_"
 end
 
@@ -53,8 +54,12 @@ end
 
 -- XXX hokey priv-detection (trailing underscore ? is this official ?)
 local function rec_from_tag(tag)
-    local stem  = is_private(tag) and "priv_type" or "node_type"
+    local stem = is_private(tag) and "priv_type" or "node_type"
     return node_table(tag)[ffi.cast("enum "..stem, stem:upper()..'_'..tag)]
+end
+
+local function node_record(tag)
+    return node_table(tag)[ rec_from_tag(tag).type ]
 end
 
 -- XXX hokey check for anonymous aggregate
@@ -95,12 +100,11 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
         done = true
     elseif item or (not is_anonymous(tag) and itemindex >= 0) then -- when is itemindex < 0 ?
         if not item then
-            item = node_table(tag)[ rec_from_tag(tag).type ].items[ itemindex ]
+            item = node_record(tag).items[ itemindex ]
         end
         local dc = decode_node_item(item)
         if item.is_pointer then
-            flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
-            flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION)
+            flags = bit.bor(bit.band(flags, bit.bnot(AST.WALK_IS_BASE)), AST.WALK_HAS_ALLOCATION)
         end
         if not ffi.isnull(dc) then
             local size  = 128
@@ -152,13 +156,13 @@ function AST.walkers.struct(node, userdata, callbacks, flags, parent, pitem)
         if is_anonymous(ffi.tagof(node)) then
             is_idx = k == 1
             should_recurse = true
-        elseif (ffi.tagof(child)) ~= "node" then -- don't bother to print `struct node`
+        elseif (AST.verbose and AST.verbose > 0) or (ffi.tagof(child)) ~= "node" then
+            -- don't print `struct node` by default
             local itemindex = ffi.istype("struct node", node) and k - 1 or k - 2
             -- note that pitem is not always meaningful ; it might be
             -- garbage, but it's only accessed (in the union branch above)
             -- if it is meaningful
-            local tag = ffi.tagof(node)
-            pitem = node_table(tag)[ rec_from_tag(tag).type ].items[ itemindex ].c.choice
+            pitem = node_record(ffi.tagof(node)).items[ itemindex ].c.choice
             should_recurse = true
         end
 
@@ -199,7 +203,7 @@ end
 
 -- the "pitem" is necessary to support / work around the anonymous unions
 -- and structs that make up CHOICE elements ; the pitem will be a struct
--- with a tag, so it can be looked up in libast.node_recs
+-- with a tag, so it can be looked up in libast.node_recs / libast.priv_recs
 -- the "pitem" element is not of the same type as "parent" : parent is a
 -- cdata node, pitem is a node_rec element
 function AST.walk(node, userdata, callbacks, flags, parent, pitem)
