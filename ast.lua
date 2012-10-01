@@ -99,8 +99,12 @@ local function doformat(userdata, flags, callbacks, k, v, node, child, parent, i
         end
         local dc = decode_node_item(item)
         dsay("item = " .. tostring(item))
+        dsay("item.is_pointer = " .. (item.is_pointer and "true" or "false"))
         dsay("dc = " .. tostring(dc))
-        if item.is_pointer then flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION) end
+        if item.is_pointer then
+            flags = bit.band(flags, bit.bnot(AST.WALK_IS_BASE))
+            flags = bit.bor(flags, AST.WALK_HAS_ALLOCATION)
+        end
         if not ffi.isnull(dc) then
             local size  = 128
             local psize = ffi.new("int[1]", size)
@@ -185,7 +189,11 @@ function AST.walkers.union(node, userdata, callbacks, flags, parent, pitem)
         local child = node[fields[parent.idx]]
         local item = pitem[parent.idx - 1] -- switch to C (zero-based) indexing
         local cflags = bit.bor(flags, AST.WALK_BETWEEN_CHILDREN)
-        if item.is_pointer then cflags = bit.bor(cflags, AST.WALK_HAS_ALLOCATION) end
+        if item.is_pointer then
+            cflags = bit.bor(cflags, AST.WALK_HAS_ALLOCATION)
+        else
+            cflags = bit.band(cflags, bit.bnot(AST.WALK_HAS_ALLOCATION))
+        end
         -- XXX hack
         -- basic elements inside a choice act funny
         -- TODO make this work for .idx in choices too

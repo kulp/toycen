@@ -3,7 +3,7 @@ local ffi = require "ffi"
 local bit = require "bit"
 
 should_debug = os.getenv("TOYCEN_LUA_DEBUG")
-local should_prettify = nil
+local should_prettify = os.getenv("TOYCEN_LUA_TIDY")
 
 function dsay(what)
     if should_debug then print(what) end
@@ -84,6 +84,7 @@ local function _format_node_inner(ud,flags,me)
         -- aggregates. we really want to have the namespace be the last
         -- "real" node so we search up the parent chain.
         local t = me
+        -- TODO what significance does the is_anonymous() have here
         while t.type and is_anonymous(t.type) do
             t = t.parent
         end
@@ -104,9 +105,11 @@ local function _format_node_inner(ud,flags,me)
                 inner = ye.null and "NULL" or "*"
             else
                 inner = ye.printable
+                inner = "XXX"
             end
         end
 
+        dsay("inner = " .. tostring(inner))
         result = result .. format_field(t.type,ye.name,inner)
     end
 
@@ -132,7 +135,7 @@ local function graphvizcb(ud,flags,k,v)
     --if _name then dsay("tag = " .. _name) end
     dsay("k = " .. tostring(k) .. " ; v = " .. tostring(v))
 
-    if should_debug then print("level=",ud.level,"flags=",flags) end
+    dsay("level=",ud.level,"flags=",flags)
 
     if AST.fl.is_before(flags) then
         ud.level = ud.level + 1
@@ -167,11 +170,12 @@ local function graphvizcb(ud,flags,k,v)
         dsay("level=",ud.level,"parent=",ud.parent)
         local printable = type(v) == "string" and v or nil
         dsay("printable = " .. (printable and "true" or "false"))
+        dsay("flags=" .. flags)
 
         local rec = {
             addr      = safeaddr,
             children  = { },
-            contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags),
+            contained = not AST.fl.is_alloc(flags),
             flags     = flags,
             name      = k,
             null      = isnull,
@@ -179,6 +183,7 @@ local function graphvizcb(ud,flags,k,v)
             printable = printable,
             type      = _name,
         }
+        dsay("rec.contained = " .. (rec.contained and "true" or "false"))
 
         table.insert(ud.parent.children,rec)
 
