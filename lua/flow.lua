@@ -13,7 +13,7 @@ local serpent = require "3rdparty/serpent/src/serpent"
 
 local function prettify(what)
     if (should_prettify) then
-        require "htmltidy"
+        require "lua/htmltidy"
 
         local tidy = htmltidy.new()
         -- indentation is really the only reason we use Tidy at all

@@ -35,7 +35,7 @@ vpath %.l.pre   lexer
 vpath %.l.post  lexer
 vpath %.l.rules lexer
 vpath %.y  		parser
-vpath %.c  		$(SRC)
+vpath %.c  		$(SRC) lua/
 vpath %.h  		$(INCLUDE)
 vpath %.xi 		xi
 
