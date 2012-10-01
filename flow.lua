@@ -89,7 +89,7 @@ local function _format_node_inner(ud,flags,me)
         end
 
         local inner
-        if ye.contained then
+        if ye.contained or not ye.ptr then
             inner = _format_node_inner(ud,flags,ye)
         else
             table.insert(ud.nodes, format_node(ud,flags,ye))
@@ -123,12 +123,13 @@ function format_node(ud,flags,node)
 end
 
 local function graphvizcb(ud,flags,k,v)
-    local ptr      = type(v) == "cdata" and ffi.cast("uintptr_t", ffi.cast("void*", v))
+    -- XXX is_enum(v) is a bit of a hack here ; are there any other c-types
+    -- that could cause problems ?
+    local ptr      = type(v) == "cdata" and not is_enum(v) and ffi.cast("uintptr_t", ffi.cast("void*", v))
     local isnull   = tonumber(ptr) == 0
-    local safeaddr = isnull and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
+    local safeaddr = (not ptr or isnull) and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
 
     local _name = ffi.tagof(v)
-
 
     if AST.fl.is_before(flags) then
         ud.level = ud.level + 1
@@ -142,6 +143,7 @@ local function graphvizcb(ud,flags,k,v)
                 flags     = flags,
                 name      = "top",
                 null      = isnull,
+                ptr       = not not ptr,
                 type      = _name,
             }
 
@@ -168,6 +170,7 @@ local function graphvizcb(ud,flags,k,v)
             null      = isnull,
             parent    = ud.parent,
             printable = printable,
+            ptr       = not not ptr,
             type      = _name,
         }
 

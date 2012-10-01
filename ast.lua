@@ -64,7 +64,8 @@ end
 -- XXX hokey check for anonymous aggregate
 local function is_anonymous(tag) return tag:find("%d+") end
 
-local function is_enum(cd)
+-- XXX shouldn't show this externally
+function is_enum(cd)
     return ffi.nsof(cd) == "enum"
 end
 
