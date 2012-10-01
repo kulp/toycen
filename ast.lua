@@ -206,10 +206,10 @@ end
 -- with a tag, so it can be looked up in libast.node_recs / libast.priv_recs
 -- the "pitem" element is not of the same type as "parent" : parent is a
 -- cdata node, pitem is a node_rec element
-function AST.walk(node, userdata, callbacks, flags, parent, pitem)
+function AST.walk(node, userdata, _callbacks, flags, parent, pitem)
     if not should_walk(node) then return nil end
     if not flags then flags = 0 end
-    -- TODO don't change incoming callbacks table
+    local callbacks = _callbacks
     callbacks.walk  = callbacks.walk  or function() end
     callbacks.error = callbacks.error or function() end
 
@@ -220,7 +220,6 @@ function AST.walk(node, userdata, callbacks, flags, parent, pitem)
     if AST.walkers[myns] then
         AST.walkers[myns](node, userdata, callbacks, flags, parent, pitem)
     else
-        --XXX
         callbacks.error(userdata,"Unsupported namespace:" .. myns)
     end
 
