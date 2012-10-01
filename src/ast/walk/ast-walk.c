@@ -50,7 +50,7 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
             break;
         case META_IS_ID:
         case META_IS_BASIC:
-            cbresult = cb(flags & ~0x7, parent->meta, parent->c.node->type,
+            cbresult = cb(flags & ~7, parent->meta, parent->c.node->type,
                     what, userdata, ops, cookie);
             break;
         case META_IS_CHOICE: {
@@ -97,8 +97,9 @@ static int recurse_any(const struct node_item *parent, void *what, ast_walk_cb
 }
 
 // combine common parts of recurse_priv() and recurse_node()
-static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
-        *thing, ast_walk_cb cb, int flags, struct ast_walk_ops *ops, void *userdata, struct ast_walk_data *cookie)
+static int recurse_priv_or_node(enum meta_type meta, int type, void *thing,
+        ast_walk_cb cb, int flags, struct ast_walk_ops *ops, void *userdata,
+        struct ast_walk_data *cookie)
 {
     // TODO move parent-handling based on flags
     // TODO do something with results
@@ -107,10 +108,11 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
 
     bool am_priv = meta == META_IS_PRIV;
 
-    const struct node_rec *rec = &(am_priv ? (struct node_rec*)priv_recs : node_recs)[type];
+    const struct node_rec *rec = &(am_priv ? priv_recs : node_recs)[type];
 
     if (flags & AST_WALK_BEFORE_CHILDREN)
-        cbresult = cb((flags & ~0x7) | AST_WALK_BEFORE_CHILDREN, meta, type, thing, userdata, ops, cookie);
+        cbresult = cb((flags & ~7) | AST_WALK_BEFORE_CHILDREN, meta, type,
+                thing, userdata, ops, cookie);
 
     if (!am_priv) {
         /// @todo give flags control of BASE recursing
@@ -158,7 +160,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
         result = recurse_any(item, &child, cb, flags_, ops, userdata, cookie);
 
         if (flags_ & AST_WALK_BETWEEN_CHILDREN)
-            cbresult = cb((flags_ & ~0x7) | AST_WALK_BETWEEN_CHILDREN, meta,
+            cbresult = cb((flags_ & ~7) | AST_WALK_BETWEEN_CHILDREN, meta,
                     type, thing, userdata, ops, cookie);
 
         s = cookie->stack;
@@ -167,7 +169,7 @@ static int recurse_priv_or_node(enum meta_type meta, enum priv_type type, void
     }
 
     if (flags & AST_WALK_AFTER_CHILDREN)
-        cbresult = cb(AST_WALK_AFTER_CHILDREN, meta, type, thing, userdata, ops, cookie);
+        cbresult = cb((flags & ~7) | AST_WALK_AFTER_CHILDREN, meta, type, thing, userdata, ops, cookie);
 
     return result;
 }

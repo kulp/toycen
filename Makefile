@@ -8,6 +8,7 @@ endif
 
 ifneq ($(NDEBUG),1)
 CFLAGS += -g
+LDFLAGS += -g
 endif
 
 ifeq ($(SAVE_TEMPS),1)
@@ -15,7 +16,10 @@ CFLAGS += -save-temps
 endif
 
 ifeq ($(NDEBUG),1)
+ifneq ($(ENABLE_LUA),1)
+# Lua walk needs introspection
 INHIBIT_INTROSPECTION = 1
+endif
 DEFINES += NDEBUG
 endif
 
@@ -24,8 +28,6 @@ ENABLE_LUA ?= 1
 INDENT ?= indent
 
 INCLUDE += xi include include/housekeeping include/ast include/preprocessor include/util
-INCLUDE += 3rdparty/luajit-2.0/src/
-LDFLAGS += -L3rdparty/luajit-2.0/src/
 SRC += src src/ast src/ast/walk src/compiler src/preprocessor src/util
 
 vpath %.l	    lexer
@@ -33,7 +35,7 @@ vpath %.l.pre   lexer
 vpath %.l.post  lexer
 vpath %.l.rules lexer
 vpath %.y  		parser
-vpath %.c  		$(SRC)
+vpath %.c  		$(SRC) lua/
 vpath %.h  		$(INCLUDE)
 vpath %.xi 		xi
 
@@ -57,7 +59,7 @@ LDFLAGS += $(ARCHFLAGS)
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-formatters.o
 
 ifneq ($(INHIBIT_INTROSPECTION),1)
-WALKERS = demo graphviz test c
+WALKERS = demo graphviz test c lua_graphviz
 WALKBINS = $(addprefix ast-walk-,$(WALKERS))
 OBJECTS += ast-walk.o
 endif
@@ -66,7 +68,11 @@ CLEANFILES += $(WALKBINS)
 OBJECTS += $(addsuffix .o,$(WALKBINS))
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 
-$(WALKBINS) : ast-walk-% : parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-walk.o ast-formatters.o
+ast-walk-lua_graphviz luash: LDLIBS += $(shell pkg-config --libs luajit) -lreadline
+$(WALKBINS) : ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
+                           lexer.o hash_table.o ast-ids.o ast-walk.o \
+                           ast-formatters.o | libljffifields.so
+	$(LINK.c) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 toycen.o: CFLAGS += -Wno-unused-parameter
 toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
@@ -83,7 +89,12 @@ wrap_ast_%.o: CFLAGS += -Wno-missing-field-initializers
 wrap_ast_%.o: wrap.c %-ast.c
 	$(COMPILE.c) -DWRAPPED='"$*-ast.c"' -o $@ $<
 
-wrap_ast_%: wrap_ast_%.o toycen.c parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
+# use a separate object so that -save-temps doesn't wreck users of normal toycen.o
+toycen,wrap.o: toycen.c
+	$(COMPILE.c) -o $@ $^
+
+# XXX this -DARTIFICIAL_AST can't really do anything with .o's !
+wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
 	$(LINK.c) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
 
 # Don't complain about unused yyunput()
@@ -122,19 +133,21 @@ libast.so: ast-ids,fPIC.o ast-formatters,fPIC.o
 
 CLEANFILES += libljffifields.so
 libljffifields.so: fields,fPIC.o
-libljffifields.so: LDLIBS += -lluajit
-libljffifields.so: INCLUDE += 3rdparty/luajit-2.0/src 
+libljffifields.so: LDLIBS   += $(shell pkg-config --libs luajit)
+libljffifields.so: CPPFLAGS += $(shell pkg-config --cflags-only-I luajit)
+libljffifields.so: INCLUDE  += 3rdparty/luajit-2.0/src
+libljffifields.so: CFLAGS   += $(shell pkg-config --cflags-only-other luajit)
+# some luajit headers need [?] gcc
 libljffifields.so: CFLAGS += -std=gnu99
 libljffifields.so: CPPFLAGS += -std=gnu99
 
 %.so:
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
-wrap_ast_% toycen luash: LDLIBS += -lluajit -lreadline
 ifeq ($(shell uname -s),Darwin)
-wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
+ast-walk-lua% wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 endif
-wrap_ast_% toycen luash: CPPFLAGS += -I/usr/local/include/luajit-2.0/
+
 endif
 
 ifeq ($(BUILD_PP),1)

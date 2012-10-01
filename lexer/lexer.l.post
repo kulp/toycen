@@ -28,8 +28,6 @@ static void c()
     for (int i = 0; yytext[i]; i++)
         if (yytext[i] == '\n')
             column = 0;
-        else if (yytext[i] == '\t')
-            column += TAB_WIDTH - (column % TAB_WIDTH);
         else
             column++;
 }
@@ -53,7 +51,7 @@ static void skip_comment(comment_t style)
 			c2 = input();
 		}
 	} else {
-		while (c2 != EOF && !(c1 == '\n'))
+		while (c1 != EOF && !(c1 == '\n'))
 			c1 = input();
 		if (c1 == '\n')
 			++lineno;
@@ -94,7 +92,7 @@ void lexer_teardown()
 void add_typename(scope_t *scope, const char *type)
 {
     hash_table_put(types_hash, type, (void*)1);
-    scope = scope; // to avoid uused warning for now
+    (void)scope; // to avoid uused warning for now
 }
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

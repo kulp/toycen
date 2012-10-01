@@ -1,10 +1,4 @@
-#include "lexer.h"
-#include "pp_lexer.h"
-#include "parser.h"
-#include "hash_table.h"
 #include "ast-walk.h"
-#include "ast-ids-priv.h"
-#include "ast-formatters.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,167 +7,35 @@
 #include <assert.h>
 #include <stdbool.h>
 
-extern int yyparse();
+// XXX
+#define STACK_LEVELS 10
 
-int DEBUG_LEVEL = 2;
-FILE* DEBUG_FILE;
+struct graphvizdata {
+    struct nodedata {
+        // TODO sort for optimal alignment
+        intptr_t addr;
+        struct nodedata *children;
+        bool contained;
+        int flags;
+        char name[32];
+        bool isnull;
+        struct nodedata *parent;
+        char *printable;
+        struct node_rec *type;
 
-struct nodedata {
+        bool valid; // to mark end of list
+
+        // appropriate for rec
+        struct nodedata *list;
+        // appropriate for stack and rec
+        struct nodedata *next, *prev;
+    } *top, *rec, *stack;
+    int level;
     struct link {
-        struct {
-            char node[64];
-            const char *port;
-        } from, to;
+        char *string;
         struct link *next;
     } *links;
-    struct parent {
-        // TODO either unify rec and type or distinguish them
-        enum node_type type;
-        struct node *node;
-        const struct node_rec *rec;
-        const char *name;
-        struct label {
-            const char *tag;
-            char before[128],
-                 after [128];
-            struct label *next;
-        } *labels;
-        struct parent *next;
-    } *ancestry;
 };
-
-static int collect_node(const char *name, enum node_type type, struct node *node, struct nodedata *nodes)
-{
-    struct parent *p = nodes->ancestry;
-    bool rooted = !p;
-    // whether we are the root
-    bool has_parent = !rooted && p->next;
-    bool not_parent = has_parent && node != p->next->node;
-    bool recursing_base = has_parent && !not_parent && type != p->next->node->node_type;
-
-    assert(!rooted);
-    // XXX wrong
-    //assert(has_parent);
-
-    //const struct node_rec *rec = &node_recs[type];
-
-    if (!has_parent) {
-        // XXX this is wrong
-        printf("_%" PRIxPTR "_%s [label=<", (uintptr_t)p->node, node_recs[type].name);
-        printf("<table"
-               #if STYLE
-               "       cellpadding=\"4\""
-               "       cellspacing=\"0\""
-               "       border=\"0\""
-               #endif
-               ">");
-        //printf("_%" PRIxPTR "_%s [label=<", (uintptr_t)p->node, p->name);
-    }
-
-    // don't draw arrows to ourselves
-    if (not_parent) {
-        struct link *link = calloc(1, sizeof *link);
-        const char *realname = node_recs[type].name;
-        const char *pname = node_recs[p->next->node->node_type].name;
-        snprintf(link->from.node, sizeof link->from.node, "_%" PRIxPTR "_%s", (uintptr_t)p->next->node, pname);
-        snprintf(link->to  .node, sizeof link->to  .node, "_%" PRIxPTR "_%s", (uintptr_t)node, realname);
-
-        link->from.port = p->name;
-        link->to.port   = name;
-
-        link->next = nodes->links;
-        nodes->links = link;
-    } else if (recursing_base) {
-        // base
-        // TODO
-        struct label *lab = calloc(1, sizeof *lab);
-        //int len = snprintf(lab->before, sizeof lab->before, "{ <%s> %s | }", name, name);
-        int len = //sn
-            printf(//lab->before, sizeof lab->before,
-                "<tr>"
-                    "<td port=\"base\">"
-                #if STYLE
-                       "<font face=\"courier\" color=\"#777777\">"
-                #endif
-                            "base"
-                #if STYLE
-                       "</font>"
-                #endif
-                    "</td>"
-                    "<td>"
-                        //"<table>"
-                );
-        #if 0
-        //sn
-        printf(//lab->after, sizeof lab->after,
-                        //"</table>"
-                    "</td>"
-                "</tr>"
-                );
-        #endif
-        assert(len <= (signed)sizeof lab->before); // XXX <
-        lab->tag = node_recs[type].name;
-        lab->next = p->labels;
-        p->labels = lab;
-    }
-
-    #if 0
-    struct label *lab = calloc(1, sizeof *lab);
-    //int len = snprintf(lab->before, sizeof lab->before, "{ <%s> %s | }", name, name);
-    int len = //sn
-        printf(//lab->before, sizeof lab->before,
-            "<tr>"
-#if 0
-                "<td port=\"%s\">"
-            #if STYLE
-                   "<font face=\"courier\" color=\"#777777\">"
-            #endif
-                        "%s"
-            #if STYLE
-                   "</font>"
-            #endif
-                "<td>*</td>"
-#endif
-            "</tr>"
-            //, name, name
-            );
-    assert(len <= (signed)sizeof lab->before); // XXX <
-    lab->tag = node_recs[type].name;
-    lab->next = p->labels;
-    p->labels = lab;
-    #endif
-
-    return 0;
-}
-
-static int collect_basic(const char *name, enum basic_type type, void *data, struct nodedata *nodes)
-{
-    char buf[128];
-    int size = sizeof buf;
-    int result = fmt_call(META_IS_BASIC, type, &size, buf, data);
-    struct label *label = calloc(1, sizeof *label);
-    //int len = snprintf(label->before, sizeof label->before, "{ <%s> %s | %s }", name, name, buf);
-    int len = //sn
-        printf(//label->before, sizeof label->before,
-            "<tr>"
-            "    <td port=\"%s\">"
-            #if STYLE
-            "       <font face=\"courier\" color=\"#777777\">"
-            #endif
-                        "%s"
-            #if STYLE
-            "       </font>"
-            #endif
-            "    </td>"
-            "    <td>%s</td>"
-            "</tr>"
-            , name, name, buf);
-    assert(len <= (signed)sizeof label->before); // XXX <
-    label->tag = name;
-    label->next = nodes->ancestry->labels;
-    nodes->ancestry->labels = label;
-    return result;
-}
 
 static int walk_cb(
         int flags,
@@ -182,158 +44,134 @@ static int walk_cb(
         void *data,
         void *userdata,
         struct ast_walk_ops *ops,
+        //struct ast_walk_meta *meta,
         walkdata cookie
     )
 {
     int result = 0;
 
-    struct nodedata *nodes = userdata;
+    (void)(meta,type,data,ops,cookie);
 
-    switch (meta) {
-        case META_IS_NODE: {
-            const struct node_rec *rec = &node_recs[type];
-            if (flags & AST_WALK_BEFORE_CHILDREN) {
-                const char *name = NULL;
-                ops->get_name(cookie, &name);
-                struct parent *p = calloc(1, sizeof *p);
-                p->node = data;
-                p->rec = rec;
-                p->type = type;
-                p->next = nodes->ancestry;
-                p->name = name;
-                nodes->ancestry = p;
+    // XXX
+    const char *k = NULL;
+    void *v = NULL;
 
-                if (!p->next) {
-                    //printf("_%" PRIxPTR "_%s [label=<", (uintptr_t)p->node, node_recs[type].name);
-                }
-            } else if (flags & AST_WALK_AFTER_CHILDREN) {
-                struct parent *p = nodes->ancestry;
-                nodes->ancestry = p->next;
-                // TODO print things
-                // can't just use address due to BASE and namespace clash
-                #if 0
-                printf("<table"
-                       #if STYLE
-                       "       cellpadding=\"4\""
-                       "       cellspacing=\"0\""
-                       "       border=\"0\""
-                       #endif
-                       ">");
-                struct label *label = p->labels;
-                struct label *back = label;
-                while (label) {
-                    if (label->before[0])
-                        printf("%s", label->before);
-                    label = label->next;
-                    // TODO fix backward list
-                    back->next = label;
-                    if (back->next)
-                        back->next->next = NULL;
-                }
+    struct graphvizdata *ud = userdata;
 
-                while (back) {
-                    if (back->after[0])
-                        printf("AFTER:%s", back->after);
-                    back = back->next;
-                    // TODO free
-                }
-                #endif
-                if (p->node == data) {
-                    // close base
-                    printf(//lab->after, sizeof lab->after,
-                                    //"</table>"
-                                "</td>"
-                            "</tr>"
-                            );
-                    //abort();
-                }
+    printf("level=\t%d\tflags=\t%d\n",ud->level,flags & ~32);
 
-                //printf("</tr>\n");
-                printf("</table>\n");
-                free(p);
-                if (!p->next) {
-                    printf(">];\n");
-                }
-            }
+    if (ud->level == 0) {
+        ud->rec = calloc(1, sizeof *ud->rec);
+    }
 
-            if (data && (flags & AST_WALK_BEFORE_CHILDREN)) {
-                if (collect_node(nodes->ancestry->name, type, data, userdata))
-                    ;//return -1;
-                //printf("node name = %s\n", rec->name);
-            }
-            break;
+    if (flags & AST_WALK_BEFORE_CHILDREN) {
+        ud->level++;
+        if (!ud->rec->next) {
+            ud->rec->next = calloc(1, sizeof *ud->rec->next);
+            ud->rec->next->prev = ud->rec;
         }
-        case META_IS_ID: // XXX check
-        case META_IS_BASIC: {
-            if (flags & AST_WALK_AFTER_CHILDREN) {
-                int size = 128;
-                char buf[size];
-                result = fmt_call(meta, type, &size, buf, data);
-                #if 0
-                printf("result = %d, val = %s, type = %s/%s\n", result, buf,
-                        basic_recs[type].defname, basic_recs[type].rawname);
-                #endif
-                const char *name = NULL;
-                if (ops->get_name(cookie, &name))
-                    ;//return -1;
-                if (collect_basic(name, type, data, userdata))
-                    ;//return -1;
-            }
-            break;
-        }
-        case META_IS_CHOICE:
-            // TODO
-            break;
-        default:
-            abort();
+    }
+
+    int level = ud->level;
+
+    if (level == 1 && AST_WALK_BEFORE_CHILDREN) {
+        ud->top = malloc(sizeof *ud->top);
+        *ud->top = (struct nodedata){
+            .name = "top",
+            .children = calloc(1, sizeof *ud->top->children), // valid = false
+        };
+
+        ud->rec = calloc(1, sizeof *ud->rec),      // valid = false
+        ud->stack = calloc(1, sizeof *ud->stack),  // valid = false
+
+        ud->rec = ud->top->children;
+        puts("digraph abstract_syntax_tree {\n"
+             "    graph [rankdir=LR];\n"
+             "    node [shape=none];\n");
+    }
+
+    struct nodedata *rec;
+
+    if (flags & AST_WALK_BETWEEN_CHILDREN) {
+        struct nodedata *parent = ud->stack;
+        // XXX
+        char *printable = NULL;
+        rec = malloc(sizeof *rec);
+        *rec = (struct nodedata){
+            .addr      = (intptr_t)v,
+            .children  = NULL,
+            .contained = ((flags & AST_WALK_IS_BASE) || !(flags & AST_WALK_HAS_ALLOCATION)),
+            .flags     = flags,
+            .isnull    = !v,
+            .parent    = parent,
+            .printable = printable,
+            .type      = NULL, // TODO
+        };
+        strncpy(rec->name, k, sizeof rec->name);
+
+        struct nodedata *temp;
+
+        temp = ud->rec->list;
+        ud->rec->list = malloc(sizeof *ud->rec->list);
+        *ud->rec->list = (struct nodedata){ .list = temp };
+
+        // push onto stack
+        ud->stack->next = malloc(sizeof *ud->stack->next);
+        *ud->stack->next = (struct nodedata){ .prev = ud->stack };
+        ud->stack = ud->stack->next;
+
+        // insert rec into parent's children
+        temp = parent->list;
+        parent->list = malloc(sizeof *parent->list);
+        *parent->list = (struct nodedata){ .list = temp };
+    }
+
+    if (flags & AST_WALK_AFTER_CHILDREN) {
+        struct nodedata *temp;
+
+        temp = ud->stack->next;
+        ud->stack->next = ud->stack;
+        free(temp);
+        ud->stack->next = NULL;
+
+        temp = ud->rec->next;
+        ud->rec->next = ud->rec;
+        free(temp);
+        ud->rec->next = NULL;
+    }
+
+    if (flags & AST_WALK_AFTER_CHILDREN) {
+        ud->level--;
+    }
+
+    if (level == 0 && (flags & AST_WALK_AFTER_CHILDREN)) {
+        free(ud->stack);
+        ud->stack = NULL;
+
+        free(ud->rec);
+        ud->rec = NULL;
+
+        // TODO write nodes and free
+        // TODO write links and free
+        puts("}");
     }
 
     return result;
 }
 
-int main(int argc, char *argv[])
+static int walk_top_graphviz(const struct translation_unit *top)
 {
-    int result;
+    int rc = 0;
 
-    DEBUG_FILE = stdout;
+    struct graphvizdata ud = { .level = 0 };
+    //ud.rec = calloc(1, sizeof *ud.rec);
 
-    parser_state_t ps;
+    int flags = AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN | AST_WALK_BETWEEN_CHILDREN;
+    rc = ast_walk((struct node*)top, walk_cb, flags, &ud);
 
-    if (argc > 1)
-        switch_to_input_file(argv[1]);
-
-    lexer_setup();
-    parser_setup(&ps);
-    result = yyparse();
-
-    //struct translation_unit *top = get_top_of_parse_result();
-
-    struct translation_unit _top = {
-        .base  = { .node_type = NODE_TYPE_translation_unit },
-        //.right = &(struct external_declaration){
-    }, *top = &_top;
-
-    struct nodedata nodes;
-    memset(&nodes, 0, sizeof nodes);
-
-    puts("digraph structs {");
-    puts("    node [shape=none];");
-    result = ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN | AST_WALK_AFTER_CHILDREN, &nodes);
-    if (result)
-        perror("ast_walk");
-    struct link *link = nodes.links;
-    while (link) {
-        //printf("%s:%s -> %s:%s;\n", link->from.node, link->from.port, link->to.node, link->to.port);
-        // XXX remove to-port from struct
-        printf("%s:%s -> %s:_name;\n", link->from.node, link->from.port, link->to.node);
-        link = link->next;
-    }
-    puts("}");
-
-    parser_teardown(&ps);
-    lexer_teardown();
-
-    return result;
+    return rc;
 }
+
+int (*main_walk_op)(const struct translation_unit *) = walk_top_graphviz;
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

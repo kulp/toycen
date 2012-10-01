@@ -47,18 +47,8 @@ enum meta_type {
     META_IS_max
 };
 
-// NOTE: we depend on node_rec and priv_rec having the same layout ! They have
-// separate types so that the enumeration in the first field is properly
-// recognized by debuggers
 struct node_rec {
-    enum node_type type;
-    const char *name;
-    size_t * const * const offp; ///< pointer to array due to limitations in preprocessor
-    struct node_item *items;
-};
-
-struct priv_rec {
-    enum priv_type type;
+    int type;
     const char *name;
     size_t * const * const offp; ///< pointer to array due to limitations in preprocessor
     struct node_item *items;
@@ -97,7 +87,7 @@ struct node_item {
     #endif
     union {
         const struct node_rec *node;
-        const struct priv_rec *priv;
+        const struct node_rec *priv;
         const struct id_rec *id;
         const struct node_item *choice;
         const struct basic_rec *basic;

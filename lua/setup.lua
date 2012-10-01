@@ -1,5 +1,5 @@
 -- generic program-start setup goes here
 
-require "ffi_introspection"
+require "lua/ffi_introspection"
 --should_prettify = true
 

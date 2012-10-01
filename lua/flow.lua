@@ -2,9 +2,18 @@
 local ffi = require "ffi"
 local bit = require "bit"
 
+should_debug = os.getenv("TOYCEN_LUA_DEBUG")
+local should_prettify = os.getenv("TOYCEN_LUA_TIDY")
+
+function dsay(what)
+    if should_debug then print(what) end
+end
+
+local serpent = require "3rdparty/serpent/src/serpent"
+
 local function prettify(what)
     if (should_prettify) then
-        require "htmltidy"
+        require "lua/htmltidy"
 
         local tidy = htmltidy.new()
         -- indentation is really the only reason we use Tidy at all
@@ -74,12 +83,13 @@ local function _format_node_inner(ud,flags,me)
         -- aggregates. we really want to have the namespace be the last
         -- "real" node so we search up the parent chain.
         local t = me
-        while t.type and is_anonymous(t.type) do
+
+        while t.type and t.contained do
             t = t.parent
         end
 
         local inner
-        if ye.contained then
+        if ye.contained or not ye.ptr then
             inner = _format_node_inner(ud,flags,ye)
         else
             table.insert(ud.nodes, format_node(ud,flags,ye))
@@ -112,79 +122,74 @@ function format_node(ud,flags,node)
         .. ">];"
 end
 
-local function graphvizcb(ud,flags,level,k,v)
-    local ptr      = ffi.cast("uintptr_t", ffi.cast("void*", v))
-    local null     = tonumber(ptr) == 0
-    local safeaddr = null and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
+local function graphvizcb(ud,flags,k,v)
+    -- XXX is_enum(v) is a bit of a hack here ; are there any other c-types
+    -- that could cause problems ?
+    local ptr      = type(v) == "cdata" and not is_enum(v) and ffi.cast("uintptr_t", ffi.cast("void*", v))
+    local isnull   = tonumber(ptr) == 0
+    local safeaddr = (not ptr or isnull) and "NULL" or tostring(ffi.cast("uint64_t",tonumber(ptr)))
 
-    local _ns   = ffi.nsof(v)
     local _name = ffi.tagof(v)
 
-    -- once-per-graph stuff
-    if level == 1 and AST.fl.is_before(flags) then
-        ud.top = {
-            addr      = safeaddr,
-            children  = { },
-            contained = false,
-            flags     = flags,
-            name      = "top",
-            ns        = _ns,
-            null      = null,
-            type      = _name,
-        }
-        -- TODO get rid of ud.rec -- we don't use it ?
-        -- we seem not to read from ud.rec, but removing it breaks things
-        ud.rec[1] = ud.top.children
-        print("digraph abstract_syntax_tree {\n"
-           .. "graph [rankdir=LR];\n"
-           .. "node [shape=none];\n")
-    end
-
-    local indenter = "  "
-
     if AST.fl.is_before(flags) then
-        if not ud.rec[level] then ud.rec[level] = { } end
-        ud.level = level
-    end
+        ud.level = ud.level + 1
 
-    local parent = ud.stack[level]
-    local rec
+        if not ud.parent then
+            -- once-per-graph stuff
+            ud.parent = {
+                addr      = safeaddr,
+                children  = { },
+                contained = false,
+                flags     = flags,
+                name      = "top",
+                null      = isnull,
+                ptr       = not not ptr,
+                type      = _name,
+            }
+
+            print("digraph abstract_syntax_tree {\n"
+               .. "    graph [rankdir=LR];\n"
+               .. "    node [shape=none];\n")
+        else
+            local up = ud.parent.children
+            if up and #up > 0 then
+                ud.parent = up[#up]
+            end
+        end
+    end
 
     if AST.fl.is_between(flags) then
         local printable = type(v) == "string" and v or nil
-        rec = {
+
+        local rec = {
             addr      = safeaddr,
             children  = { },
-            contained = AST.fl.is_base(flags) or not AST.fl.is_alloc(flags),
+            contained = not AST.fl.is_alloc(flags),
             flags     = flags,
             name      = k,
-            ns        = _ns,
-            null      = null,
-            parent    = parent,
+            null      = isnull,
+            parent    = ud.parent,
             printable = printable,
+            ptr       = not not ptr,
             type      = _name,
         }
 
-        table.insert(ud.rec[level], rec)
-        ud.stack[level + 1] = rec
-        table.insert(parent.children,rec)
+        table.insert(ud.parent.children,rec)
     end
 
     if AST.fl.is_after(flags) then
-        -- clear out junk we don't need any to keep around
-        ud.stack[level + 1] = nil
-        ud.rec[level + 1] = nil
-    end
-
-    if level == 1 and AST.fl.is_after(flags) then
-        -- clear out junk we don't need any to keep around
-        ud.level = nil
-        ud.stack = nil
-        ud.rec = nil
-        print(format_node(ud,flags,ud.top))
-        for i,n in ipairs(ud.nodes) do print(n) end
-        for i,n in ipairs(ud.links) do print(n) end
-        print "}"
+        ud.level = ud.level - 1
+        if ud.parent.parent then
+            ud.parent = ud.parent.parent
+        end
+        -- TODO "if not ud.parent.parent" ?
+        if ud.level == 0 then
+            --print("ud.parent.parent=",ud.parent.parent)
+            print(format_node(ud,flags,ud.parent))
+            for i,n in ipairs(ud.nodes) do print(n) end
+            for i,n in ipairs(ud.links) do print(n) end
+            print "}"
+        end
     end
 
 end
@@ -195,17 +200,20 @@ local function errorcb(ud,msg)
 
     print(msg)
     -- TODO print "." vs. "->" correctly ("." is good enough for GDB) ?
-    print("level is " .. ud.level .. ", path is top." .. table.concat(ud.path,"."))
+    --print("level is " .. ud.level .. ", path is top." .. table.concat(ud.path,"."))
     ffi.C.abort()
 end
 
 local ud = {
-    level = 1,
+    level = 0,
+    --top   = {},
     links = {}, -- connections between nodes, formatted
     nodes = {}, -- top-level nodes, formatted
-    rec   = {},
-    stack = { { children = {} } },
+    --rec   = {},
+    --stack = { { children = {} } },
 }
+
+--ud.parent = ud.top
 
 AST.walk(ast,ud,{ walk = graphvizcb, error = errorcb })
 

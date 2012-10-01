@@ -175,7 +175,7 @@ const struct node_rec node_recs[] = {
 #define MAKE_NODE(...)
 #define MAKE_PRIV(...) MAKE2(PRIV,priv,__VA_ARGS__)
 
-const struct priv_rec priv_recs[] = {
+const struct node_rec priv_recs[] = {
     #include "ast.xi"
 };
 

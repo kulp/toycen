@@ -20,7 +20,7 @@ struct priv_offset {
 
 // TODO encapsulate these
 extern const struct node_rec node_recs[];
-extern const struct priv_rec priv_recs[];
+extern const struct node_rec priv_recs[];
 extern const struct id_rec id_recs[];
 extern const struct node_parentage node_parentages[];
 extern const struct basic_rec basic_recs[];

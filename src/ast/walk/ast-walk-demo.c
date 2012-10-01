@@ -1,7 +1,3 @@
-#include "lexer.h"
-#include "pp_lexer.h"
-#include "parser.h"
-#include "hash_table.h"
 #include "ast-walk.h"
 #include "ast-ids-priv.h"
 #include "ast-formatters.h"
@@ -10,11 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-extern int yyparse();
-
-int DEBUG_LEVEL = 2;
-FILE* DEBUG_FILE;
 
 static const char *flags_names[] = {
     #define R_(X) [AST_WALK_##X] = #X,
@@ -92,7 +83,7 @@ static int walk_cb(
 
     switch (meta) {
         case META_IS_PRIV: {
-            const struct priv_rec *rec = &priv_recs[type];
+            const struct node_rec *rec = &priv_recs[type];
             if (before)
                 printf("%s, ", rec->name);
             break;
@@ -130,31 +121,17 @@ static int walk_cb(
     return 0;
 }
 
-int main(int argc, char *argv[])
+static int demo_top_op(const struct translation_unit *top)
 {
     int result;
 
-    DEBUG_FILE = stdout;
-
-    parser_state_t ps;
-
-    if (argc > 1)
-        switch_to_input_file(argv[1]);
-
-    lexer_setup();
-    parser_setup(&ps);
-    result = yyparse();
-
-    struct translation_unit *top = get_top_of_parse_result();
-
     struct mydata data = { 0 };
-    ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN |
-                                         AST_WALK_AFTER_CHILDREN, &data);
-
-    parser_teardown(&ps);
-    lexer_teardown();
+    result = ast_walk((struct node*)top, walk_cb, AST_WALK_BEFORE_CHILDREN |
+                                                  AST_WALK_AFTER_CHILDREN, &data);
 
     return result;
 }
+
+int (*main_walk_op)(const struct translation_unit *) = demo_top_op;
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

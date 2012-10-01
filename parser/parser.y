@@ -45,8 +45,6 @@
     #include <string.h>
     #include <stdint.h>
 
-    extern int lineno, column;
-
     // not reentrant, but the parsing process is inherently serial, so it's ok
     void *_tptr;
 
@@ -291,20 +289,20 @@ multiplicative_expression
     : cast_expression
         { $$ = UN(multiplicative_expression, $1, .left = NULL, .op = BO_INVALID); }
     | multiplicative_expression '*' cast_expression
-        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = '*'); }
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = BO_MULTIPLY); }
     | multiplicative_expression '/' cast_expression
-        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = '/'); }
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = BO_DIVIDE); }
     | multiplicative_expression '%' cast_expression
-        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = '%'); }
+        { $$ = UN(multiplicative_expression, $3, .left = $1, .op = BO_MODULUS); }
     ;
 
 additive_expression
     : multiplicative_expression
         { $$ = UN(additive_expression, $1, .left = NULL, .op = BO_INVALID); }
     | additive_expression '+' multiplicative_expression
-        { $$ = UN(additive_expression, $3, .left = $1, .op = '+'); }
+        { $$ = UN(additive_expression, $3, .left = $1, .op = BO_ADD); }
     | additive_expression '-' multiplicative_expression
-        { $$ = UN(additive_expression, $3, .left = $1, .op = '-'); }
+        { $$ = UN(additive_expression, $3, .left = $1, .op = BO_SUBTRACT); }
     ;
 
 shift_expression
@@ -835,9 +833,12 @@ function_definition
 
 void yyerror(const char *s)
 {
-    fflush(stdout);
-    printf("Error on line %d\n", lineno);
-    printf("%*s\n%*s\n", column, "^", column, s);
+    extern int lineno, column;
+    extern char *yytext;
+
+    fflush(stderr);
+    fprintf(stderr, "Error on line %d at `%s' : \n", lineno + 1, yytext); // zero-based
+    fprintf(stderr, "%*s\n%*s\n", column, "^", column, s);
 }
 
 struct translation_unit* get_top_of_parse_result(void)
