@@ -9,7 +9,7 @@ function dsay(what)
     if should_debug then print(what) end
 end
 
-local serpent = require "3rdparty/serpent/src/serpent"
+--local serpent = require "3rdparty/serpent/src/serpent"
 
 local function prettify(what)
     if (should_prettify) then

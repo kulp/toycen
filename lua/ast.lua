@@ -1,7 +1,7 @@
 -- AST-specific functions / methods / setup goes here
 --module "AST"
 
-local serpent = require "3rdparty/serpent/src/serpent"
+--local serpent = require "3rdparty/serpent/src/serpent"
 
 local ffi = require "ffi"
 local bit = require "bit"
