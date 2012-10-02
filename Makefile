@@ -68,7 +68,6 @@ endif
 
 ifeq ($(ENABLE_LUA),1)
 WALKERS += lua_graphviz
-$(WALKBINS): | libljffifields.so
 ast-walk-lua_graphviz: LDLIBS += $(shell pkg-config --libs luajit) -lreadline
 endif
 
@@ -77,10 +76,10 @@ CLEANFILES += $(WALKBINS)
 OBJECTS += $(addsuffix .o,$(WALKBINS))
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 
-$(WALKBINS) : ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
+ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
                            lexer.o hash_table.o ast-ids.o ast-walk.o \
                            ast-formatters.o
-	$(LINK.c) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(LINK.c) $(BINLDFLAGS) -o $@ $^ $(LDLIBS)
 
 toycen.o: CFLAGS += -Wno-unused-parameter
 toycen: parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
@@ -101,9 +100,12 @@ wrap_ast_%.o: wrap.c %-ast.c
 toycen,wrap.o: toycen.c
 	$(COMPILE.c) -o $@ $^
 
+%: %.o
+	$(LINK.c) -o $@ $^ $(LDLIBS)
+
 # XXX this -DARTIFICIAL_AST can't really do anything with .o's !
 wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash_table.o ast-ids.o ast-formatters.o
-	$(LINK.c) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
+	$(LINK.c) $(BINLDFLAGS) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
 
 # Don't complain about unused yyunput()
 lexer.o: CFLAGS += -Wno-unused-function
@@ -130,12 +132,10 @@ CLEANFILES += ast-one.h
 ast-one.h: ast.h ast-ids-priv.h ast-formatters.h
 	cat $^ | $(CPP) $(CPPFLAGS) -o $@ -
 
-WALKERS += lua_graphviz
-$(WALKBINS): | libljffifields.so
-
-all: libast.so
-all: libljffifields.so
-all ast-walk-lua%: ast-one.h
+LUA_WALKERS = graphviz
+WALKERS += $(addprefix lua_,$(LUA_WALKERS))
+LUA_WALKBINS = $(addprefix ast-walk-lua_,$(WALKERS))
+$(LUA_WALKBINS): | libljffifields.so libast.so ast-one.h
 
 %,fPIC.o: CFLAGS += -fPIC
 %,fPIC.o: %.c
@@ -157,7 +157,7 @@ libljffifields.so: CPPFLAGS += -std=gnu99
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
 ifeq ($(shell uname -s),Darwin)
-ast-walk-lua% wrap_ast_% toycen: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
+ast-walk-lua% wrap_ast_% toycen: BINLDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 endif
 
 endif
