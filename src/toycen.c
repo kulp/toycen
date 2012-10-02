@@ -12,8 +12,8 @@
  */
 
 #include "lexer.h"
-#include "pp_lexer.h"
 #include "parser.h"
+#include "parser_primitives.h"
 #include "hash_table.h"
 
 #include <stdio.h>

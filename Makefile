@@ -1,7 +1,7 @@
 CPP = gcc -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
-SAVE_TEMPS ?= 1
+SAVE_TEMPS ?= 0
 else
 CFLAGS += -O3
 endif
@@ -99,6 +99,7 @@ wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash
 
 # Don't complain about unused yyunput()
 lexer.o: CFLAGS += -Wno-unused-function
+CLOBBERFILES += parser_internal.h
 parser_internal.h: y.tab.h ; ln $< $@
 
 CLEANFILES += t/test_hash_table t/test_hash_table_interface
@@ -151,17 +152,6 @@ ifeq ($(shell uname -s),Darwin)
 ast-walk-lua% wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 endif
 
-endif
-
-ifeq ($(BUILD_PP),1)
-CLEANFILES += tpp
-tpp: hash_table.o pp_lexer.o
-pp_lexer.o: DEFINES += PREPROCESSOR_LEXING
-pp_lexer.o: WEXTRA =
-pp_lexer.l: lexer.l.pre lexer.l.rules lexer.l.post
-OBJECTS += pp_lexer.o
-CLEANFILES += pp_lexer.l
-.SECONDARY: pp_lexer.c
 endif
 
 .SECONDARY: parser.c lexer.c

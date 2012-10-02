@@ -15,8 +15,6 @@ libljffifields.so
 libluajit.so
 parser.c
 parser_internal.h
-pp_lexer.c
-pp_lexer.l
 t/test_hash_table
 t/test_hash_table_interface
 tmp/

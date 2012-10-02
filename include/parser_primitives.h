@@ -14,6 +14,7 @@ extern int DEBUG_LEVEL;
 extern FILE* DEBUG_FILE;
 
 extern int yylex();
+extern int switch_to_input_file(const char *s);
 extern void yyerror(const char *s);
 void* _alloc_node(size_t size, void *data);
 /// copies data into old at offset
