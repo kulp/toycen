@@ -14,7 +14,8 @@ extern int DEBUG_LEVEL;
 extern FILE* DEBUG_FILE;
 
 extern int yylex();
-extern int switch_to_input_file(const char *s);
+extern int switch_to_input_file(const char *s, void **_state);
+extern int cleanup_input_state(void *_state);
 extern void yyerror(const char *s);
 void* _alloc_node(size_t size, void *data);
 /// copies data into old at offset
@@ -30,7 +31,7 @@ extern void *_tptr;
 #define NN(Type, ...) \
     ( (_tptr = (struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__)), \
       (debug(2, "allocating %p as %-25s with " #__VA_ARGS__, _tptr, #Type)), \
-	  (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
+      (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
       _tptr) \
     )
 
@@ -48,8 +49,8 @@ extern void *_tptr;
     ( (assert(Old != NULL)), \
       (debug(2, "upgrading  %p to %-25s with " #__VA_ARGS__, (void*)Old, #Type)), \
       (_tptr = (struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)), \
-	  (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
-	  (_tptr) \
+      (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
+      (_tptr) \
     )
 
 /// @todo real lookup

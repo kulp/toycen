@@ -1,17 +1,24 @@
-int switch_to_input_file(const char *s)
+int switch_to_input_file(const char *s, void **_state)
 {
-	yyin = fopen(s, "r");
+    yyin = fopen(s, "r");
 
-	if (!yyin) {
-		perror("fopen");
-		return -1;
-	}
+    if (!yyin) {
+        perror("fopen");
+        return -1;
+    }
 
-	yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+    YY_BUFFER_STATE state = yy_create_buffer(yyin, YY_BUF_SIZE);
+    *_state = state;
+    yypush_buffer_state(state);
 
-	BEGIN(INITIAL);
+    BEGIN(INITIAL);
 
-	return 0;
+    return 0;
+}
+
+int cleanup_input_state(void *_state)
+{
+    yy_delete_buffer(_state);
 }
 
 int column;
@@ -40,22 +47,22 @@ static void skip_comment(comment_t style)
 {
     int c1, c2;
 
-	c1 = input();
-	if (style == C89_STYLE) {
-		c2 = input();
+    c1 = input();
+    if (style == C89_STYLE) {
+        c2 = input();
 
-		while (c2 != EOF && !(c1 == '*' && c2 == '/')) {
-			if (c1 == '\n')
-				++lineno;
-			c1 = c2;
-			c2 = input();
-		}
-	} else {
-		while (c1 != EOF && !(c1 == '\n'))
-			c1 = input();
-		if (c1 == '\n')
-			++lineno;
-	}
+        while (c2 != EOF && !(c1 == '*' && c2 == '/')) {
+            if (c1 == '\n')
+                ++lineno;
+            c1 = c2;
+            c2 = input();
+        }
+    } else {
+        while (c1 != EOF && !(c1 == '\n'))
+            c1 = input();
+        if (c1 == '\n')
+            ++lineno;
+    }
 }
 
 static int check_identifier(char *s)

@@ -32,7 +32,7 @@
 %option noyywrap
 
 %{
-	#define _XOPEN_SOURCE 500
+    #define _XOPEN_SOURCE 500
 
     #include <ctype.h>
     #include <stdio.h>
@@ -46,7 +46,7 @@
 
     static hash_table_t types_hash;
 
-	int switch_to_input_file(const char *s);
+    int switch_to_input_file(const char *s, void **_state);
     /// Tracks columns for error reporting
     static void c();
     static void p();

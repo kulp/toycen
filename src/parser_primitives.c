@@ -55,6 +55,8 @@ void parser_teardown(parser_state_t *ps)
 {
     _debug(2, "%s", __func__);
     assert(ps != NULL);
+    hash_table_destroy(ps->globals);
+    hash_table_destroy(ps->constants.strings);
     memset(ps, 0, sizeof *ps);
     set_parser_state(NULL);
     /// @todo implement

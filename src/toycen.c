@@ -87,8 +87,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    void *parser_state;
     if (optind < argc)
-        switch_to_input_file(argv[optind]);
+        switch_to_input_file(argv[optind], &parser_state);
 
     struct translation_unit *top;
     get_ast(&ps, &top);
@@ -97,6 +98,10 @@ int main(int argc, char *argv[])
         result = main_walk_op(top);
 
     teardown_ast(&ps, &top);
+
+    cleanup_input_state(parser_state);
+    extern FILE *yyin;
+    fclose(yyin);
 
     return result;
 }

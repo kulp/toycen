@@ -216,6 +216,8 @@ int hash_table_destroy(hash_table_t table)
     table->size = 0;
     table->full = 0;
 
+    free(table);
+
     return rc;
 }
 
