@@ -27,7 +27,7 @@ ENABLE_LUA ?= 1
 
 INDENT ?= indent
 
-INCLUDE += xi include include/housekeeping include/ast include/util
+INCLUDE += src/xi include include/housekeeping include/ast include/util
 SRC += src src/ast src/ast/walk src/compiler src/util
 
 vpath %.l	    src/lexer
@@ -37,7 +37,7 @@ vpath %.l.rules src/lexer
 vpath %.y  		src/parser
 vpath %.c  		$(SRC) lua/
 vpath %.h  		$(INCLUDE)
-vpath %.xi 		xi
+vpath %.xi 		src/xi
 
 ifeq ($(INHIBIT_INTROSPECTION),1)
 DEFINES += INHIBIT_INTROSPECTION
