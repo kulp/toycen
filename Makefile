@@ -27,8 +27,8 @@ ENABLE_LUA ?= 1
 
 INDENT ?= indent
 
-INCLUDE += xi include include/housekeeping include/ast include/preprocessor include/util
-SRC += src src/ast src/ast/walk src/compiler src/preprocessor src/util
+INCLUDE += xi include include/housekeeping include/ast include/util
+SRC += src src/ast src/ast/walk src/compiler src/util
 
 vpath %.l	    lexer
 vpath %.l.pre   lexer
@@ -58,17 +58,25 @@ LDFLAGS += $(ARCHFLAGS)
 
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-formatters.o
 
+.DEFAULT_GOAL = all
+
 ifneq ($(INHIBIT_INTROSPECTION),1)
 WALKERS = demo graphviz test c
 WALKBINS = $(addprefix ast-walk-,$(WALKERS))
 OBJECTS += ast-walk.o
 endif
 
+ifeq ($(ENABLE_LUA),1)
+WALKERS += lua_graphviz
+$(WALKBINS): | libljffifields.so
+ast-walk-lua_graphviz: LDLIBS += $(shell pkg-config --libs luajit) -lreadline
+endif
+
+# ------------------------------------------------------------------------------
 CLEANFILES += $(WALKBINS)
 OBJECTS += $(addsuffix .o,$(WALKBINS))
 all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 
-ast-walk-lua_graphviz luash: LDLIBS += $(shell pkg-config --libs luajit) -lreadline
 $(WALKBINS) : ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
                            lexer.o hash_table.o ast-ids.o ast-walk.o \
                            ast-formatters.o
@@ -122,12 +130,12 @@ CLEANFILES += ast-one.h
 ast-one.h: ast.h ast-ids-priv.h ast-formatters.h
 	cat $^ | $(CPP) $(CPPFLAGS) -o $@ -
 
-$(WALKBINS): | libljffifields.so
 WALKERS += lua_graphviz
+$(WALKBINS): | libljffifields.so
 
 all: libast.so
-all: ast-one.h
 all: libljffifields.so
+all ast-walk-lua%: ast-one.h
 
 %,fPIC.o: CFLAGS += -fPIC
 %,fPIC.o: %.c
@@ -149,7 +157,7 @@ libljffifields.so: CPPFLAGS += -std=gnu99
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
 
 ifeq ($(shell uname -s),Darwin)
-ast-walk-lua% wrap_ast_% toycen luash: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
+ast-walk-lua% wrap_ast_% toycen: LDFLAGS += -Wl,-pagezero_size,10000 -Wl,-image_base,100000000
 endif
 
 endif

@@ -1,5 +1,4 @@
 #include "lexer.h"
-#include "pp_lexer.h"
 #include "parser.h"
 
 #include <luajit-2.0/luajit.h>
