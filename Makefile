@@ -59,7 +59,7 @@ LDFLAGS += $(ARCHFLAGS)
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-formatters.o
 
 ifneq ($(INHIBIT_INTROSPECTION),1)
-WALKERS = demo graphviz test c lua_graphviz
+WALKERS = demo graphviz test c
 WALKBINS = $(addprefix ast-walk-,$(WALKERS))
 OBJECTS += ast-walk.o
 endif
@@ -71,7 +71,7 @@ all: $(TARGET) t/test_hash_table t/test_hash_table_interface $(WALKBINS)
 ast-walk-lua_graphviz luash: LDLIBS += $(shell pkg-config --libs luajit) -lreadline
 $(WALKBINS) : ast-walk-% : toycen.o ast-walk-%.o parser.o parser_primitives.o \
                            lexer.o hash_table.o ast-ids.o ast-walk.o \
-                           ast-formatters.o | libljffifields.so
+                           ast-formatters.o
 	$(LINK.c) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 toycen.o: CFLAGS += -Wno-unused-parameter
@@ -121,9 +121,12 @@ CLEANFILES += ast-one.h
 ast-one.h: ast.h ast-ids-priv.h ast-formatters.h
 	cat $^ | $(CPP) $(CPPFLAGS) -o $@ -
 
+$(WALKBINS): | libljffifields.so
+WALKERS += lua_graphviz
+
 all: libast.so
-all: libljffifields.so
 all: ast-one.h
+all: libljffifields.so
 
 %,fPIC.o: CFLAGS += -fPIC
 %,fPIC.o: %.c
