@@ -30,11 +30,11 @@ INDENT ?= indent
 INCLUDE += xi include include/housekeeping include/ast include/util
 SRC += src src/ast src/ast/walk src/compiler src/util
 
-vpath %.l	    lexer
-vpath %.l.pre   lexer
-vpath %.l.post  lexer
-vpath %.l.rules lexer
-vpath %.y  		parser
+vpath %.l	    src/lexer
+vpath %.l.pre   src/lexer
+vpath %.l.post  src/lexer
+vpath %.l.rules src/lexer
+vpath %.y  		src/parser
 vpath %.c  		$(SRC) lua/
 vpath %.h  		$(INCLUDE)
 vpath %.xi 		xi

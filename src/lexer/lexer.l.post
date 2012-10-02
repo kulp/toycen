@@ -19,6 +19,7 @@ int switch_to_input_file(const char *s, void **_state)
 int cleanup_input_state(void *_state)
 {
     yy_delete_buffer(_state);
+    return 0;
 }
 
 int column;
