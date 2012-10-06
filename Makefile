@@ -27,7 +27,10 @@ ENABLE_LUA ?= 1
 
 INDENT ?= indent
 
-INCLUDE += src/xi include include/housekeeping include/ast include/util
+BISON = bison
+FLEX  = flex
+
+INCLUDE += src/xi include include/housekeeping include/ast include/util .
 SRC += src src/ast src/ast/walk src/compiler src/util
 
 vpath %.l	    src/lexer
@@ -51,9 +54,7 @@ WEXTRA = -Wextra -Wno-unused
 ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 
 CPPFLAGS += -std=c99 $(patsubst %,-D'%',$(DEFINES)) $(patsubst %,-I%,$(INCLUDE))
-YFLAGS  += -dv
-CFLAGS  += -Wall $(WEXTRA) -std=c99 $(PEDANTIC) $(ARCHFLAGS)
-LFLAGS  +=
+CFLAGS  += -Wall $(WEXTRA) $(PEDANTIC) $(ARCHFLAGS)
 LDFLAGS += $(ARCHFLAGS)
 
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-formatters.o
@@ -108,9 +109,8 @@ wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash
 	$(LINK.c) $(BINLDFLAGS) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
 
 # Don't complain about unused yyunput()
+# TODO use flex no* options to stop generating the functions in the first place
 lexer.o: CFLAGS += -Wno-unused-function
-CLOBBERFILES += parser_internal.h
-parser_internal.h: y.tab.h ; ln $< $@
 
 CLEANFILES += t/test_hash_table t/test_hash_table_interface
 t/%: CFLAGS += -I.
@@ -150,7 +150,6 @@ libljffifields.so: CPPFLAGS += $(shell pkg-config --cflags-only-I luajit)
 libljffifields.so: INCLUDE  += 3rdparty/luajit-2.0/src
 libljffifields.so: CFLAGS   += $(shell pkg-config --cflags-only-other luajit)
 # some luajit headers need [?] gcc
-libljffifields.so: CFLAGS += -std=gnu99
 libljffifields.so: CPPFLAGS += -std=gnu99
 
 %.so:
@@ -163,7 +162,15 @@ endif
 endif
 
 .SECONDARY: parser.c lexer.c
-CLEANFILES += y.output parser_internal.h y.tab.h parser.c lexer.l
+CLEANFILES += y.output y.tab.h parser.c lexer.c
+
+CLEANFILES += parser_gen.h
+%.h %.c: %.l
+	$(FLEX) --header-file=$*_gen.h -o $*.c $<
+
+CLEANFILES += lexer_gen.h
+%.h %.c: %.y
+	$(BISON) --defines=$*_gen.h -o $*.c $<
 
 ifeq ($(words $(filter clean clobber,$(MAKECMDGOALS))),0)
 -include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
@@ -174,10 +181,6 @@ endif
 	$(CC) -MG -M $(CPPFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
-
-CLEANFILES += lexer.c
-%.l: %.l.pre blank.l %.l.rules %.l.post
-	cat $(filter %.l.pre,$^) $(filter %blank.l,$^) $(filter %.l.rules,$^) $(filter %blank.l,$^) $(filter %.l.post,$^) > $@
 
 clean:
 	$(RM) -r $(CLEANFILES) *.[odsi] *.dSYM $(TARGET)

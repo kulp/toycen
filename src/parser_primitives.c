@@ -2,18 +2,6 @@
 
 #include <assert.h>
 
-static parser_state_t *_ps;
-
-parser_state_t *get_parser_state(void)
-{
-    return _ps;
-}
-
-void set_parser_state(parser_state_t *ps)
-{
-    _ps = ps;
-}
-
 void* _alloc_node(size_t size, void *data)
 {
     debug(3, "allocator running with size %ld", size);
@@ -39,29 +27,6 @@ void* _copy_node(void *old, void *data, size_t size, size_t off)
     return old;
 }
  
-void parser_setup(parser_state_t *ps)
-{
-    _debug(2, "%s", __func__);
-    assert(ps != NULL);
-    memset(ps, 0, sizeof *ps);
-    set_parser_state(ps);
-    hash_table_create(&ps->globals          , DEFAULT_SYMBOL_TABLE_SIZE);
-    hash_table_create(&ps->constants.strings, DEFAULT_CONSTANTS_TABLE_SIZE);
-
-    /// @todo implement
-}
-
-void parser_teardown(parser_state_t *ps)
-{
-    _debug(2, "%s", __func__);
-    assert(ps != NULL);
-    hash_table_destroy(ps->globals);
-    hash_table_destroy(ps->constants.strings);
-    memset(ps, 0, sizeof *ps);
-    set_parser_state(NULL);
-    /// @todo implement
-}
-
 void *my_malloc(size_t size)
 {
     void *result = malloc(size);
@@ -93,7 +58,7 @@ void my_free(void *ptr)
 }
 
 /// @tod support overlapping string constants
-struct string* intern_string(parser_state_t *ps, const char *str)
+struct string* intern_string(struct parser_state *ps, const char *str)
 {
     assert(ps != NULL);
     assert(str != NULL);

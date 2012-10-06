@@ -11,9 +11,9 @@
  * extensions.
  */
 
-#include "lexer.h"
-#include "parser.h"
+#include "lexer_gen.h"
 #include "parser_primitives.h"
+#include "parser.h"
 #include "hash_table.h"
 
 #include <stdio.h>
@@ -22,7 +22,7 @@
 
 #include <getopt.h>
 
-extern int yyparse();
+extern int toycen_parse();
 
 int DEBUG_LEVEL = 2;
 FILE* DEBUG_FILE;
@@ -33,34 +33,49 @@ bool is_interactive = false;
 // common variable, another object sets it
 int (*main_walk_op)(const struct translation_unit *);
 
-static int get_parsed_ast(void *ud, struct translation_unit **what)
+static int get_parsed_ast(struct parser_state *ps, struct translation_unit **what, void *ud)
 {
     int result = 0;
 
-    lexer_setup();
-    parser_setup(ud);
-    result = yyparse();
+    toycen_lex_init(&ps->scanner);
+    toycen_set_extra(ps, ps->scanner);
+    hash_table_create(&ps->types_hash, 0);
+    hash_table_create(&ps->globals          , DEFAULT_SYMBOL_TABLE_SIZE);
+    hash_table_create(&ps->constants.strings, DEFAULT_CONSTANTS_TABLE_SIZE);
 
-    *what = get_top_of_parse_result();
+    if (ud)
+        toycen_set_in(ud, ps->scanner);
+
+    result = toycen_parse(ps);
+
+    *what = ps->top;
 
     return result;
 }
 
-static int teardown_parsed_ast(void *ud, struct translation_unit **what)
+static int teardown_parsed_ast(struct parser_state *ps, struct translation_unit **what, void *ud)
 {
     int result = 0;
 
-    parser_teardown(ud);
-    lexer_teardown();
+    // TODO free what
+    (void)what;
+    (void)ud;
+
+    toycen_lex_destroy(ps->scanner);
+    hash_table_destroy(ps->globals);
+    hash_table_destroy(ps->constants.strings);
+    hash_table_destroy(ps->types_hash);
+    ps->types_hash = NULL;
+    memset(ps, 0, sizeof *ps);
 
     return result;
 }
 
-extern int get_wrapped_ast(void *, struct translation_unit **);
-extern int teardown_wrapped_ast(void *, struct translation_unit **);
+extern int get_wrapped_ast(struct parser_state *ps, struct translation_unit **, void *ud);
+extern int teardown_wrapped_ast(struct parser_state *ps, struct translation_unit **, void *ud);
 
-static int (*get_ast)(void *, struct translation_unit **);
-static int (*teardown_ast)(void *, struct translation_unit **);
+static int (*get_ast)(struct parser_state *ps, struct translation_unit **, void *ud);
+static int (*teardown_ast)(struct parser_state *ps, struct translation_unit **, void *ud);
 
 int main(int argc, char *argv[])
 {
@@ -76,7 +91,8 @@ int main(int argc, char *argv[])
     teardown_ast = teardown_parsed_ast;
 #endif
 
-    parser_state_t ps;
+    struct parser_state _ps, *ps = &_ps;
+    memset(ps, 0, sizeof *ps);
 
     extern int optind;
     int ch;
@@ -87,21 +103,20 @@ int main(int argc, char *argv[])
         }
     }
 
-    void *parser_state;
+    FILE *in = NULL;
     if (optind < argc)
-        switch_to_input_file(argv[optind], &parser_state);
+        in = fopen(argv[optind], "rb");
 
     struct translation_unit *top;
-    get_ast(&ps, &top);
+    get_ast(ps, &top, in);
 
     if (main_walk_op)
         result = main_walk_op(top);
 
-    teardown_ast(&ps, &top);
+    teardown_ast(ps, &top, NULL);
 
-    cleanup_input_state(parser_state);
-    extern FILE *yyin;
-    fclose(yyin);
+    if (in)
+        fclose(in);
 
     return result;
 }
