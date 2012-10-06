@@ -1,4 +1,4 @@
-CPP = gcc -E -x c -P
+CPP := $(CC) -E -x c -P
 ifneq ($(DEBUG),)
 DEFINES += DEBUG=$(DEBUG)
 SAVE_TEMPS ?= 0
@@ -25,9 +25,9 @@ endif
 
 ENABLE_LUA ?= 1
 
-INDENT ?= $(shell which indent2 cat | head -n1)
+INDENT ?= $(shell which indent cat | head -n1)
 
-INCLUDE += src/xi include include/housekeeping include/ast include/util
+INCLUDE += src/xi include include/housekeeping include/ast include/util .
 SRC += src src/ast src/ast/walk src/compiler src/util
 
 vpath %.l	    src/lexer
