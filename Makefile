@@ -25,7 +25,7 @@ endif
 
 ENABLE_LUA ?= 1
 
-INDENT ?= indent
+INDENT ?= $(shell which indent2 cat | head -n1)
 
 INCLUDE += src/xi include include/housekeeping include/ast include/util
 SRC += src src/ast src/ast/walk src/compiler src/util
