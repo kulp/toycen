@@ -31,12 +31,14 @@
 
 %option noyywrap
 
-%{
+%top{
     #define _XOPEN_SOURCE 500
 
     #include <ctype.h>
     #include <stdio.h>
+}
 
+%{
     #include "debug.h"
     #include "parser.h"
     #include "hash_table.h"
