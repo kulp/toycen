@@ -34,9 +34,11 @@
 %{
     #define _XOPEN_SOURCE 600
 
+    #include "ast.h"
     #include "parser.h"
     #include "parser_primitives.h"
     #include "lexer.h"
+    void add_typename(scope_t *scope, const char *type);
 
     #include <assert.h>
     #include <stdio.h>
@@ -199,6 +201,9 @@
 %token <i> STRUCT UNION
 %token <str> STRING
 
+%error-verbose
+%name-prefix "toycen_"
+
 %start translation_unit
 
 %%
@@ -211,7 +216,7 @@ primary_expression
     | INTEGER
         { struct integer *temp = NN(integer, /** @todo size */.size = 4,
                                              /** @todo is_signed */.is_signed = true,
-                                             .me = CHOICE(1,i,strtol(yylval.str, NULL, 0)));
+                                             .me = CHOICE(1,i,strtol(toycen_lval.str, NULL, 0)));
           $$ = NN(primary_expression, .type = PRET_INTEGER   , .me = CHOICE(1,i,temp)); }
     | CHARACTER
         { $$ = NN(primary_expression, .type = PRET_CHARACTER , .me = CHOICE(2,c,/* TODO */NULL)); }
@@ -225,7 +230,7 @@ primary_expression
 
 identifier
     : IDENTIFIER
-        { $$ = NN(identifier, .len = strlen(yylval.str), .name = strdup(yylval.str)); }
+        { $$ = NN(identifier, .len = strlen(toycen_lval.str), .name = strdup(toycen_lval.str)); }
     ;
 
 postfix_expression
@@ -480,7 +485,7 @@ type_specifier
     | enum_specifier
         { $$ = NN(type_specifier, .type = TS_ENUM_SPEC, .c = CHOICE(1,es,$1)); }
     | TYPEDEF_NAME
-        { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .c = CHOICE(2,tn,NULL /* TODO str2type_name(yylval.str))*/)); }
+        { $$ = NN(type_specifier, .type = TS_TYPEDEF_NAME, .c = CHOICE(2,tn,NULL /* TODO str2type_name(toycen_lval.str))*/)); }
     ;
 
 struct_or_union_specifier
@@ -831,13 +836,13 @@ function_definition
 
 %%
 
-void yyerror(const char *s)
+void toycen_error(const char *s)
 {
     extern int lineno, column;
-    extern char *yytext;
+    extern char *toycen_text;
 
     fflush(stderr);
-    fprintf(stderr, "Error on line %d at `%s' : \n", lineno + 1, yytext); // zero-based
+    fprintf(stderr, "Error on line %d at `%s' : \n", lineno + 1, toycen_text); // zero-based
     fprintf(stderr, "%*s\n%*s\n", column, "^", column, s);
 }
 

@@ -30,19 +30,23 @@
  */
 
 %option noyywrap
+%option prefix="toycen_"
 
 %top{
-    #define _XOPEN_SOURCE 500
+    #define _XOPEN_SOURCE 600
 
     #include <ctype.h>
     #include <stdio.h>
+
+    typedef int scope_t;
 }
 
 %{
-    #include "debug.h"
+    #include "ast.h"
     #include "parser.h"
+    #include "parser_internal.h"
+    #include "debug.h"
     #include "hash_table.h"
-    #include "lexer.h"
 
     int lineno;
 

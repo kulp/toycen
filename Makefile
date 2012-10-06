@@ -27,6 +27,9 @@ ENABLE_LUA ?= 1
 
 INDENT ?= $(shell which indent cat | head -n1)
 
+BISON = bison
+FLEX  = flex
+
 INCLUDE += src/xi include include/housekeeping include/ast include/util .
 SRC += src src/ast src/ast/walk src/compiler src/util
 
@@ -51,9 +54,7 @@ WEXTRA = -Wextra -Wno-unused
 ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 
 CPPFLAGS += -std=c99 $(patsubst %,-D'%',$(DEFINES)) $(patsubst %,-I%,$(INCLUDE))
-YFLAGS  += -dv
 CFLAGS  += -Wall $(WEXTRA) $(PEDANTIC) $(ARCHFLAGS)
-LFLAGS  +=
 LDFLAGS += $(ARCHFLAGS)
 
 OBJECTS = parser.o parser_primitives.o lexer.o main.o hash_table.o ast-ids.o ast-formatters.o
@@ -163,6 +164,14 @@ endif
 
 .SECONDARY: parser.c lexer.c
 CLEANFILES += y.output parser_internal.h y.tab.h parser.c lexer.l
+
+CLEANFILES += parser.h
+%.h %.c: %.l
+	$(FLEX) --header-file=$*.h -o $*.c $<
+
+CLEANFILES += lexer.h
+%.h %.c: %.y
+	$(BISON) --defines=$*.h -o $*.c $<
 
 ifeq ($(words $(filter clean clobber,$(MAKECMDGOALS))),0)
 -include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
