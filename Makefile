@@ -178,7 +178,7 @@ ifeq ($(words $(filter clean clobber,$(MAKECMDGOALS))),0)
 endif
 
 %.d: %.c
-	@set -e; rm -f $@; \
+	set -e; rm -f $@; \
 	$(CC) -MG -M $(CPPFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
