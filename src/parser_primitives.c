@@ -27,29 +27,6 @@ void* _copy_node(void *old, void *data, size_t size, size_t off)
     return old;
 }
  
-void parser_setup(struct parser_state *ps)
-{
-    _debug(2, "%s", __func__);
-    assert(ps != NULL);
-    memset(ps, 0, sizeof *ps);
-    set_parser_state(ps);
-    hash_table_create(&ps->globals          , DEFAULT_SYMBOL_TABLE_SIZE);
-    hash_table_create(&ps->constants.strings, DEFAULT_CONSTANTS_TABLE_SIZE);
-
-    /// @todo implement
-}
-
-void parser_teardown(struct parser_state *ps)
-{
-    _debug(2, "%s", __func__);
-    assert(ps != NULL);
-    hash_table_destroy(ps->globals);
-    hash_table_destroy(ps->constants.strings);
-    memset(ps, 0, sizeof *ps);
-    set_parser_state(NULL);
-    /// @todo implement
-}
-
 void *my_malloc(size_t size)
 {
     void *result = malloc(size);

@@ -32,26 +32,21 @@
 %top{
 #define _XOPEN_SOURCE 600
 
-#include <ctype.h>
-#include <stdio.h>
-
-#include "lexer.h"
+#include "ast.h"
+#include "parser_gen.h"
+#include "parser.h"
 }
 
 %{
-#include "ast.h"
-#include "parser.h"
-#include "parser_internal.h"
+#include <ctype.h>
+#include <stdio.h>
+
 #include "debug.h"
 #include "hash_table.h"
 
 int parser_add_typename(struct parser_state *ps, scope_t *scope, const char *type);
-void toycen_error(YYLTYPE *locp, struct parser_state *ps, const char *s);
-/// Tracks columns for error reporting
-static void c(yyscan_t yyscanner);
-static void p(yyscan_t yyscanner);
-
 static int check_identifier(yyscan_t yyscanner, char *);
+
 %}
 
 %option reentrant bison-bridge bison-locations stack
@@ -156,7 +151,7 @@ id                                      [a-zA-Z_][a-zA-Z_0-9]*
 "short"                                 { return SHORT;    }
 "signed"                                { return SIGNED;   }
 "sizeof"                                { return SIZEOF;   }
-"static"                                { return STATI  }
+"static"                                { return STATIC;   }
 "struct"                                { return STRUCT;   }
 "switch"                                { return SWITCH;   }
 "typedef"                               { return TYPEDEF;  }

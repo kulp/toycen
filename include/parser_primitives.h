@@ -67,7 +67,6 @@ void my_free(void*);
 #define debug(...) _debug(__VA_ARGS__)
 
 struct parser_state *get_parser_state(void);
-void set_parser_state(struct parser_state *ps);
 
 struct string* intern_string(struct parser_state *ps, const char *str);
 

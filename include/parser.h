@@ -35,6 +35,9 @@ struct parser_state {
 
 int toycen_error(YYLTYPE *locp, struct parser_state *ps, const char *s);
 
+/// @todo define scope appropriately, and somewhere else
+typedef int scope_t;
+
 #endif
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

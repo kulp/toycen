@@ -6,9 +6,6 @@
 #include "parser.h"
 #include "lexer_gen.h"
 
-/// @todo define scope appropriately, and somewhere else
-typedef int scope_t;
-
 #endif
 
 /* vi:set ts=4 sw=4 et syntax=c.doxygen: */

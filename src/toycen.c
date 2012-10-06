@@ -40,6 +40,8 @@ static int get_parsed_ast(struct parser_state *ps, struct translation_unit **wha
     toycen_lex_init(&ps->scanner);
     toycen_set_extra(ps, ps->scanner);
     hash_table_create(&ps->types_hash, 0);
+    hash_table_create(&ps->globals          , DEFAULT_SYMBOL_TABLE_SIZE);
+    hash_table_create(&ps->constants.strings, DEFAULT_CONSTANTS_TABLE_SIZE);
 
     if (ud)
         toycen_set_in(ud, ps->scanner);
@@ -60,8 +62,11 @@ static int teardown_parsed_ast(struct parser_state *ps, struct translation_unit 
     (void)ud;
 
     toycen_lex_destroy(ps->scanner);
+    hash_table_destroy(ps->globals);
+    hash_table_destroy(ps->constants.strings);
     hash_table_destroy(ps->types_hash);
     ps->types_hash = NULL;
+    memset(ps, 0, sizeof *ps);
 
     return result;
 }
