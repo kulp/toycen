@@ -52,7 +52,7 @@ ARCHFLAGS = $(patsubst %,-arch %,$(ARCHS))
 
 CPPFLAGS += -std=c99 $(patsubst %,-D'%',$(DEFINES)) $(patsubst %,-I%,$(INCLUDE))
 YFLAGS  += -dv
-CFLAGS  += -Wall $(WEXTRA) -std=c99 $(PEDANTIC) $(ARCHFLAGS)
+CFLAGS  += -Wall $(WEXTRA) $(PEDANTIC) $(ARCHFLAGS)
 LFLAGS  +=
 LDFLAGS += $(ARCHFLAGS)
 
@@ -150,7 +150,6 @@ libljffifields.so: CPPFLAGS += $(shell pkg-config --cflags-only-I luajit)
 libljffifields.so: INCLUDE  += 3rdparty/luajit-2.0/src
 libljffifields.so: CFLAGS   += $(shell pkg-config --cflags-only-other luajit)
 # some luajit headers need [?] gcc
-libljffifields.so: CFLAGS += -std=gnu99
 libljffifields.so: CPPFLAGS += -std=gnu99
 
 %.so:

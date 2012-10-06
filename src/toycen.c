@@ -50,6 +50,8 @@ static int teardown_parsed_ast(void *ud, struct translation_unit **what)
 {
     int result = 0;
 
+    (void)what;
+
     parser_teardown(ud);
     lexer_teardown();
 
