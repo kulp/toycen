@@ -66,136 +66,136 @@ int parser_add_typename(struct parser_state *ps, scope_t *scope, const char *typ
     char *str;
     char chr;
 
-    /* TODO align */
     enum assignment_operator assn_op;
     enum storage_class_specifier scs;
     enum type_qualifier tq;
     enum unary_operator uo;
-    struct abstract_declarator *abs_decl;
-    struct additive_expression *add_expr;
-    struct aggregate_declaration *ai;
-    struct aggregate_declaration_list *al;
-    struct aggregate_declarator *adecl;
-    struct aggregate_declarator_list *adecl_list;
-    struct aggregate_specifier *as;
-    struct and_expression *and_expr;
-    struct argument_expression_list *ael;
-    struct assignment_expression *assn_expr;
-    struct cast_expression *ce;
-    struct compound_statement *comp_stat;
-    struct conditional_expression *cond_expr;
-    struct constant_expression *const_expr;
-    struct declaration *decln;
-    struct declaration_list *decln_list;
-    struct declaration_specifiers *decl_spec;
-    struct declarator *decl;
-    struct direct_abstract_declarator *dir_abs_decl;
-    struct direct_declarator *ddecl;
-    struct enum_specifier *enum_spec;
-    struct enumerator *ei;
-    struct enumerator_list *el;
-    struct equality_expression *eq_expr;
-    struct exclusive_or_expression *e_or_expr;
-    struct expression *expr;
-    struct expression_statement *expr_stat;
-    struct external_declaration *ext_decl;
-    struct function_definition *func_def;
-    struct identifier *id;
-    struct identifier_list *ident_list;
-    struct inclusive_or_expression *i_or_expr;
-    struct init_declarator *i_decl;
-    struct init_declarator_list *i_d_list;
-    struct initializer *init;
-    struct initializer_list *init_list;
-    struct iteration_statement *iter_stat;
-    struct jump_statement *jump_stat;
-    struct labeled_statement *lab_stat;
-    struct logical_and_expression *l_and_expr;
-    struct logical_or_expression *l_or_expr;
-    struct multiplicative_expression *mult_expr;
-    struct parameter_declaration *p_decl;
-    struct parameter_list *p_list;
-    struct parameter_type_list *p_type_list;
-    struct pointer *ptr;
-    struct postfix_expression *pe;
-    struct primary_expression *pri_expr;
-    struct relational_expression *rel_expr;
-    struct selection_statement *sel_stat;
-    struct shift_expression *shift_expr;
-    struct specifier_qualifier_list *sq_list;
-    struct statement *stat;
-    struct statement_list *stat_list;
-    struct translation_unit *trans_unit;
-    struct type_name *tn;
-    struct type_qualifier_list *tq_list;
-    struct type_specifier *ts;
-    struct unary_expression *ue;
+
+    struct abstract_declarator        * abs_decl;
+    struct additive_expression        * add_expr;
+    struct aggregate_declaration      * ai;
+    struct aggregate_declaration_list * al;
+    struct aggregate_declarator       * adecl;
+    struct aggregate_declarator_list  * adecl_list;
+    struct aggregate_specifier        * as;
+    struct and_expression             * and_expr;
+    struct argument_expression_list   * ael;
+    struct assignment_expression      * assn_expr;
+    struct cast_expression            * ce;
+    struct compound_statement         * comp_stat;
+    struct conditional_expression     * cond_expr;
+    struct constant_expression        * const_expr;
+    struct declaration                * decln;
+    struct declaration_list           * decln_list;
+    struct declaration_specifiers     * decl_spec;
+    struct declarator                 * decl;
+    struct direct_abstract_declarator * dir_abs_decl;
+    struct direct_declarator          * ddecl;
+    struct enum_specifier             * enum_spec;
+    struct enumerator                 * ei;
+    struct enumerator_list            * el;
+    struct equality_expression        * eq_expr;
+    struct exclusive_or_expression    * e_or_expr;
+    struct expression                 * expr;
+    struct expression_statement       * expr_stat;
+    struct external_declaration       * ext_decl;
+    struct function_definition        * func_def;
+    struct identifier                 * id;
+    struct identifier_list            * ident_list;
+    struct inclusive_or_expression    * i_or_expr;
+    struct init_declarator            * i_decl;
+    struct init_declarator_list       * i_d_list;
+    struct initializer                * init;
+    struct initializer_list           * init_list;
+    struct iteration_statement        * iter_stat;
+    struct jump_statement             * jump_stat;
+    struct labeled_statement          * lab_stat;
+    struct logical_and_expression     * l_and_expr;
+    struct logical_or_expression      * l_or_expr;
+    struct multiplicative_expression  * mult_expr;
+    struct parameter_declaration      * p_decl;
+    struct parameter_list             * p_list;
+    struct parameter_type_list        * p_type_list;
+    struct pointer                    * ptr;
+    struct postfix_expression         * pe;
+    struct primary_expression         * pri_expr;
+    struct relational_expression      * rel_expr;
+    struct selection_statement        * sel_stat;
+    struct shift_expression           * shift_expr;
+    struct specifier_qualifier_list   * sq_list;
+    struct statement                  * stat;
+    struct statement_list             * stat_list;
+    struct translation_unit           * trans_unit;
+    struct type_name                  * tn;
+    struct type_qualifier_list        * tq_list;
+    struct type_specifier             * ts;
+    struct unary_expression           * ue;
 }
 
-%type <abs_decl> abstract_declarator;
-%type <add_expr> additive_expression;
-%type <adecl> struct_declarator;
-%type <adecl_list> struct_declarator_list;
-%type <ael> argument_expression_list
-%type <ai> struct_declaration
-%type <al> struct_declaration_list
-%type <and_expr> and_expression;
-%type <as> struct_or_union_specifier
-%type <assn_expr> assignment_expression;
-%type <assn_op> assignment_operator;
-%type <ce> cast_expression
-%type <comp_stat> compound_statement
-%type <cond_expr> conditional_expression;
-%type <const_expr> constant_expression;
-%type <ddecl> direct_declarator;
-%type <decl> declarator;
-%type <decl_spec> declaration_specifiers;
-%type <decln> declaration
-%type <decln_list> declaration_list
-%type <dir_abs_decl> direct_abstract_declarator;
-%type <e_or_expr> exclusive_or_expression;
-%type <ei> enumerator
-%type <el> enumerator_list
-%type <enum_spec> enum_specifier
-%type <eq_expr> equality_expression;
-%type <expr> expression;
-%type <expr_stat> expression_statement
-%type <ext_decl> external_declaration
-%type <func_def> function_definition
-%type <i> struct_or_union
-%type <i_d_list> init_declarator_list
-%type <i_decl> init_declarator
-%type <i_or_expr> inclusive_or_expression;
-%type <id> identifier
-%type <ident_list> identifier_list
-%type <init> initializer
-%type <init_list> initializer_list
-%type <iter_stat> iteration_statement
-%type <jump_stat> jump_statement
-%type <l_and_expr> logical_and_expression;
-%type <l_or_expr> logical_or_expression;
-%type <lab_stat> labeled_statement
-%type <mult_expr> multiplicative_expression;
-%type <p_decl> parameter_declaration;
-%type <p_list> parameter_list;
-%type <p_type_list> parameter_type_list
-%type <pe> postfix_expression
-%type <pri_expr> primary_expression;
-%type <ptr> pointer;
-%type <rel_expr> relational_expression;
-%type <scs> storage_class_specifier;
-%type <sel_stat> selection_statement
-%type <shift_expr> shift_expression;
-%type <sq_list> specifier_qualifier_list;
-%type <stat> statement
-%type <stat_list> statement_list
-%type <tn> type_name
-%type <tq> type_qualifier;
-%type <tq_list> type_qualifier_list;
-%type <trans_unit> translation_unit
-%type <ts> type_specifier
-%type <ue> unary_expression
-%type <uo> unary_operator
+%type < abs_decl     > abstract_declarator;
+%type < add_expr     > additive_expression;
+%type < adecl        > struct_declarator;
+%type < adecl_list   > struct_declarator_list;
+%type < ael          > argument_expression_list
+%type < ai           > struct_declaration
+%type < al           > struct_declaration_list
+%type < and_expr     > and_expression;
+%type < as           > struct_or_union_specifier
+%type < assn_expr    > assignment_expression;
+%type < assn_op      > assignment_operator;
+%type < ce           > cast_expression
+%type < comp_stat    > compound_statement
+%type < cond_expr    > conditional_expression;
+%type < const_expr   > constant_expression;
+%type < ddecl        > direct_declarator;
+%type < decl         > declarator;
+%type < decl_spec    > declaration_specifiers;
+%type < decln        > declaration
+%type < decln_list   > declaration_list
+%type < dir_abs_decl > direct_abstract_declarator;
+%type < e_or_expr    > exclusive_or_expression;
+%type < ei           > enumerator
+%type < el           > enumerator_list
+%type < enum_spec    > enum_specifier
+%type < eq_expr      > equality_expression;
+%type < expr         > expression;
+%type < expr_stat    > expression_statement
+%type < ext_decl     > external_declaration
+%type < func_def     > function_definition
+%type < i            > struct_or_union
+%type < i_d_list     > init_declarator_list
+%type < i_decl       > init_declarator
+%type < i_or_expr    > inclusive_or_expression;
+%type < id           > identifier
+%type < ident_list   > identifier_list
+%type < init         > initializer
+%type < init_list    > initializer_list
+%type < iter_stat    > iteration_statement
+%type < jump_stat    > jump_statement
+%type < l_and_expr   > logical_and_expression;
+%type < l_or_expr    > logical_or_expression;
+%type < lab_stat     > labeled_statement
+%type < mult_expr    > multiplicative_expression;
+%type < p_decl       > parameter_declaration;
+%type < p_list       > parameter_list;
+%type < p_type_list  > parameter_type_list
+%type < pe           > postfix_expression
+%type < pri_expr     > primary_expression;
+%type < ptr          > pointer;
+%type < rel_expr     > relational_expression;
+%type < scs          > storage_class_specifier;
+%type < sel_stat     > selection_statement
+%type < shift_expr   > shift_expression;
+%type < sq_list      > specifier_qualifier_list;
+%type < stat         > statement
+%type < stat_list    > statement_list
+%type < tn           > type_name
+%type < tq           > type_qualifier;
+%type < tq_list      > type_qualifier_list;
+%type < trans_unit   > translation_unit
+%type < ts           > type_specifier
+%type < ue           > unary_expression
+%type < uo           > unary_operator
 
 %token IDENTIFIER TYPEDEF_NAME INTEGER FLOATING CHARACTER
 

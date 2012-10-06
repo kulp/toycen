@@ -110,7 +110,7 @@ wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash
 
 # Don't complain about unused yyunput()
 # TODO use flex no* options to stop generating the functions in the first place
-lexer.o: CFLAGS += -Wno-unused-function
+lexer.o: CFLAGS += -Wno-unused-function -Wno-unused-parameter -Wno-sign-compare
 
 CLEANFILES += t/test_hash_table t/test_hash_table_interface
 t/%: CFLAGS += -I.
@@ -151,6 +151,8 @@ libljffifields.so: INCLUDE  += 3rdparty/luajit-2.0/src
 libljffifields.so: CFLAGS   += $(shell pkg-config --cflags-only-other luajit)
 # some luajit headers need [?] gcc
 libljffifields.so: CPPFLAGS += -std=gnu99
+# don't complain about anonymous unions from luajit
+libljffifields.so: CFLAGS += -Wno-c11-extensions
 
 %.so:
 	$(LINK.c) -shared -o $@ $^ $(LDLIBS)
