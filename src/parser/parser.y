@@ -32,32 +32,41 @@
  */
 
 %{
-    #define _XOPEN_SOURCE 600
+#define _XOPEN_SOURCE 600
 
-    #include "ast.h"
-    #include "parser.h"
-    #include "parser_primitives.h"
-    #include "lexer.h"
-    void add_typename(scope_t *scope, const char *type);
+#include "ast.h"
+#include "parser_primitives.h"
+#include "lexer.h"
 
-    #include <assert.h>
-    #include <stdio.h>
-    #include <stdarg.h>
-    #include <stdlib.h>
-    #include <string.h>
-    #include <stdint.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
-    // not reentrant, but the parsing process is inherently serial, so it's ok
-    void *_tptr;
+int parser_add_typename(struct parser_state *ps, scope_t *scope, const char *type);
 
-    static struct translation_unit *top;
+#define YYLEX_PARAM (ps->scanner)
+
 %}
+
+%error-verbose
+%pure-parser
+%locations
+%define parse.lac full
+%lex-param { void *yyscanner }
+/* declare parse_data struct as opaque for bison 2.6 */
+%code requires { struct parser_state; }
+%parse-param { struct parser_state *ps }
+%name-prefix "toycen_"
 
 %union {
     long i;
     char *str;
     char chr;
 
+    /* TODO align */
     enum assignment_operator assn_op;
     enum storage_class_specifier scs;
     enum type_qualifier tq;
@@ -201,9 +210,6 @@
 %token <i> STRUCT UNION
 %token <str> STRING
 
-%error-verbose
-%name-prefix "toycen_"
-
 %start translation_unit
 
 %%
@@ -223,7 +229,7 @@ primary_expression
     | FLOATING
         { $$ = NN(primary_expression, .type = PRET_FLOATING  , .me = CHOICE(3,f,/* TODO */NULL)); }
     | STRING
-        { $$ = NN(primary_expression, .type = PRET_STRING    , .me = CHOICE(4,s,intern_string(get_parser_state(),$1))); }
+        { $$ = NN(primary_expression, .type = PRET_STRING    , .me = CHOICE(4,s,intern_string(ps,$1))); }
     | '(' expression ')'
         { $$ = NN(primary_expression, .type = PRET_PARENTHESIZED, .me = CHOICE(5,e,$2)); }
     ;
@@ -424,7 +430,7 @@ declaration
           if (old->type == DS_HAS_STORAGE_CLASS && CHOICE_REF(&old->me,scs) == SCS_TYPEDEF) {
               struct init_declarator_list *head = $2;
               while (head) {
-                  add_typename(NULL, CHOICE_REF(&head->base.base.base.c,id)->name);
+                  parser_add_typename(ps, NULL, CHOICE_REF(&head->base.base.base.c,id)->name);
                   head = head->left;
               }
           }
@@ -811,9 +817,9 @@ jump_statement
 
 translation_unit
     : external_declaration
-        { top = $$ = NN(translation_unit, .right = $1, .left = NULL); }
+        { ps->top = $$ = NN(translation_unit, .right = $1, .left = NULL); }
     | translation_unit external_declaration
-        { top = $$ = NN(translation_unit, .right = $2, .left = $1); }
+        { ps->top = $$ = NN(translation_unit, .right = $2, .left = $1); }
     ;
 
 external_declaration
@@ -836,19 +842,32 @@ function_definition
 
 %%
 
-void toycen_error(const char *s)
+int toycen_error(YYLTYPE *locp, struct parser_state *ps, const char *s)
 {
-    extern int lineno, column;
-    extern char *toycen_text;
-
     fflush(stderr);
-    fprintf(stderr, "Error on line %d at `%s' : \n", lineno + 1, toycen_text); // zero-based
-    fprintf(stderr, "%*s\n%*s\n", column, "^", column, s);
+    fprintf(stderr, "%s\n", ps->lexstate.saveline);
+    fprintf(stderr, "%*s\n%*s at line %d column %d at `%s'\n",
+            locp->first_column, "^", locp->first_column, s,
+            locp->first_line, locp->first_column,
+            toycen_get_text(ps->scanner));
+
+    return 0;
 }
 
-struct translation_unit* get_top_of_parse_result(void)
+int parser_check_identifier(struct parser_state *ps, const char *s)
 {
-    return top;
+    if (hash_table_get(ps->types_hash, s))
+        return TYPEDEF_NAME;
+
+    return IDENTIFIER;
+}
+
+/// @todo scope properly
+int parser_add_typename(struct parser_state *ps, scope_t *scope, const char *type)
+{
+    hash_table_put(ps->types_hash, type, (void*)1);
+    (void)scope; // to avoid uused warning for now
+    return 0;
 }
 
 /* vi:set ts=4 sw=4 et: */

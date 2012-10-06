@@ -25,3 +25,5 @@ y.output
 y.tab.h
 lexer.h
 parser.h
+lexer_gen.h
+parser_gen.h

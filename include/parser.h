@@ -1,26 +1,39 @@
-#ifndef PARSER_H_D0BAB84A620FF56F821864BE64C127E0
-#define PARSER_H_D0BAB84A620FF56F821864BE64C127E0
+#ifndef PARSER_H_
+#define PARSER_H_
 
 #include "ast.h"
 #include "debug.h"
-#include "parser_internal.h"
+#include "parser_gen.h"
 #include "hash_table.h"
 
+#define LINE_LEN 512
+
 /// @todo define appropriately
-typedef struct parser_state_s {
+struct parser_state {
+    struct translation_unit *top;
+    hash_table_t types_hash;
+    /// temporary pointer for debugging output in NN(...)
+    // XXX this may break reentrancy a bit ?
+    void *_tptr;
+
+    void *bufstate;
+
     hash_table_t globals;
     struct {
         hash_table_t strings;
     } constants;
-} parser_state_t;
 
-void parser_setup(parser_state_t *ps);
-void parser_teardown(parser_state_t *ps);
-
-struct translation_unit* get_top_of_parse_result(void);
+    void *scanner;
+    struct {
+        unsigned savecol;
+        char saveline[LINE_LEN];
+    } lexstate;
+};
 
 #define DEFAULT_SYMBOL_TABLE_SIZE       1024
 #define DEFAULT_CONSTANTS_TABLE_SIZE    1024
+
+int toycen_error(YYLTYPE *locp, struct parser_state *ps, const char *s);
 
 #endif
 

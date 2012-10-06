@@ -109,9 +109,8 @@ wrap_ast_%: wrap_ast_%.o toycen,wrap.o parser.o parser_primitives.o lexer.o hash
 	$(LINK.c) $(BINLDFLAGS) -DARTIFICIAL_AST -o $@ $^ $(LDLIBS)
 
 # Don't complain about unused yyunput()
+# TODO use flex no* options to stop generating the functions in the first place
 lexer.o: CFLAGS += -Wno-unused-function
-CLOBBERFILES += parser_internal.h
-parser_internal.h: y.tab.h ; ln $< $@
 
 CLEANFILES += t/test_hash_table t/test_hash_table_interface
 t/%: CFLAGS += -I.
@@ -163,15 +162,15 @@ endif
 endif
 
 .SECONDARY: parser.c lexer.c
-CLEANFILES += y.output parser_internal.h y.tab.h parser.c lexer.l
+CLEANFILES += y.output y.tab.h parser.c lexer.c
 
-CLEANFILES += parser.h
+CLEANFILES += parser_gen.h
 %.h %.c: %.l
-	$(FLEX) --header-file=$*.h -o $*.c $<
+	$(FLEX) --header-file=$*_gen.h -o $*.c $<
 
-CLEANFILES += lexer.h
+CLEANFILES += lexer_gen.h
 %.h %.c: %.y
-	$(BISON) --defines=$*.h -o $*.c $<
+	$(BISON) --defines=$*_gen.h -o $*.c $<
 
 ifeq ($(words $(filter clean clobber,$(MAKECMDGOALS))),0)
 -include $(notdir $(patsubst %.o,%.d,$(OBJECTS)))
@@ -182,10 +181,6 @@ endif
 	$(CC) -MG -M $(CPPFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$
-
-CLEANFILES += lexer.c
-%.l: %.l.pre blank.l %.l.rules %.l.post
-	cat $(filter %.l.pre,$^) $(filter %blank.l,$^) $(filter %.l.rules,$^) $(filter %blank.l,$^) $(filter %.l.post,$^) > $@
 
 clean:
 	$(RM) -r $(CLEANFILES) *.[odsi] *.dSYM $(TARGET)

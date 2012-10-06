@@ -8,13 +8,13 @@ static struct translation_unit *artificial = &
 #include WRAPPED
 ;
 
-int get_wrapped_ast(void *ud, struct translation_unit **what)
+int get_wrapped_ast(struct parser_state *ps, struct translation_unit **what, void *ud)
 {
 	*what = artificial;
 	return 0;
 }
 
-int teardown_wrapped_ast(void *ud, struct translation_unit **what)
+int teardown_wrapped_ast(struct parser_state *ps, struct translation_unit **what, void *ud)
 {
 	return 0;
 }

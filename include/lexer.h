@@ -3,13 +3,11 @@
 
 #define TAB_WIDTH 8
 
+#include "parser.h"
+#include "lexer_gen.h"
+
 /// @todo define scope appropriately, and somewhere else
 typedef int scope_t;
-
-void lexer_setup();
-void lexer_teardown();
-
-void add_typename(scope_t *scope, const char *type);
 
 #endif
 

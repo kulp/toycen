@@ -13,10 +13,6 @@
 extern int DEBUG_LEVEL;
 extern FILE* DEBUG_FILE;
 
-extern int yylex();
-extern int switch_to_input_file(const char *s, void **_state);
-extern int cleanup_input_state(void *_state);
-extern void yyerror(const char *s);
 void* _alloc_node(size_t size, void *data);
 /// copies data into old at offset
 void* _copy_node(void *old, void *data, size_t size, size_t off);
@@ -24,15 +20,12 @@ void* _copy_node(void *old, void *data, size_t size, size_t off);
 /// size of type
 #define SoT(Type) sizeof(struct Type)
 
-/// temporary pointer for debugging output in NN(...)
-extern void *_tptr;
-
 /// new node
 #define NN(Type, ...) \
-    ( (_tptr = (struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__)), \
-      (debug(2, "allocating %p as %-25s with " #__VA_ARGS__, _tptr, #Type)), \
-      (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
-      _tptr) \
+    ( (ps->_tptr = (struct Type*)_alloc_node(SoT(Type), PAnon(Type, __VA_ARGS__)), \
+      (debug(2, "allocating %p as %-25s with " #__VA_ARGS__, ps->_tptr, #Type)), \
+      (((struct node*)ps->_tptr)->node_type = NODE_TYPE_##Type), \
+      ps->_tptr) \
     )
 
 /*
@@ -48,9 +41,9 @@ extern void *_tptr;
 #define UN(Type, Old, ...) \
     ( (assert(Old != NULL)), \
       (debug(2, "upgrading  %p to %-25s with " #__VA_ARGS__, (void*)Old, #Type)), \
-      (_tptr = (struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)), \
-      (((struct node*)_tptr)->node_type = NODE_TYPE_##Type), \
-      (_tptr) \
+      (ps->_tptr = (struct Type*)_copy_node(my_realloc(Old, SoT(Type)), PAnon(Type, __VA_ARGS__), SoT(Type), sizeof *Old)), \
+      (((struct node*)ps->_tptr)->node_type = NODE_TYPE_##Type), \
+      (ps->_tptr) \
     )
 
 /// @todo real lookup
@@ -73,10 +66,10 @@ void my_free(void*);
 
 #define debug(...) _debug(__VA_ARGS__)
 
-parser_state_t *get_parser_state(void);
-void set_parser_state(parser_state_t *ps);
+struct parser_state *get_parser_state(void);
+void set_parser_state(struct parser_state *ps);
 
-struct string* intern_string(parser_state_t *ps, const char *str);
+struct string* intern_string(struct parser_state *ps, const char *str);
 
 // see ast-gen-pre.h's CHOICE(...)
 #if INHIBIT_INTROSPECTION
