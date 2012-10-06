@@ -1,0 +1,12 @@
+language: c
+compiler:
+  - gcc
+  - clang
+script: make
+notifications:
+    irc:
+        channels:
+          - "irc.freenode.org##toycen"
+          - "irc.freenode.org#toycen"
+        use_notice: true
+        skip_join: true
