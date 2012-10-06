@@ -94,17 +94,17 @@
 
 {id}                                    { c();      return check_identifier(yytext); }
 
-"0"[xX][0-9a-fA-F]+{intsuffix}?         { c(); p(); yylval.str = yytext; return INTEGER; }
-"0"[0-7]+{intsuffix}?                   { c(); p(); yylval.str = yytext; return INTEGER; }
-[0-9]+{intsuffix}?                      { c(); p(); yylval.str = yytext; return INTEGER; }
+"0"[xX][0-9a-fA-F]+{intsuffix}?         { c(); p(); toycen_lval.str = yytext; return INTEGER; }
+"0"[0-7]+{intsuffix}?                   { c(); p(); toycen_lval.str = yytext; return INTEGER; }
+[0-9]+{intsuffix}?                      { c(); p(); toycen_lval.str = yytext; return INTEGER; }
 
 {fracconst}{exppart}?{floatsuffix}?     { c(); p(); return FLOATING;  }
 [0-9]+{exppart}{floatsuffix}?           { c(); p(); return FLOATING;  }
 
-"'"{chartext}*"'"                       { c(); p(); yylval.chr = yytext[0]; return CHARACTER; }
-"L'"{chartext}*"'"                      { c(); p(); yylval.chr = yytext[0]; return CHARACTER; }
+"'"{chartext}*"'"                       { c(); p(); toycen_lval.chr = yytext[0]; return CHARACTER; }
+"L'"{chartext}*"'"                      { c(); p(); toycen_lval.chr = yytext[0]; return CHARACTER; }
 
-"\""{stringtext}*"\""                   { c(); p(); yylval.str = yytext; return STRING; }
-"L\""{stringtext}*"\""                  { c(); p(); yylval.str = yytext; return STRING; }
+"\""{stringtext}*"\""                   { c(); p(); toycen_lval.str = yytext; return STRING; }
+"L\""{stringtext}*"\""                  { c(); p(); toycen_lval.str = yytext; return STRING; }
 
 .                                       { c(); fprintf(stderr, "line %d: unexpected character `%c'\n", lineno, yytext[0]); /* vi:set ts=4 sw=4 et syntax=lexrules: */ }

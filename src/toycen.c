@@ -22,7 +22,7 @@
 
 #include <getopt.h>
 
-extern int yyparse();
+extern int toycen_parse();
 
 int DEBUG_LEVEL = 2;
 FILE* DEBUG_FILE;
@@ -39,7 +39,7 @@ static int get_parsed_ast(void *ud, struct translation_unit **what)
 
     lexer_setup();
     parser_setup(ud);
-    result = yyparse();
+    result = toycen_parse();
 
     *what = get_top_of_parse_result();
 
@@ -102,8 +102,8 @@ int main(int argc, char *argv[])
     teardown_ast(&ps, &top);
 
     cleanup_input_state(parser_state);
-    extern FILE *yyin;
-    fclose(yyin);
+    extern FILE *toycen_in;
+    fclose(toycen_in);
 
     return result;
 }
