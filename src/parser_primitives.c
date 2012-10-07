@@ -60,6 +60,29 @@ void my_free(void *ptr)
 
 void node_free(void *node, int recurse);
 void priv_free(void *priv, int recurse);
+static void node_or_priv_free(void *what, int priv, int freeself, int recurse);
+
+static void item_free(void **child, const struct node_item *item)
+{
+    // TODO move this choice type somewhere common
+    struct { int idx; union { alignment_type alignment_dummy_; } choice; } *choice = (void*)child;
+
+    switch (item->meta) {
+        case META_IS_PRIV:
+        case META_IS_NODE:
+            node_or_priv_free(*child, item->meta == META_IS_PRIV, item->is_pointer, 1);
+            break;
+        case META_IS_CHOICE:
+            item_free((void*)&choice->choice, &item->c.choice[choice->idx - 1]);
+            break;
+        default:
+            // Other options are META_IS_ID, which cannot be recursed
+            // upon, and META_IS_CHOICE, which might have a freeable
+            // string, but that is interned and freed another way.
+            // TODO reduce the interned string's refcount
+            break;
+    }
+}
 
 static void node_or_priv_free(void *what, int priv, int freeself, int recurse)
 {
@@ -72,20 +95,10 @@ static void node_or_priv_free(void *what, int priv, int freeself, int recurse)
                               *rec  = &recs[type];
 
         size_t offset = 0;
-        struct node_item *item = &rec->items[offset];
+        const struct node_item *item = &rec->items[offset];
         while (item->meta != META_IS_INVALID) {
             void **child = (void*)(((char*) what) + (*rec->offp)[offset]);
-            switch (item->meta) {
-                case META_IS_PRIV:
-                case META_IS_NODE:
-                    node_or_priv_free(*child, item->meta == META_IS_PRIV, item->is_pointer, 1);
-                    break;
-                case META_IS_CHOICE:
-                    break; // TODO
-                default:
-                    break;
-            }
-
+            item_free(child, item);
             item = &rec->items[++offset];
         }
     }
