@@ -60,17 +60,21 @@ void my_free(void *ptr)
 
 void node_free(void *node, int recurse);
 void priv_free(void *priv, int recurse);
-static void node_or_priv_free(void *what, int priv, int freeself, int recurse);
+static void node_or_priv_free(void *what, int _type, int priv, int freeself, int recurse);
 
-static void item_free(void **child, const struct node_item *item)
+static void item_free(void *childaddr, const struct node_item *item)
 {
     // TODO move this choice type somewhere common
-    struct { int idx; union { alignment_type alignment_dummy_; } choice; } *choice = (void*)child;
+    struct { int idx; union { alignment_type alignment_dummy_; } choice; } *choice = childaddr;
 
+    int type = NODE_TYPE_INVALID;
+    void *what = *(void**)childaddr;
     switch (item->meta) {
         case META_IS_PRIV:
+            what = childaddr; // privs have less indirection (whence cometh this ?)
+            type = item->c.priv->type; /* FALLTHROUGH */
         case META_IS_NODE:
-            node_or_priv_free(*child, item->meta == META_IS_PRIV, item->is_pointer, 1);
+            node_or_priv_free(what, type, item->meta == META_IS_PRIV, item->is_pointer, 1);
             break;
         case META_IS_CHOICE:
             item_free((void*)&choice->choice, &item->c.choice[choice->idx - 1]);
@@ -84,21 +88,29 @@ static void item_free(void **child, const struct node_item *item)
     }
 }
 
-static void node_or_priv_free(void *what, int priv, int freeself, int recurse)
+static void node_or_priv_free(void *what, int _type, int priv, int freeself, int recurse)
 {
     if (!what)
         return;
 
     if (recurse) {
-        int type = ((struct node *)what)->node_type;
+        // If _type is nonzero (i.e., if it is valid), use that type ;
+        // otherwise discover
+        int type = _type ? _type : ((struct node *)what)->node_type;
+        const struct node_parentage *anc = priv ? NULL : &node_parentages[type];
         const struct node_rec *recs = priv ? priv_recs : node_recs,
                               *rec  = &recs[type];
+
+        debug(3, "freeing %s '%s' at %p", priv ? "priv" : "node", rec->name, what);
+
+        if (!priv && anc->base != NODE_TYPE_node)
+            node_or_priv_free(what, anc->base, priv, 0, recurse);
 
         size_t offset = 0;
         const struct node_item *item = &rec->items[offset];
         while (item->meta != META_IS_INVALID) {
-            void **child = (void*)(((char*) what) + (*rec->offp)[offset]);
-            item_free(child, item);
+            void *childaddr = (((char*) what) + (*rec->offp)[offset]);
+            item_free(childaddr, item);
             item = &rec->items[++offset];
         }
     }
@@ -107,14 +119,15 @@ static void node_or_priv_free(void *what, int priv, int freeself, int recurse)
         my_free(what);
 }
 
+// TODO remove this entry point if not needed
 void priv_free(void *priv, int recurse)
 {
-    node_or_priv_free(priv, 1, 1, recurse);
+    node_or_priv_free(priv, PRIV_TYPE_INVALID, 1, 1, recurse);
 }
 
 void node_free(void *node, int recurse)
 {
-    node_or_priv_free(node, 0, 1, recurse);
+    node_or_priv_free(node, NODE_TYPE_INVALID, 0, 1, recurse);
 }
 
 /// @tod support overlapping string constants
