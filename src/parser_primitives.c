@@ -130,33 +130,55 @@ void node_free(void *node, int recurse)
     node_or_priv_free(node, NODE_TYPE_INVALID, 0, 1, recurse);
 }
 
+struct refcount_string {
+    struct string *string;
+    int refcount;
+};
+
 /// @tod support overlapping string constants
-struct string* intern_string(struct parser_state *ps, const char *str)
+struct string *intern_string(struct parser_state *ps, const char *str, int dir)
 {
     assert(ps != NULL);
     assert(str != NULL);
     assert(ps->constants.strings != NULL);
 
-    struct string *result = NULL;
+    struct refcount_string *result = NULL;
     // look up string in constants table, and add it if it doesn't exist
     /// @todo
     result = hash_table_get(ps->constants.strings, str);
-    if (!result) {
+    if (!result && dir > 0) {
         result = my_malloc(sizeof *result);
+        result->refcount = 1;
+        struct string *string = result->string = my_malloc(sizeof *string);
         size_t len = strlen(str);
-        result->cached = my_malloc(len + 1);
-        memcpy(result->cached, str, len + 1);
-        result->size = len;
-        result->value = my_malloc(len * sizeof *result->value);
+        string->cached = my_malloc(len + 1);
+        memcpy(string->cached, str, len + 1);
+        string->size = len;
+        string->value = my_malloc(len * sizeof *string->value);
         for (unsigned i = 0; i < len; i++) {
-            struct character *p = &result->value[i];
+            struct character *p = &string->value[i];
             p->has_signage = false;
-            p->is_signed= false;
+            p->is_signed   = false;
             CHOICE_REF(&p->me,c) = str[i];
         }
         hash_table_put(ps->constants.strings, str, result);
+
+        assert(result != NULL);
+        return result->string;
+    } else if (result && dir < 0) {
+        if (result->refcount-- <= 0) {
+            my_free(result->string->cached);
+            my_free(result->string);
+            my_free(result);
+        } else {
+            return result->string;
+        }
+    } else {
+        assert(result != NULL);
+        result->refcount++;
+        return result->string;
     }
 
-    assert(result != NULL);
-    return result;
+    return NULL;
 }
+

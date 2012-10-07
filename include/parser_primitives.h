@@ -66,7 +66,8 @@ void my_free(void*);
 
 #define debug(...) _debug(__VA_ARGS__)
 
-struct string* intern_string(struct parser_state *ps, const char *str);
+// dir = 1 to add, dir = 0 to query, dir = -1 to unref
+struct string *intern_string(struct parser_state *ps, const char *str, int dir);
 
 void node_free(void *node, int recurse);
 void priv_free(void *priv, int recurse);

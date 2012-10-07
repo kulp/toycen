@@ -229,7 +229,7 @@ primary_expression
     | FLOATING
         { $$ = NN(primary_expression, .type = PRET_FLOATING  , .me = CHOICE(3,f,/* TODO */NULL)); }
     | STRING
-        { $$ = NN(primary_expression, .type = PRET_STRING    , .me = CHOICE(4,s,intern_string(ps,$1))); }
+        { $$ = NN(primary_expression, .type = PRET_STRING    , .me = CHOICE(4,s,intern_string(ps,$1,1))); }
     | '(' expression ')'
         { $$ = NN(primary_expression, .type = PRET_PARENTHESIZED, .me = CHOICE(5,e,$2)); }
     ;
