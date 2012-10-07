@@ -48,8 +48,11 @@ static inline unsigned int hash(const char *str)
 static bucket_t* bucket_top(bucket_t **bkts, int index)
 {
     if (!bkts[index]) {
-        bkts[index] = malloc(sizeof *bkts[index]);
-        bkts[index]->type = HEAD;
+        struct bucket_s *s = bkts[index] = malloc(sizeof *bkts[index]);
+        s->type = HEAD;
+        s->key  = NULL;
+        s->val  = NULL;
+        s->next = NULL;
     }
 
     return bkts[index];
