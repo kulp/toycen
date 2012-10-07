@@ -9,12 +9,8 @@ struct node_parentage {
 };
 
 struct node_offset {
-    enum node_type type;
-    size_t *items;
-};
-
-struct priv_offset {
-    enum priv_type type;
+#define priv_offset node_offset
+    int type;
     size_t *items;
 };
 

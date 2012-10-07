@@ -57,8 +57,6 @@ static int teardown_parsed_ast(struct parser_state *ps, struct translation_unit 
 {
     int result = 0;
 
-    // TODO free what
-    (void)what;
     (void)ud;
 
     toycen_lex_destroy(ps->scanner);
@@ -67,6 +65,8 @@ static int teardown_parsed_ast(struct parser_state *ps, struct translation_unit 
     hash_table_destroy(ps->types_hash);
     ps->types_hash = NULL;
     memset(ps, 0, sizeof *ps);
+
+    node_free(*what, 1);
 
     return result;
 }

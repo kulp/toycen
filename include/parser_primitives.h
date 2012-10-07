@@ -66,9 +66,10 @@ void my_free(void*);
 
 #define debug(...) _debug(__VA_ARGS__)
 
-struct parser_state *get_parser_state(void);
-
 struct string* intern_string(struct parser_state *ps, const char *str);
+
+void node_free(void *node, int recurse);
+void priv_free(void *priv, int recurse);
 
 // see ast-gen-pre.h's CHOICE(...)
 #if INHIBIT_INTROSPECTION

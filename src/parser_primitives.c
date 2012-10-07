@@ -1,4 +1,5 @@
 #include "parser_primitives.h"
+#include "ast-ids-priv.h"
 
 #include <assert.h>
 
@@ -57,6 +58,52 @@ void my_free(void *ptr)
     free(ptr);
 }
 
+void node_free(void *node, int recurse);
+void priv_free(void *priv, int recurse);
+
+static void node_or_priv_free(void *what, int priv, int freeself, int recurse)
+{
+    if (!what)
+        return;
+
+    if (recurse) {
+        int type = ((struct node *)what)->node_type;
+        const struct node_rec *recs = priv ? priv_recs : node_recs,
+                              *rec  = &recs[type];
+
+        size_t offset = 0;
+        struct node_item *item = &rec->items[offset];
+        while (item->meta != META_IS_INVALID) {
+            void **child = (void*)(((char*) what) + (*rec->offp)[offset]);
+            switch (item->meta) {
+                case META_IS_PRIV:
+                case META_IS_NODE:
+                    node_or_priv_free(*child, item->meta == META_IS_PRIV, item->is_pointer, 1);
+                    break;
+                case META_IS_CHOICE:
+                    break; // TODO
+                default:
+                    break;
+            }
+
+            item = &rec->items[++offset];
+        }
+    }
+
+    if (freeself)
+        my_free(what);
+}
+
+void priv_free(void *priv, int recurse)
+{
+    node_or_priv_free(priv, 1, 1, recurse);
+}
+
+void node_free(void *node, int recurse)
+{
+    node_or_priv_free(node, 0, 1, recurse);
+}
+
 /// @tod support overlapping string constants
 struct string* intern_string(struct parser_state *ps, const char *str)
 {
@@ -76,10 +123,10 @@ struct string* intern_string(struct parser_state *ps, const char *str)
         result->size = len;
         result->value = my_malloc(len * sizeof *result->value);
         for (unsigned i = 0; i < len; i++) {
-			struct character *p = &result->value[i];
-			p->has_signage = false;
-			p->is_signed= false;
-			CHOICE_REF(&p->me,c) = str[i];
+            struct character *p = &result->value[i];
+            p->has_signage = false;
+            p->is_signed= false;
+            CHOICE_REF(&p->me,c) = str[i];
         }
         hash_table_put(ps->constants.strings, str, result);
     }
