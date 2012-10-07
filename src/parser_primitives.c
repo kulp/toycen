@@ -79,11 +79,13 @@ static void item_free(void *childaddr, const struct node_item *item)
         case META_IS_CHOICE:
             item_free((void*)&choice->choice, &item->c.choice[choice->idx - 1]);
             break;
+        case META_IS_BASIC:
+            // TODO unintern strings
+            break;
         default:
             // Other options are META_IS_ID, which cannot be recursed
-            // upon, and META_IS_CHOICE, which might have a freeable
-            // string, but that is interned and freed another way.
-            // TODO reduce the interned string's refcount
+            // upon, and META_IS_BASIC, which might have a freeable
+            // string, but that is interned and freed above.
             break;
     }
 }
@@ -168,17 +170,17 @@ struct string *intern_string(struct parser_state *ps, const char *str, int dir)
     } else if (result && dir < 0) {
         if (result->refcount-- <= 0) {
             my_free(result->string->cached);
-            my_free(result->string);
+            // we don't free the actual string object ; the caller might have
+            // that action on the stack, and can do it by freeing the result we
+            // return, if not.
             my_free(result);
-        } else {
-            return result->string;
         }
+
+        return result->string;
     } else {
         assert(result != NULL);
         result->refcount++;
         return result->string;
     }
-
-    return NULL;
 }
 
